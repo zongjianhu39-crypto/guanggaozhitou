@@ -4,13 +4,13 @@
 
 当前网站项目的本地源码根目录在：
 
-- /Users/zhouhao/.openclaw/workspace/website
+- /Users/zhouhao/Desktop/website
 
 这就是现在维护网站的主目录，前端页面、静态资源、部署脚本、Supabase 后端函数、数据库迁移都在这里。
 
 可以把它理解成三层：
 
-1. 本地源码目录：/Users/zhouhao/.openclaw/workspace/website
+1. 本地源码目录：/Users/zhouhao/Desktop/website
 2. 线上静态站目录：虚拟主机 /wwwroot
 3. 线上后端目录：Supabase 项目中的 Edge Functions 和数据库
 
@@ -309,7 +309,7 @@ supabase/ 目录是网站后端能力所在，包含数据文件、Edge Function
 
 ## 10. 一句话总结
 
-这个项目的源码主目录就是 /Users/zhouhao/.openclaw/workspace/website。
+这个项目的源码主目录就是 /Users/zhouhao/Desktop/website。
 
 - 页面文件主要在根目录和 auth/
 - 静态资源主要在 assets/

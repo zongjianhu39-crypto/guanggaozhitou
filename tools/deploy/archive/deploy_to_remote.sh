@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # deploy_to_remote.sh
-# 用途：把本地 ~/.openclaw/workspace/website 同步到远端根目录（慎用 --delete），并做备份与权限设置
+# 用途：把本地 ~/Desktop/website 同步到远端根目录（慎用 --delete），并做备份与权限设置
 # 使用：./deploy_to_remote.sh user@host /path/to/remote_root
 
 if [ "$#" -ne 2 ]; then
@@ -12,7 +12,7 @@ fi
 
 REMOTE="$1"
 REMOTE_ROOT="$2"
-LOCAL_DIR="${LOCAL_DIR:-$HOME/.openclaw/workspace/website/}"
+LOCAL_DIR="${LOCAL_DIR:-$HOME/Desktop/website/}"
 EXCLUDES=( ".git" "node_modules" ".env.local" )
 
 # 构建 rsync exclude 参数

@@ -746,7 +746,7 @@ add_text(slide, Inches(1.2), Inches(6.0), Inches(11), Inches(0.5),
 
 
 # ── Save ──
-output_path = "/Users/zhouhao/.openclaw/workspace/website/广告智投工作台介绍.pptx"
+output_path = "/Users/zhouhao/Desktop/website/广告智投工作台介绍.pptx"
 prs.save(output_path)
 print(f"PPT saved to: {output_path}")
 print(f"Total slides: {len(prs.slides)}")
