@@ -14,14 +14,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 检查部署配置
+        shell: bash
+        env:
+          FTP_SERVER: ${{ vars.FTP_SERVER }}
+          FTP_USERNAME: ${{ vars.FTP_USERNAME }}
+          FTP_SERVER_DIR: ${{ vars.FTP_SERVER_DIR }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          [[ -n "$FTP_SERVER" ]] || { echo "Missing repository variable: FTP_SERVER"; exit 1; }
+          [[ -n "$FTP_USERNAME" ]] || { echo "Missing repository variable: FTP_USERNAME"; exit 1; }
+          [[ -n "$FTP_SERVER_DIR" ]] || { echo "Missing repository variable: FTP_SERVER_DIR"; exit 1; }
+          [[ -n "$FTP_PASSWORD" ]] || { echo "Missing repository secret: FTP_PASSWORD"; exit 1; }
+
       - name: 部署到 FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: jiangfeng1012.gotoftp4.com
-          username: jiangfeng1012
+          server: ${{ vars.FTP_SERVER }}
+          username: ${{ vars.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
-          server-dir: /wwwroot/
+          server-dir: ${{ vars.FTP_SERVER_DIR }}
           exclude: |
             .git/**
             .github/**

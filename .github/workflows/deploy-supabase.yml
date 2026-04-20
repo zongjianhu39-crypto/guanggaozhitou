@@ -19,6 +19,15 @@ jobs:
         with:
           version: latest
 
+      - name: 检查 Supabase 部署配置
+        shell: bash
+        env:
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          [[ -n "$SUPABASE_PROJECT_REF" ]] || { echo "Missing repository variable: SUPABASE_PROJECT_REF"; exit 1; }
+          [[ -n "$SUPABASE_ACCESS_TOKEN" ]] || { echo "Missing repository secret: SUPABASE_ACCESS_TOKEN"; exit 1; }
+
       - name: 部署所有边函数
         shell: bash
         run: |
@@ -35,7 +44,8 @@ jobs:
               continue
             fi
             echo "Deploying $func_name..."
-            supabase functions deploy "$func_name" --project-ref qjscsikithbxuxmjyjsp
+            supabase functions deploy "$func_name" --project-ref "$SUPABASE_PROJECT_REF"
           done
         env:
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
