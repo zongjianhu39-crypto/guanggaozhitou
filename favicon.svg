@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A5F"/>
+      <stop offset="100%" stop-color="#0F2744"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#4ECDC4"/>
+      <stop offset="100%" stop-color="#7EE8E0"/>
+    </linearGradient>
+  </defs>
+  <!-- 背景圆角矩形 -->
+  <rect width="32" height="32" rx="6" fill="url(#bg)"/>
+  <!-- 简洁柱状图 - 象征数据/分析 -->
+  <rect x="6" y="18" width="4" height="8" rx="1" fill="url(#bar)" opacity="0.6"/>
+  <rect x="12" y="13" width="4" height="13" rx="1" fill="url(#bar)" opacity="0.8"/>
+  <rect x="18" y="8" width="4" height="18" rx="1" fill="url(#bar)"/>
+  <rect x="24" y="15" width="4" height="11" rx="1" fill="url(#bar)" opacity="0.7"/>
+  <!-- 顶部小圆点 - 象征数据点/AI亮点 -->
+  <circle cx="24" cy="7" r="2" fill="#FF6B6B"/>
+</svg>

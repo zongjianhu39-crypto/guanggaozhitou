@@ -1,0 +1,8 @@
+{
+  "name": "friends-website",
+  "private": true,
+  "scripts": {
+    "check:release": "node tools/checks/run-release-check.mjs",
+    "check:release:online": "node tools/checks/run-release-check.mjs --online"
+  }
+}

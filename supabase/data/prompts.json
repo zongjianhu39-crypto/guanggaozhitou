@@ -1,0 +1,13 @@
+{
+  "daily_summary": {
+    "key": "daily_summary",
+    "name": "每日分析摘要",
+    "description": "用于生成每日投放/运营分析的 Prompt 模板",
+    "published_version": {
+      "version_label": "v1",
+      "content": "你是业务分析师，分析以下指标：{{metrics}}。请给出三点主要结论和三条可执行建议。输出包含：headline, actions, markdown。",
+      "created_by": "system",
+      "created_at": "2026-04-06T00:00:00Z"
+    }
+  }
+}

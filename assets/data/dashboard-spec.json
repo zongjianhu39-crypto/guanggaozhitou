@@ -1,0 +1,218 @@
+{
+  "version": "2026-04-15",
+  "docsSource": "docs/current/报表字段及关系-标准文档.md",
+  "metrics": {
+    "adsFormulaRows": [
+      {
+        "key": "roi",
+        "label": "ROI",
+        "formula": "总成交金额 ÷ 花费"
+      },
+      {
+        "key": "directRoi",
+        "label": "直接ROI",
+        "formula": "直接成交金额 ÷ 花费"
+      },
+      {
+        "key": "adRevenue",
+        "label": "广告收入",
+        "formula": "(保量佣金 + 预估结算线下佣金 + 预估结算机构佣金 − 直播间红包 − 严选红包) × (总成交笔数 ÷ 淘宝直播成交笔数)；按日计算后向周/月汇总"
+      },
+      {
+        "key": "breakevenRoi",
+        "label": "盈亏平衡ROI",
+        "formula": "广告收入 ÷ 花费；周/月按可计算日汇总后的广告收入 ÷ 可计算日花费"
+      },
+      {
+        "key": "returnRoi",
+        "label": "去退ROI",
+        "formula": "总成交金额 × (1 − 退货率) ÷ 花费"
+      },
+      {
+        "key": "adShare",
+        "label": "广告成交占比",
+        "formula": "超级直播总成交笔数 ÷ 淘宝直播成交笔数"
+      },
+      {
+        "key": "viewCost",
+        "label": "观看成本",
+        "formula": "花费 ÷ 观看次数"
+      },
+      {
+        "key": "orderCost",
+        "label": "订单成本",
+        "formula": "花费 ÷ 总成交笔数"
+      },
+      {
+        "key": "cartCost",
+        "label": "加购成本",
+        "formula": "花费 ÷ 总购物车数"
+      },
+      {
+        "key": "preOrderCost",
+        "label": "预售订单成本",
+        "formula": "花费 ÷ 总预售成交笔数"
+      },
+      {
+        "key": "viewConvertRate",
+        "label": "观看转化率",
+        "formula": "总成交笔数 ÷ 观看次数 × 100%"
+      },
+      {
+        "key": "deepInteractRate",
+        "label": "深度互动率",
+        "formula": "互动量 ÷ 观看次数 × 100%"
+      },
+      {
+        "key": "viewRate",
+        "label": "观看率",
+        "formula": "观看次数 ÷ 展现量 × 100%"
+      },
+      {
+        "key": "cpm",
+        "label": "千次展现成本",
+        "formula": "(花费 ÷ 展现量) × 1000"
+      }
+    ]
+  },
+  "dimensions": {
+    "planType": {
+      "defaultLabel": "直播间投放",
+      "rules": [
+        {
+          "label": "单品投放",
+          "includes": [
+            "单品"
+          ]
+        }
+      ]
+    },
+    "crowdLayer": {
+      "fallbackLabel": "未知",
+      "rules": [
+        {
+          "label": "纯黑盒",
+          "exact": [
+            "智能推荐人群"
+          ],
+          "prefixes": [
+            "智能竞争直播间:"
+          ]
+        },
+        {
+          "label": "灰盒_竞争宝贝",
+          "prefixes": [
+            "自定义竞争宝贝:"
+          ]
+        },
+        {
+          "label": "灰盒_竞争店铺",
+          "prefixes": [
+            "自定义竞争店铺:"
+          ]
+        },
+        {
+          "label": "灰盒_竞争直播间",
+          "prefixes": [
+            "自定义竞争直播间:"
+          ]
+        },
+        {
+          "label": "老客",
+          "includes": [
+            "复购老客",
+            "未通知到人群",
+            "购买人群",
+            "活跃成交",
+            "活跃复购"
+          ]
+        },
+        {
+          "label": "兴趣新客",
+          "prefixes": [
+            "粉丝人群:",
+            "喜欢我的直播:",
+            "喜欢我的短视频:"
+          ],
+          "includes": [
+            "加购人群",
+            "兴趣新客",
+            "访问新客",
+            "浏览"
+          ]
+        },
+        {
+          "label": "新客",
+          "includes": [
+            "首购新客",
+            "差老客",
+            "付定人群",
+            "流失",
+            "竞店人群"
+          ]
+        },
+        {
+          "label": "灰盒",
+          "prefixes": [
+            "精选人群:",
+            "达摩盘人群:"
+          ],
+          "subRules": [
+            {
+              "label": "老客",
+              "includes": [
+                "活跃复购",
+                "活跃成交",
+                "活跃下降",
+                "即将流失",
+                "差直播间老客",
+                "差老客",
+                "购买人群"
+              ]
+            },
+            {
+              "label": "兴趣新客",
+              "includes": [
+                "加购人群",
+                "兴趣新客",
+                "访问新客",
+                "浏览"
+              ]
+            },
+            {
+              "label": "新客",
+              "includes": [
+                "首购新客",
+                "未购",
+                "流失",
+                "竞店人群",
+                "付定人群"
+              ]
+            },
+            {
+              "label": "灰盒_竞争宝贝",
+              "includes": [
+                "宠物清洁",
+                "直播低退",
+                "达人带货品牌"
+              ]
+            }
+          ]
+        },
+        {
+          "label": "新客",
+          "includes": [
+            "活跃"
+          ]
+        },
+        {
+          "label": "灰盒",
+          "prefixes": [
+            "精选人群:",
+            "达摩盘人群:"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞书登录中... - 交个朋友·广告智投工作台</title>
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+    <style>
+        body {
+            background: linear-gradient(135deg, #9b8fd4 0%, #a88bc4 50%, #8c82c8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .callback-card {
+            background: white;
+            border-radius: 20px;
+            padding: 48px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .callback-card h2 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .callback-card p {
+            color: #666;
+            font-size: 14px;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .success {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="callback-card">
+        <div class="spinner" id="spinner"></div>
+        <h2 id="title">登录中...</h2>
+        <p id="message">正在验证飞书账号，请稍候</p>
+    </div>
+
+    <script src="../../assets/js/config.js"></script>
+    <script src="../../assets/js/auth-helpers.js?v=20260411c"></script>
+    <script>
+        // Load runtime config from assets/js/config.js
+        if (typeof CONFIG === 'undefined' || !CONFIG || !CONFIG.SUPABASE_ANON_KEY || !CONFIG.SB_URL) {
+            console.error('Missing CONFIG (assets/js/config.js). Please provide CONFIG.SUPABASE_ANON_KEY and CONFIG.SB_URL');
+        }
+        const SUPABASE_ANON_KEY = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SUPABASE_ANON_KEY) ? CONFIG.SUPABASE_ANON_KEY : '';
+        const SUPABASE_URL = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SB_URL) ? CONFIG.SB_URL : '';
+
+        // use authHelpers.normalizeUser from assets/js/auth-helpers.js
+
+        function extractUserPayload(result) {
+            if (!result || typeof result !== 'object') {
+                return null;
+            }
+
+            return result.user
+                || result.user_info
+                || result.data?.user
+                || result.data?.user_info
+                || result.data
+                || null;
+        }
+
+        function extractPromptAdminPayload(result) {
+            if (!result || typeof result !== 'object') {
+                return null;
+            }
+
+            return result.prompt_admin
+                || result.data?.prompt_admin
+                || null;
+        }
+
+        function extractLoginDebugPayload(result) {
+            if (!result || typeof result !== 'object') {
+                return null;
+            }
+
+            return result.login_debug
+                || result.data?.login_debug
+                || null;
+        }
+
+        function extractErrorMessage(result) {
+            if (!result || typeof result !== 'object') {
+                return '';
+            }
+
+            return String(result.error || result.message || result.msg || '').trim();
+        }
+
+        function appendCodeLine(target, label, value) {
+            const line = document.createElement('div');
+            line.append(document.createTextNode(label));
+            const code = document.createElement('code');
+            code.textContent = value || '';
+            line.appendChild(code);
+            target.appendChild(line);
+        }
+
+        async function handleCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
+            
+            // 检查是否有错误
+            if (error) {
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('title').textContent = '登录失败';
+                document.getElementById('title').className = 'error';
+                document.getElementById('message').textContent = '错误: ' + (urlParams.get('error_description') || error);
+                return;
+            }
+            
+            // 检查 state 防止 CSRF
+            const savedState = localStorage.getItem('oauth_state');
+            const stateMismatch = state !== savedState;
+            // savedState 为空 = 跨浏览器上下文（飞书 WebView → 系统浏览器），不是 CSRF
+            const isCrossContext = stateMismatch && !savedState && !!state;
+
+            if (stateMismatch && !isCrossContext) {
+                console.warn('[feishu callback] state mismatch', { received_state: state, saved_state: savedState });
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('title').textContent = '安全验证失败';
+                document.getElementById('title').className = 'error';
+                const messageEl = document.getElementById('message');
+                messageEl.replaceChildren();
+                appendCodeLine(messageEl, '收到的 state: ', state || '');
+                appendCodeLine(messageEl, '本地保存的 state: ', savedState || '');
+                const p3 = document.createElement('div');
+                p3.style.marginTop = '8px';
+                p3.textContent = '排查建议：请确认在同一浏览器/同一窗口发起登录，避免手动打开回调页；若使用 127.0.0.1，请改为 localhost；如浏览器清理了本地存储，请重试。';
+                messageEl.appendChild(p3);
+                (async function sendDebug() {
+                    try {
+                        await window.authHelpers.fetchFunctionJson('feishu-callback-debug', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: {
+                                received_state: state || null,
+                                saved_state: savedState || null,
+                                cross_context: false,
+                                path: window.location.pathname + window.location.search,
+                                user_agent: navigator.userAgent || null,
+                                recorded_at: new Date().toISOString(),
+                            },
+                            publicAuth: true,
+                            anonKey: SUPABASE_ANON_KEY,
+                        });
+                    } catch (e) {
+                        console.warn('[feishu callback] failed to POST debug info', e);
+                    }
+                })();
+                return;
+            }
+            if (isCrossContext) {
+                console.info('[feishu callback] cross-context login detected (Feishu WebView → system browser), proceeding');
+            }
+            
+            if (!code) {
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('title').textContent = '无效的响应';
+                document.getElementById('title').className = 'error';
+                document.getElementById('message').textContent = '未收到授权码，请重新尝试';
+                return;
+            }
+            
+            try {
+                // 调用 Supabase Edge Function 处理飞书 OAuth
+                const authResponse = await window.authHelpers.fetchFunctionJson('feishu-auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: { code: code },
+                    publicAuth: true,
+                    anonKey: SUPABASE_ANON_KEY,
+                    parseErrorMessage: '登录接口返回了无法解析的响应，请稍后重试',
+                });
+
+                const supabaseRes = authResponse.response;
+                const rawResponseText = authResponse.rawText || '';
+                const responseContentType = supabaseRes.headers.get('content-type') || '';
+                localStorage.setItem('feishu_login_last_http_meta', JSON.stringify({
+                    status: supabaseRes.status,
+                    ok: supabaseRes.ok,
+                    content_type: responseContentType,
+                    response_preview: String(rawResponseText || '').slice(0, 500),
+                    received_at: new Date().toISOString(),
+                }));
+                const result = authResponse.data || {};
+
+                const resolvedUser = extractUserPayload(result);
+                const promptAdmin = extractPromptAdminPayload(result);
+                const loginDebug = extractLoginDebugPayload(result);
+
+                localStorage.setItem('prompt_admin_last_login_meta', JSON.stringify({
+                    success: Boolean(result.success),
+                    has_user: Boolean(resolvedUser),
+                    user_open_id: resolvedUser?.open_id || resolvedUser?.user_id || resolvedUser?.union_id || resolvedUser?.sub || resolvedUser?.email || '',
+                    user_identity_type: resolvedUser?.identity_type || loginDebug?.identity_type || '',
+                    user_email: resolvedUser?.email || '',
+                    has_prompt_admin: Boolean(promptAdmin),
+                    prompt_admin_enabled: Boolean(promptAdmin?.enabled),
+                    prompt_admin_reason: promptAdmin?.reason || '',
+                    prompt_admin_expires_at: promptAdmin?.expires_at || null,
+                    login_debug: loginDebug,
+                    recorded_at: new Date().toISOString(),
+                }));
+
+                const responseError = extractErrorMessage(result);
+                if (responseError) {
+                    throw new Error(responseError);
+                }
+
+                // 保存完整的调试信息
+                localStorage.setItem('feishu_login_last_response', JSON.stringify({
+                    success: result.success,
+                    user: resolvedUser,
+                    login_debug: loginDebug,
+                    prompt_admin: promptAdmin,
+                    raw_result: result,
+                    received_at: new Date().toISOString()
+                }));
+
+                const normalizedUser = (window.authHelpers && window.authHelpers.normalizeUser)
+                    ? window.authHelpers.normalizeUser(resolvedUser)
+                    : (function(u){ if(!u||typeof u!=='object')return null; const rid=u.open_id||u.user_id||u.union_id||u.sub||u.email; if(!rid) return null; return Object.assign({},u,{open_id:String(rid)}); })(resolvedUser);
+                if (!normalizedUser) {
+                    // 把完整响应保存到 localStorage，方便排查
+                    localStorage.setItem('feishu_login_error', JSON.stringify({
+                        has_user: Boolean(resolvedUser),
+                        user_keys: resolvedUser ? Object.keys(resolvedUser) : [],
+                        user: resolvedUser,
+                        login_debug: loginDebug,
+                        raw_result: result,
+                        error: '登录响应缺少用户信息，请重新登录一次'
+                    }));
+                    throw new Error('登录响应缺少用户信息，请重新登录一次');
+                }
+                
+                // 登录成功！保存用户信息到 localStorage
+                localStorage.setItem('feishu_user', JSON.stringify(normalizedUser));
+                if (promptAdmin && promptAdmin.enabled && promptAdmin.token) {
+                    localStorage.setItem('prompt_admin_token', promptAdmin.token);
+                    localStorage.setItem('prompt_admin_expires_at', String(promptAdmin.expires_at || ''));
+                    localStorage.removeItem('prompt_admin_reason');
+                } else {
+                    localStorage.removeItem('prompt_admin_token');
+                    localStorage.removeItem('prompt_admin_expires_at');
+                    localStorage.setItem('prompt_admin_reason', String(promptAdmin?.reason || 'prompt_admin_token_missing'));
+                }
+                
+                // 清除 state
+                localStorage.removeItem('oauth_state');
+                
+                // 跳转到原请求页面
+                const savedRedirect = localStorage.getItem('feishu_redirect');
+                const redirectUrl = authHelpers.getSafeRedirectUrl
+                    ? authHelpers.getSafeRedirectUrl(savedRedirect, '/index.html')
+                    : (window.location.origin + '/index.html');
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('title').textContent = '✅ 登录成功';
+                document.getElementById('title').className = 'success';
+                document.getElementById('message').textContent = '即将跳转...';
+                
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 1000);
+                
+            } catch (err) {
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('title').textContent = '登录失败';
+                document.getElementById('title').className = 'error';
+                document.getElementById('message').textContent = err.message || '发生未知错误';
+            }
+        }
+        
+        handleCallback();
+    </script>
+</body>
+</html>

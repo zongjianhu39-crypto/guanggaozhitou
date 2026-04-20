@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据看板 - 交个朋友·广告智投工作台</title>
+    <meta name="description" content="投放数据聚合看板，监控花费、ROI、转化率与人群表现">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        html, body {
+            overflow-x: auto;
+        }
+
+        body {
+            background: #f5f5f7;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            min-width: 100%;
+            overflow-x: auto;
+        }
+
+        .tabs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            background: #e8e8ed;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+        }
+
+        .tab:hover {
+            color: #333;
+        }
+
+        .tab.active {
+            background: #fff;
+            color: #0071e3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow-x: auto;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #1a1a2e;
+            border-left: 4px solid #3498db;
+            padding-left: 12px;
+        }
+
+        .date-range {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .date-range label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .date-range input {
+            padding: 8px 12px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .date-range button,
+        .ai-analysis-footer button,
+        .download-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .date-range button {
+            background: #0071e3;
+            color: #fff;
+        }
+
+        .date-range button:disabled,
+        .date-range button.is-loading {
+            opacity: 0.72;
+            cursor: wait;
+        }
+
+        .download-btn {
+            background: #3498db;
+            color: #fff;
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+
+        .ai-analysis-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .dashboard-status {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin: -8px 0 18px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid #e6defb;
+            box-shadow: 0 10px 28px rgba(47, 30, 94, 0.06);
+        }
+
+        .dashboard-status.show {
+            display: flex;
+        }
+
+        .dashboard-status-badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #eef2ff;
+            color: #4253b8;
+            white-space: nowrap;
+        }
+
+        .dashboard-status.is-info .dashboard-status-badge {
+            background: #eef2ff;
+            color: #4253b8;
+        }
+
+        .dashboard-status.is-success .dashboard-status-badge {
+            background: #eaf8ef;
+            color: #18794e;
+        }
+
+        .dashboard-status.is-warn .dashboard-status-badge {
+            background: #fff4e5;
+            color: #b26a00;
+        }
+
+        .dashboard-status.is-error .dashboard-status-badge {
+            background: #ffe9e7;
+            color: #c0362c;
+        }
+
+        .dashboard-status-text {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .skeleton-shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-shimmer::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.72), transparent);
+            animation: skeleton-shimmer 1.35s infinite;
+        }
+
+        .skeleton-line {
+            height: 12px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #efeff4 0%, #e7e7ee 100%);
+        }
+
+        .skeleton-line.lg {
+            height: 18px;
+        }
+
+        .skeleton-line.sm {
+            height: 10px;
+        }
+
+        .kpi-card.skeleton-card {
+            min-height: 86px;
+        }
+
+        .table-placeholder-cell {
+            padding: 16px 12px !important;
+        }
+
+        .table-placeholder-stack {
+            display: grid;
+            gap: 10px;
+        }
+
+        @keyframes skeleton-shimmer {
+            to { transform: translateX(100%); }
+        }
+
+        .table-wrapper,
+        .table-scroll-wrapper {
+            overflow: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            padding: 10px 12px;
+            text-align: right;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            box-shadow: inset 0 -1px 0 #dee2e6;
+        }
+
+        .data-table td {
+            padding: 8px 12px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+        }
+
+        .data-table th:first-child,
+        .data-table td:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: #fff;
+        }
+
+        .data-table th:first-child {
+            z-index: 4;
+            background: #f8f9fa;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .data-table tr:hover td:first-child {
+            background: #f8f9fa;
+        }
+
+        .kpi-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            min-width: 0;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: #86868b;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #1d1d1f;
+        }
+
+        .kpi-value.green { color: #34c759; }
+        .kpi-value.blue { color: #0071e3; }
+        .kpi-value.orange { color: #ff9500; }
+        .kpi-value.purple { color: #af52de; }
+        .good { color: #27ae60; font-weight: 600; }
+        .bad { color: #e74c3c; font-weight: 600; }
+
+        .crowd-row {
+            cursor: pointer;
+        }
+
+        .crowd-row:hover {
+            background: #e8e8ed;
+        }
+
+        .expand-icon {
+            display: inline-block;
+            width: 16px;
+            font-size: 12px;
+            color: #86868b;
+            transition: transform 0.2s;
+        }
+
+        .crowd-row.expanded .expand-icon {
+            transform: rotate(90deg);
+        }
+
+        .sub-row {
+            display: none;
+            background: #f8f9fa;
+        }
+
+        .sub-row.visible {
+            display: table-row;
+        }
+
+        .sub-row td {
+            padding: 6px 12px 6px 40px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .ai-analysis-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ai-analysis-modal.show {
+            display: flex;
+        }
+
+        .ai-analysis-dialog {
+            background: #fff;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .ai-analysis-header,
+        .ai-analysis-footer {
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .ai-analysis-header {
+            border-bottom: 1px solid #e8e8ed;
+        }
+
+        .ai-analysis-footer {
+            border-top: 1px solid #e8e8ed;
+            justify-content: flex-end;
+        }
+
+        .ai-analysis-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .ai-analysis-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .ai-analysis-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e8e8ed;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .ai-analysis-text {
+            font-size: 14px;
+            line-height: 1.75;
+            color: #1d1d1f;
+            word-break: break-word;
+        }
+        .ai-analysis-text .ai-analysis-h1 { font-size: 1.25rem; margin: 0 0 12px; font-weight: 700; color: #0f172a; }
+        .ai-analysis-text .ai-analysis-h2 { font-size: 1.1rem; margin: 20px 0 10px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e8e8ed; padding-bottom: 6px; }
+        .ai-analysis-text .ai-analysis-h3 { font-size: 1rem; margin: 16px 0 8px; font-weight: 600; color: #1e293b; }
+        .ai-analysis-text .ai-analysis-h4,
+        .ai-analysis-text .ai-analysis-h5,
+        .ai-analysis-text .ai-analysis-h6 { font-size: 0.95rem; margin: 12px 0 6px; font-weight: 600; color: #334155; }
+        .ai-analysis-text p { margin: 0 0 12px; }
+        .ai-analysis-text ul.ai-analysis-ul,
+        .ai-analysis-text ol.ai-analysis-ol { margin: 0 0 14px; padding-left: 1.35em; }
+        .ai-analysis-text li { margin: 4px 0; }
+        .ai-analysis-text strong { font-weight: 600; color: #0f172a; }
+        .ai-analysis-text code { font-family: ui-monospace, Menlo, monospace; font-size: 0.9em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+        .ai-analysis-text hr.ai-analysis-hr { border: none; border-top: 1px solid #e8e8ed; margin: 16px 0; }
+        .ai-analysis-text blockquote.ai-analysis-quote { margin: 0 0 12px; padding: 8px 12px; border-left: 3px solid #667eea; background: #f8fafc; color: #475569; font-size: 13px; }
+        .ai-analysis-persist-warning {
+            display: none;
+            margin: 12px 0 0;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #fff8f0;
+            border: 1px solid #f5d0a8;
+            color: #9a3412;
+            font-size: 12px;
+            line-height: 1.55;
+        }
+        .ai-analysis-text .article-md-table-wrap {
+            margin: 0 0 14px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+            border: 1px solid #e8e8ed;
+            background: #fff;
+        }
+        .ai-analysis-text table.ai-analysis-table {
+            width: 100%;
+            min-width: 320px;
+            border-collapse: collapse;
+            font-size: 13px;
+            color: #334155;
+        }
+        .ai-analysis-text table.ai-analysis-table th,
+        .ai-analysis-text table.ai-analysis-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e8e8ed;
+            vertical-align: top;
+        }
+        .ai-analysis-text table.ai-analysis-table thead th {
+            font-weight: 600;
+            color: #0f172a;
+            background: #f8fafc;
+            border-bottom: 1px solid #d2d2d7;
+            white-space: nowrap;
+        }
+        .ai-analysis-text table.ai-analysis-table tbody tr:last-child td { border-bottom: none; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-status {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script src="assets/js/auth-helpers.js?v=20260412a"></script>
+    <script src="auth.js?v=20260409a"></script>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-emoji">🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="genbi.html" class="nav-link">GenBI</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link active">数据看板</a></li>
+                <li class="nav-item-dropdown">
+                    <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
+                    <div class="nav-dropdown" role="menu">
+                        <a href="metric-rules.html">指标规则</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="error-msg" style="display:none;background:#fff3cd;color:#856404;padding:12px 20px;border-radius:8px;margin-bottom:16px;border:1px solid #ffc107"></div>
+        <div id="loading-overlay" aria-hidden="true" style="display:none;pointer-events:none;opacity:0;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(245,245,247,0.95);z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px">
+            <div style="font-size:16px;color:#1d1d1f;font-weight:600" id="loading-text">正在加载数据...</div>
+            <div style="width:320px;height:6px;background:#e8e8ed;border-radius:3px;overflow:hidden">
+                <div id="loading-bar" style="width:0%;height:100%;background:#0071e3;border-radius:3px;transition:width 0.3s"></div>
+            </div>
+            <div style="font-size:13px;color:#86868b" id="loading-detail">准备中...</div>
+            <div style="width:100%;max-width:600px;overflow:hidden;margin-top:20px;background:linear-gradient(90deg,#667eea,#764ba2);padding:12px 0;border-radius:8px">
+                <div style="white-space:nowrap;animation:marquee 20s linear infinite;font-size:14px;color:#fff;font-weight:500">
+                    使命：让好产品不被埋没，让消费者拥有更好的生活；愿景：成为消费者和商家信赖的朋友；价值观：极致、诚信、利他、关爱和长期主义。
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="数据维度">
+            <button class="tab active" data-tab="ads" role="tab" aria-selected="true" aria-controls="panel-ads">🎯 投放分析</button>
+            <button class="tab" data-tab="crowd" role="tab" aria-selected="false" aria-controls="panel-crowd">👥 人群维度</button>
+            <button class="tab" data-tab="single" role="tab" aria-selected="false" aria-controls="panel-single">📦 单品广告</button>
+            <button class="ai-analysis-btn" id="ai-analysis-btn" type="button">🤖 AI 分析</button>
+            <button class="download-btn" id="download-full-report-btn" type="button" style="margin-left:auto">📥 下载当前聚合报告 CSV</button>
+        </div>
+
+        <div id="dashboard-status" class="dashboard-status" aria-live="polite">
+            <span id="dashboard-status-badge" class="dashboard-status-badge">加载中</span>
+            <span id="dashboard-status-text" class="dashboard-status-text">正在准备数据看板...</span>
+        </div>
+
+        <div class="tab-content active" id="ads">
+            <div class="section">
+                <div class="date-range">
+                    <label>开始日期：</label><input type="date" id="ads-start">
+                    <label>结束日期：</label><input type="date" id="ads-end">
+                    <button id="load-ads-btn" type="button">查询</button>
+                    <button id="download-ads-csv-btn" class="download-btn" type="button">下载日报 CSV</button>
+                </div>
+                <div id="ads-kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px"></div>
+            </div>
+
+            <div class="section">
+                <h2>📅 分月对比表</h2>
+                <div class="table-wrapper">
+                    <table id="ads-monthly-table" class="data-table"><thead><tr><th>月份</th><th>花费</th><th>总成交金额</th><th>总成交笔数</th><th>ROI</th><th>直接ROI</th><th>盈亏平衡ROI</th><th>广告收入</th><th>去退ROI</th><th>广告成交占比</th><th>可计算天数</th><th>跳过天数</th><th>观看成本</th><th>订单成本</th><th>加购成本</th><th>总预售成交笔数</th><th>预售订单成本</th><th>观看转化率</th><th>深度互动率</th><th>观看率</th><th>千次展现成本</th><th>直接成交金额</th><th>总购物车数</th><th>展现量</th><th>保量佣金</th><th>预估结算线下佣金</th><th>预估结算机构佣金</th><th>直播间红包</th><th>严选红包</th><th>淘宝直播成交笔数</th><th>退货率</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📅 分周对比表</h2>
+                <div class="table-wrapper">
+                    <table id="ads-weekly-table" class="data-table"><thead><tr><th>周</th><th>花费</th><th>总成交金额</th><th>总成交笔数</th><th>ROI</th><th>直接ROI</th><th>盈亏平衡ROI</th><th>广告收入</th><th>去退ROI</th><th>广告成交占比</th><th>可计算天数</th><th>跳过天数</th><th>观看成本</th><th>订单成本</th><th>加购成本</th><th>总预售成交笔数</th><th>预售订单成本</th><th>观看转化率</th><th>深度互动率</th><th>观看率</th><th>千次展现成本</th><th>直接成交金额</th><th>总购物车数</th><th>展现量</th><th>保量佣金</th><th>预估结算线下佣金</th><th>预估结算机构佣金</th><th>直播间红包</th><th>严选红包</th><th>淘宝直播成交笔数</th><th>退货率</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📅 每日明细表</h2>
+                <div class="table-wrapper">
+                    <table id="ads-daily-table" class="data-table"><thead><tr><th>日期</th><th>花费</th><th>总成交金额</th><th>总成交笔数</th><th>ROI</th><th>直接ROI</th><th>盈亏平衡ROI</th><th>广告收入</th><th>去退ROI</th><th>广告成交占比</th><th>可计算天数</th><th>跳过天数</th><th>观看成本</th><th>订单成本</th><th>加购成本</th><th>总预售成交笔数</th><th>预售订单成本</th><th>观看转化率</th><th>深度互动率</th><th>观看率</th><th>千次展现成本</th><th>直接成交金额</th><th>总购物车数</th><th>展现量</th><th>保量佣金</th><th>预估结算线下佣金</th><th>预估结算机构佣金</th><th>直播间红包</th><th>严选红包</th><th>淘宝直播成交笔数</th><th>退货率</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="single">
+            <div class="section">
+                <h2>📦 单品广告</h2>
+                <div class="date-range">
+                    <label>开始日期：</label><input type="date" id="single-start">
+                    <label>结束日期：</label><input type="date" id="single-end">
+                    <button id="load-single-btn" type="button">查询</button>
+                    <button id="download-single-csv-btn" class="download-btn" type="button">下载 CSV</button>
+                </div>
+                <div id="single-kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px"></div>
+                <div class="table-wrapper">
+                    <table id="single-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width:260px">商品</th>
+                                <th>花费</th>
+                                <th>直接ROI</th>
+                                <th>商品直接ROI</th>
+                                <th>直接成交笔数</th>
+                                <th>商品直接笔数</th>
+                                <th>商品直接金额</th>
+                                <th>加购数</th>
+                                <th>加购成本</th>
+                                <th>观看人数</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="crowd">
+            <div class="section">
+                <div class="date-range">
+                    <label>开始日期：</label><input type="date" id="crowd-start">
+                    <label>结束日期：</label><input type="date" id="crowd-end">
+                    <button id="load-crowd-btn" type="button">查询</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>👥 人群分层汇总</h2>
+                <div class="table-scroll-wrapper">
+                    <table class="data-table" id="crowd-summary-table">
+                        <thead><tr>
+                            <th>人群分层</th><th>花费</th><th>总成交金额</th><th>总成交笔数</th><th>ROI</th><th>直接ROI</th><th>观看成本</th><th>订单成本</th><th>加购成本</th><th>总预售成交笔数</th><th>预售订单成本</th><th>观看转化率</th><th>深度互动率</th><th>观看率</th><th>千次展现成本</th><th>直接成交金额</th><th>总购物车数</th><th>展现量</th>
+                        </tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ai-analysis-modal" class="ai-analysis-modal">
+        <div class="ai-analysis-dialog">
+            <div class="ai-analysis-header">
+                <div>
+                    <h3 style="margin:0;font-size:16px;color:#1d1d1f;">🤖 AI 数据分析</h3>
+                    <p class="ai-analysis-range" id="ai-analysis-range" style="margin:4px 0 0;font-size:12px;color:#86868b;">分析范围：-- 至 --</p>
+                </div>
+                <button id="close-ai-analysis-btn" type="button" style="background:none;border:none;font-size:20px;cursor:pointer;color:#86868b;padding:4px">×</button>
+            </div>
+            <div id="ai-analysis-loading" class="ai-analysis-loading" style="display:none">
+                <div class="ai-analysis-spinner"></div>
+                <div style="font-size:14px;color:#666">正在分析数据...</div>
+                <div style="font-size:12px;color:#999">约需 60-90 秒，请勿关闭页面</div>
+            </div>
+            <div id="ai-analysis-body" class="ai-analysis-body" style="display:none">
+                <div id="ai-analysis-text" class="ai-analysis-text"></div>
+                <details id="ai-prompt-viewer" class="ai-prompt-viewer" style="display:none;margin-top:16px;">
+                    <summary style="cursor:pointer;font-size:13px;color:#86868b;user-select:none;padding:8px 0;">
+                        📋 查看实际发送给 AI 的提示词
+                    </summary>
+                    <div style="margin-top:8px;">
+                        <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:4px;">System Prompt（身份/约束/背景）</div>
+                        <pre id="ai-prompt-system" style="background:#f5f5f7;border:1px solid #e5e5ea;border-radius:8px;padding:12px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;color:#333;margin:0 0 12px;"></pre>
+                        <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:4px;">User Prompt（数据+指令）</div>
+                        <pre id="ai-prompt-rendered" style="background:#f5f5f7;border:1px solid #e5e5ea;border-radius:8px;padding:12px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;color:#333;margin:0;"></pre>
+                    </div>
+                </details>
+            </div>
+            <div class="ai-analysis-footer">
+                <button id="ai-report-link-btn" type="button" style="display:none;background:#667eea;color:#fff">查看洞察中心</button>
+                <button id="refresh-ai-analysis-btn" type="button" style="background:#667eea;color:#fff">重新分析</button>
+                <button id="close-ai-analysis-footer-btn" type="button" style="background:#fff;color:#333;border:1px solid #d2d2d7">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/ai-article-markdown.js?v=20260415b"></script>
+    <script src="script.js?v=20260403"></script>
+    <script src="assets/js/dashboard-state.js?v=20260418b"></script>
+    <script src="assets/js/dashboard-render.js?v=20260415c"></script>
+    <script src="assets/js/dashboard-api.js?v=20260412a"></script>
+    <script src="assets/js/dashboard-loader.js?v=20260418a"></script>
+    <script src="assets/js/dashboard-events.js?v=20260411a"></script>
+    <script src="dashboard.js?v=20260418a"></script>
+</body>
+</html>

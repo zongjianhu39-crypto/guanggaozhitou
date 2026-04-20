@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>洞察中心 - 交个朋友·广告智投工作台</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        :root {
+            --insight-bg: linear-gradient(180deg, #f6f4ff 0%, #f8f9fa 38%, #ffffff 100%);
+            --card-shadow: 0 18px 48px rgba(80, 60, 150, 0.08);
+            --card-border: rgba(118, 75, 162, 0.12);
+            --success: #18794e;
+            --warning: #b26a00;
+            --danger: #c2410c;
+            --critical: #b42318;
+        }
+
+        body {
+            background: var(--insight-bg);
+            min-height: 100vh;
+        }
+
+        .insights-shell {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px 20px 56px;
+        }
+
+        /* 白底工具风：顶边紫条表示「页头介绍」，与详情区左侧紫条区分层次 */
+        .hero-panel {
+            background: #ffffff;
+            border: 1px solid var(--card-border);
+            border-top: 3px solid #7c6fd1;
+            border-radius: 22px;
+            color: var(--text);
+            padding: 20px 26px 22px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-bottom: 14px;
+        }
+
+        .hero-panel .eyebrow {
+            color: #6b4db7;
+            opacity: 1;
+            margin-bottom: 10px;
+        }
+
+        .hero-title {
+            color: #0f172a;
+            font-size: 2rem;
+            line-height: 1.2;
+            margin-bottom: 10px;
+        }
+
+        .hero-desc {
+            color: #475569;
+            max-width: 560px;
+            margin-bottom: 16px;
+            font-size: 15px;
+            line-height: 1.65;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .hero-link,
+        .hero-link:visited {
+            color: #fff;
+        }
+
+        .hero-link:hover {
+            color: #fff;
+            filter: brightness(1.05);
+        }
+
+        .hero-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            padding: 0 16px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #667eea, #8e61c9);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.22);
+        }
+
+        .hero-link.secondary,
+        .hero-link.secondary:visited,
+        .hero-link.secondary:hover {
+            color: var(--text);
+            filter: none;
+        }
+
+        .hero-link.secondary {
+            background: #fff;
+            border: 1px solid var(--card-border);
+            box-shadow: none;
+        }
+
+        .hero-link.secondary:hover {
+            border-color: rgba(109, 97, 181, 0.35);
+            background: #faf8ff;
+        }
+
+        .stats-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            align-self: center;
+        }
+
+        .stat-card {
+            background: #f8f7ff;
+            border: 1px solid rgba(109, 97, 181, 0.14);
+            border-radius: 16px;
+            padding: 12px 14px;
+            min-height: 0;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .stat-value {
+            font-size: 1.55rem;
+            font-weight: 700;
+            margin-top: 6px;
+            color: #0f172a;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .section-heading h2,
+        .detail-header h2 {
+            font-size: 1.5rem;
+            color: var(--text);
+        }
+
+        .section-heading p,
+        .detail-header p {
+            color: var(--text-light);
+        }
+
+        /* 与 hero、筛选条同宽（insights-shell 内全宽），避免列表单独收窄导致左右对不齐 */
+        .report-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .report-card,
+        .section-card {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+        }
+
+        #list-view {
+            margin-top: 22px;
+        }
+
+        .report-card {
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 36px rgba(80, 60, 150, 0.1);
+        }
+
+        .report-card h3 {
+            font-size: 1.08rem;
+            line-height: 1.35;
+            margin: 0;
+            color: #0f172a;
+        }
+
+        .report-entry {
+            position: relative;
+            overflow: hidden;
+            gap: 10px;
+            background: #fff;
+            border: 1px solid var(--card-border);
+        }
+
+        .report-entry::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 3px;
+            background: linear-gradient(180deg, #667eea, #8e61c9);
+            opacity: 0.85;
+        }
+
+        .report-entry--latest {
+            border-color: rgba(109, 97, 181, 0.28);
+            box-shadow: 0 12px 32px rgba(80, 60, 150, 0.08);
+        }
+
+        .report-entry--latest::before {
+            width: 4px;
+        }
+
+        .report-entry.is-high::before,
+        .report-entry.is-critical::before {
+            background: linear-gradient(180deg, #c2410c, #b42318);
+        }
+
+        .report-entry-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .report-entry-head-main {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .report-badge-latest {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: #5b4db0;
+            background: #f1edff;
+            border-radius: 999px;
+            padding: 3px 10px;
+            margin-bottom: 6px;
+        }
+
+        .report-entry-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .report-entry-date {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .report-entry-summary {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.65;
+            color: #475569;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .report-entry-metrics {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .report-entry-cta-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+
+        .report-entry-cta {
+            font-size: 13px;
+            font-weight: 600;
+            color: #5b4db0;
+        }
+
+        .report-entry:hover .report-entry-cta {
+            text-decoration: underline;
+        }
+
+        .report-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--text-light);
+            font-size: 13px;
+        }
+
+        .risk-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 68px;
+            height: 30px;
+            padding: 0 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #edf2ff;
+            color: #4253b8;
+        }
+
+        .risk-pill.low {
+            background: rgba(24, 121, 78, 0.12);
+            color: var(--success);
+        }
+
+        .risk-pill.medium {
+            background: rgba(178, 106, 0, 0.12);
+            color: var(--warning);
+        }
+
+        .risk-pill.high {
+            background: rgba(194, 65, 12, 0.12);
+            color: var(--danger);
+        }
+
+        .risk-pill.critical {
+            background: rgba(180, 35, 24, 0.12);
+            color: var(--critical);
+        }
+
+        .summary-text {
+            color: var(--text);
+            line-height: 1.75;
+            min-height: 72px;
+        }
+
+        .chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: #f1edff;
+            color: #6b4db7;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .metric-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .metric-mini {
+            background: #faf8ff;
+            border-radius: 16px;
+            padding: 12px 14px;
+        }
+
+        .metric-mini .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .metric-mini .value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .card-cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #667eea, #8e61c9);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .list-empty,
+        .loading-box,
+        .error-box {
+            border-radius: 24px;
+            padding: 28px;
+            background: rgba(255,255,255,0.88);
+            border: 1px solid var(--card-border);
+            text-align: center;
+            color: var(--text-light);
+            box-shadow: var(--card-shadow);
+        }
+
+        .detail-view {
+            display: none;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .detail-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        .detail-action-btn {
+            min-height: 42px;
+            padding: 0 16px;
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #667eea, #8e61c9);
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.18);
+        }
+
+        .detail-hint {
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--text-light);
+            max-width: 260px;
+            text-align: right;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 0 16px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text);
+            cursor: pointer;
+            margin-bottom: 18px;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .metric-card {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .metric-card .label {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .metric-card .value {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        /* 与顶部 hero 同一套白底卡片；左侧色条标出「当前在读的这一篇」 */
+        .detail-stage {
+            position: relative;
+            margin-bottom: 22px;
+            padding: 28px 28px 28px 30px;
+            border-radius: 28px;
+            background: #ffffff;
+            border: 1px solid var(--card-border);
+            border-left: 4px solid #7c6fd1;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            color: var(--text);
+        }
+
+        .detail-stage .eyebrow {
+            color: #6b4db7;
+            opacity: 1;
+        }
+
+        .detail-stage-grid {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 20px;
+            z-index: 1;
+        }
+
+        .detail-stage-main {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .detail-stage-copy h2 {
+            color: #0f172a;
+            font-size: 2rem;
+            line-height: 1.18;
+            margin-bottom: 12px;
+        }
+
+        .detail-stage-copy p {
+            color: #475569;
+            font-size: 15px;
+            line-height: 1.85;
+            max-width: 720px;
+        }        .detail-stage .detail-action-btn.secondary {
+            background: #fff;
+            color: var(--text);
+            box-shadow: none;
+            border: 1px solid var(--card-border);
+        }
+
+        .detail-stage .detail-hint {
+            font-size: 12px;
+            line-height: 1.7;
+            color: var(--text-muted);
+            max-width: none;
+            text-align: left;
+        }
+
+        .detail-kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .detail-kpi-card {
+            min-height: 112px;
+            padding: 16px;
+            border-radius: 20px;
+            background: #faf8ff;
+            border: 1px solid rgba(109, 97, 181, 0.12);
+        }
+
+        .detail-kpi-card .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .detail-kpi-card .value {
+            font-size: 1.35rem;
+            line-height: 1.2;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .detail-kpi-card .hint {
+            margin-top: 8px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--text-light);
+        }
+
+        .detail-focus-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .detail-focus-card {
+            padding: 16px 18px;
+            border-radius: 20px;
+            background: #faf8ff;
+            border: 1px solid rgba(109, 97, 181, 0.12);
+        }
+
+        .detail-focus-card .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .detail-focus-card .value {
+            font-size: 1rem;
+            line-height: 1.5;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+
+        .detail-focus-card .desc {
+            font-size: 13px;
+            line-height: 1.65;
+            color: #475569;
+        }
+
+        .detail-layout {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        /* 与上方 detail-stage 同宽对齐，不再单独居中收窄 */
+        .report-sheet {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .detail-skim {
+            margin-top: 4px;
+            border-radius: 18px;
+            background: #f4f2fb;
+            border: 1px solid rgba(109, 97, 181, 0.12);
+            padding: 10px 14px;
+        }
+
+        .detail-skim summary {
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4338a8;
+            list-style: none;
+        }
+
+        .detail-skim summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .detail-skim-body {
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .report-prose-card {
+            padding: 28px 30px 32px;
+        }
+
+        .report-prose-lead {
+            font-size: 14px;
+            line-height: 1.75;
+            color: var(--text-light);
+            margin: 0 0 20px;
+        }
+
+        .report-article-prose {
+            font-size: 16px;
+            line-height: 1.85;
+            color: #1d1d1f;
+            word-break: break-word;
+        }
+
+        .report-article-prose .ai-analysis-h1 { font-size: 1.35rem; margin: 0 0 14px; font-weight: 700; color: #0f172a; }
+        .report-article-prose .ai-analysis-h2 { font-size: 1.2rem; margin: 28px 0 12px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #ece8ff; padding-bottom: 8px; }
+        .report-article-prose .ai-analysis-h3 { font-size: 1.08rem; margin: 22px 0 10px; font-weight: 600; color: #1e293b; }
+        .report-article-prose .ai-analysis-h4,
+        .report-article-prose .ai-analysis-h5,
+        .report-article-prose .ai-analysis-h6 { font-size: 1rem; margin: 16px 0 8px; font-weight: 600; color: #334155; }
+        .report-article-prose p { margin: 0 0 14px; }
+        .report-article-prose ul.ai-analysis-ul,
+        .report-article-prose ol.ai-analysis-ol { margin: 0 0 16px; padding-left: 1.35em; }
+        .report-article-prose li { margin: 5px 0; }
+        .report-article-prose strong { font-weight: 600; color: #0f172a; }
+        .report-article-prose code { font-family: ui-monospace, Menlo, monospace; font-size: 0.88em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+        .report-article-prose .ai-analysis-hr { border: none; border-top: 1px solid #e8e4f5; margin: 22px 0; }
+        .report-article-prose .ai-analysis-quote { margin: 0 0 14px; padding: 10px 14px; border-left: 3px solid #7c6fd1; background: #f8f7ff; color: #475569; font-size: 15px; }
+        .report-article-prose .article-md-table-wrap {
+            margin: 0 0 18px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+            border: 1px solid #e8e4f5;
+            background: #fff;
+        }
+        .report-article-prose table.ai-analysis-table {
+            width: 100%;
+            min-width: 360px;
+            border-collapse: collapse;
+            font-size: 14px;
+            color: #334155;
+        }
+        .report-article-prose table.ai-analysis-table th,
+        .report-article-prose table.ai-analysis-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ece8ff;
+            vertical-align: top;
+        }
+        .report-article-prose table.ai-analysis-table thead th {
+            font-weight: 600;
+            color: #0f172a;
+            background: #f8f7ff;
+            border-bottom: 1px solid #dcd4f0;
+            white-space: nowrap;
+        }
+        .report-article-prose table.ai-analysis-table tbody tr:last-child td { border-bottom: none; }
+        .report-article-prose table.ai-analysis-table tbody tr:hover td { background: #faf9ff; }
+        .report-lead-fallback { font-size: 16px; line-height: 1.8; color: var(--text); }
+        .report-plain-fallback { font-size: 13px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+
+        .appendix-details {
+            padding: 20px 22px;
+        }
+
+        .appendix-details summary {
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--primary);
+            list-style: none;
+        }
+
+        .appendix-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .appendix-block {
+            margin-bottom: 20px;
+        }
+
+        .appendix-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .appendix-h {
+            font-size: 0.95rem;
+            margin: 0 0 10px;
+            color: #2f2459;
+        }
+
+        .appendix-empty {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .section-card {
+            padding: 22px;
+        }
+
+        .section-card h3 {
+            font-size: 1.05rem;
+            margin-bottom: 14px;
+        }
+
+        .list-block {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .list-item {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: #faf8ff;
+        }
+
+        .item-title {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .item-meta,
+        .item-desc {
+            font-size: 13px;
+            color: var(--text-light);
+            line-height: 1.7;
+        }
+
+        .story-card {
+            padding: 24px;
+            background:
+                radial-gradient(circle at top left, rgba(102,126,234,0.12), rgba(102,126,234,0) 34%),
+                rgba(255,255,255,0.94);
+        }
+
+        .story-card h3 {
+            font-size: 1.15rem;
+            margin-bottom: 6px;
+        }
+
+        .story-lead {
+            font-size: 13px;
+            line-height: 1.75;
+            color: var(--text-light);
+            margin-bottom: 18px;
+        }
+
+        .story-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .story-section {
+            padding: 18px 18px 16px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #fbfbff 0%, #f6f4ff 100%);
+            border: 1px solid rgba(109, 97, 181, 0.12);
+        }
+
+        .story-section h4 {
+            font-size: 1rem;
+            line-height: 1.4;
+            color: #2f2459;
+            margin-bottom: 12px;
+        }
+
+        .story-section-body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.9;
+        }
+
+        .story-section-body p {
+            margin: 0;
+        }
+
+        .story-section-body ul {
+            margin: 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .story-section.empty {
+            background: #fff;
+        }
+
+        .markdown-details summary {
+            cursor: pointer;
+            color: var(--primary);
+            font-weight: 700;
+            list-style: none;
+        }
+
+        .markdown-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .markdown-box {
+            margin-top: 10px;
+            padding: 18px 20px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f5ff 100%);
+            border: 1px solid rgba(109, 97, 181, 0.14);
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.9;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 900px) {
+            .hero-grid,
+            .detail-layout,
+            .detail-stage-grid,
+            .detail-focus-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-strip {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hero-panel {
+                padding: 20px 18px;
+            }
+
+            .hero-title {
+                font-size: 1.65rem;
+            }
+
+            .metric-mini-grid,
+            .metric-grid,
+            .detail-kpi-strip {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-stage {
+                padding: 22px;
+            }
+
+            .detail-stage-copy h2 {
+                font-size: 1.55rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script src="assets/js/auth-helpers.js?v=20260412a"></script>
+    <script src="auth.js?v=20260409a"></script>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-emoji">🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="genbi.html" class="nav-link">GenBI</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="insights.html" class="nav-link active">洞察中心</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li class="nav-item-dropdown">
+                    <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
+                    <div class="nav-dropdown" role="menu">
+                        <a href="metric-rules.html">指标规则</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="insights-shell">
+        <section class="hero-panel">
+            <div class="hero-grid">
+                <div>
+                    <div class="eyebrow">经营洞察中心</div>
+                    <h1 class="hero-title">把 AI 分析从一次性弹窗，变成可复用、可复盘的正式报告。</h1>
+                    <p class="hero-desc">这里汇总数据看板生成过的分析报告，集中查看关键判断、风险问题和后续动作，不再只保留一段 Markdown 文本。</p>
+                    <div class="hero-actions">
+                        <a href="supabase-dashboard.html" class="hero-link">返回数据看板</a>
+                        <button id="reload-reports-btn" class="hero-link secondary" type="button">刷新报告</button>
+                    </div>
+                </div>
+                <div class="stats-strip">
+                    <div class="stat-card">
+                        <div class="stat-label">报告总数</div>
+                        <div class="stat-value" id="stat-total">--</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">高风险报告</div>
+                        <div class="stat-value" id="stat-high-risk">--</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">最近报告日期</div>
+                        <div class="stat-value" id="stat-latest">--</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="list-view">
+            <div id="list-state"></div>
+            <div id="report-list" class="report-grid"></div>
+        </section>
+
+        <section id="detail-view" class="detail-view">
+            <button id="detail-back-btn" class="back-link" type="button">← 返回报告列表</button>
+            <div class="detail-stage">
+                <div class="detail-stage-grid">
+                    <div class="detail-stage-main">
+                        <div class="detail-stage-copy">
+                            <div class="eyebrow" id="detail-subtitle">日报洞察</div>
+                            <h2 id="detail-title">报告详情</h2>
+                            <p id="detail-summary">--</p>
+                        </div>
+                        <details class="detail-skim">
+                            <summary>关键判断与数据速览（可选展开）</summary>
+                            <div class="detail-skim-body">
+                                <div class="detail-focus-grid" id="detail-focus-points"></div>
+                                <div class="detail-kpi-strip" id="detail-primary-metrics"></div>
+                            </div>
+                        </details>
+                        <div class="chips" id="detail-tags"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="report-sheet">
+                <div class="section-card report-prose-card">
+                    <h3>报告正文</h3>
+                    <p class="report-prose-lead">以下为完整分析，已排版为易读格式；需要核对原始符号时可展开文末「原始分析文本」。</p>
+                    <div id="detail-story" class="report-article-prose"></div>
+                </div>
+                <details class="section-card appendix-details">
+                    <summary>结构化参考：人群、动作、风险、财务、场次</summary>
+                    <div id="detail-structured-appendix" class="list-block"></div>
+                </details>
+                <details class="section-card appendix-details">
+                    <summary>原始分析文本（Markdown）</summary>
+                    <pre id="detail-markdown" class="markdown-box"></pre>
+                </details>
+            </div>
+        </section>
+    </main>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/ai-article-markdown.js?v=20260415b"></script>
+    <script src="assets/js/insights-render.js?v=20260415d"></script>
+    <script src="assets/js/insights-page.js?v=20260415d"></script>
+    <script src="script.js?v=20260403"></script>
+</body>
+</html>

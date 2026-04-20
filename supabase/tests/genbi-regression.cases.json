@@ -1,0 +1,110 @@
+{
+  "dateRangeCases": [
+    {
+      "name": "single_day_explicit",
+      "question": "4月7日哪些具体人群效果好需要增加预算，哪些人群差需要降低预算",
+      "expected": {
+        "start": "2026-04-07",
+        "end": "2026-04-07",
+        "label": "2026-04-07"
+      }
+    },
+    {
+      "name": "explicit_range_same_month",
+      "question": "4月1日到4月7日哪些具体人群效果好需要增加预算，哪些人群差需要降低预算",
+      "expected": {
+        "start": "2026-04-01",
+        "end": "2026-04-07",
+        "label": "2026-04-01 至 2026-04-07"
+      }
+    },
+    {
+      "name": "month_range_single_product",
+      "question": "3月单品广告里哪些商品花费高但回报差",
+      "expected": {
+        "start": "2026-03-01",
+        "end": "2026-03-31",
+        "label": "2026-03-01 至 2026-03-31"
+      }
+    },
+    {
+      "name": "last_week_range",
+      "question": "帮我整理一下上周的周报需要有近期周环比",
+      "expected": {
+        "start": "2026-03-30",
+        "end": "2026-04-05",
+        "label": "上周"
+      }
+    },
+    {
+      "name": "last_month_range",
+      "question": "帮我整理一下上月的月报需要有近期月环比",
+      "expected": {
+        "start": "2026-03-01",
+        "end": "2026-03-31",
+        "label": "上月"
+      }
+    },
+    {
+      "name": "yesterday_range",
+      "question": "为什么昨日的花费下降了，在人群上有什么变化",
+      "expected": {
+        "start": "2026-04-09",
+        "end": "2026-04-09",
+        "label": "昨日"
+      }
+    }
+  ],
+  "intentCases": [
+    {
+      "name": "crowd_budget",
+      "question": "哪些具体人群效果好需要增加预算，哪些人群差需要降低预算",
+      "expectedIntent": "crowd_budget"
+    },
+    {
+      "name": "weak_products",
+      "question": "单品广告里哪些商品花费高但回报差",
+      "expectedIntent": "weak_products"
+    },
+    {
+      "name": "crowd_mix",
+      "question": "老客和新客的占比情况如何，是否合理",
+      "expectedIntent": "crowd_mix"
+    },
+    {
+      "name": "product_potential",
+      "question": "哪些商品适合冲销售额",
+      "expectedIntent": "product_potential"
+    },
+    {
+      "name": "product_sales",
+      "question": "某个商品近期的单品广告销售数据如何",
+      "expectedIntent": "product_sales"
+    },
+    {
+      "name": "weekly_report",
+      "question": "帮我整理一下上周的周报需要有近期周环比",
+      "expectedIntent": "weekly_report"
+    },
+    {
+      "name": "monthly_report",
+      "question": "帮我整理一下上月的月报需要有近期月环比",
+      "expectedIntent": "monthly_report"
+    },
+    {
+      "name": "daily_drop_reason",
+      "question": "为什么昨日的花费下降了，在人群上有什么变化",
+      "expectedIntent": "daily_drop_reason"
+    },
+    {
+      "name": "loss_reason",
+      "question": "为什么上周的花费盈亏ROI低于 1 是亏钱的，亏在了哪里",
+      "expectedIntent": "loss_reason"
+    },
+    {
+      "name": "budget_plan",
+      "question": "如果本月还有 100 万预算，按照目前的情况接下来的费用该怎么花",
+      "expectedIntent": "budget_plan"
+    }
+  ]
+}

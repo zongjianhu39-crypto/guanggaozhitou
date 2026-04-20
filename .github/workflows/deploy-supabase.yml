@@ -1,0 +1,41 @@
+name: 部署 Supabase 函数
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: 部署所有边函数
+        shell: bash
+        run: |
+          for dir in supabase/functions/*/; do
+            func_name=$(basename "$dir")
+            # 跳过非法函数名（如 _shared）
+            if [[ ! $func_name =~ ^[A-Za-z][A-Za-z0-9_-]*$ ]]; then
+              echo "Skipping $func_name (not a valid function name)"
+              continue
+            fi
+            # 跳过没有 index.ts 的目录（非函数目录，如 genbi-rules）
+            if [[ ! -f "$dir/index.ts" ]]; then
+              echo "Skipping $func_name (no index.ts entrypoint)"
+              continue
+            fi
+            echo "Deploying $func_name..."
+            supabase functions deploy "$func_name" --project-ref qjscsikithbxuxmjyjsp
+          done
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt 管理 - 交个朋友·广告智投工作台</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        :root {
+            --panel-bg: rgba(255, 255, 255, 0.92);
+            --panel-border: rgba(102, 126, 234, 0.14);
+            --panel-shadow: 0 20px 45px rgba(46, 62, 108, 0.12);
+            --page-bg: radial-gradient(circle at top left, rgba(102,126,234,0.14), transparent 34%), linear-gradient(180deg, #f5f7fb 0%, #eef2f9 100%);
+            --text-muted: #64748b;
+            --accent: #2563eb;
+            --accent-dark: #1d4ed8;
+            --good: #0f766e;
+            --warn: #b45309;
+            --bad: #b91c1c;
+        }
+        body { background: var(--page-bg); min-height: 100vh; }
+
+        .pa-shell {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 28px 20px 64px;
+        }
+
+        /* ---- toast ---- */
+        .page-toast {
+            position: fixed; right: 20px; bottom: 20px;
+            padding: 12px 18px; border-radius: 14px;
+            background: rgba(15,23,42,0.92); color: #fff;
+            box-shadow: 0 16px 32px rgba(15,23,42,0.2);
+            opacity: 0; transform: translateY(10px); pointer-events: none;
+            transition: opacity .24s ease, transform .24s ease; z-index: 40; font-size: 14px;
+        }
+        .page-toast.show { opacity: 1; transform: translateY(0); }
+
+        /* ---- error banner ---- */
+        .err-banner {
+            display: none; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px;
+            background: rgba(255,255,255,0.9); border: 1px solid rgba(185,28,28,.18);
+            color: var(--bad); font-size: 14px;
+        }
+        .err-banner.show { display: block; }
+
+        /* ---- layout ---- */
+        .pa-layout {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ---- sidebar ---- */
+        .pa-sidebar {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            box-shadow: var(--panel-shadow);
+            backdrop-filter: blur(16px);
+            overflow: hidden;
+            position: sticky;
+            top: 20px;
+        }
+        .pa-sidebar-title {
+            padding: 16px 18px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--panel-border);
+        }
+        .pa-tab {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; text-align: left;
+            padding: 13px 18px; border: none; background: none;
+            cursor: pointer; font-size: 15px; color: #334155;
+            border-bottom: 1px solid var(--panel-border);
+            transition: background .16s, color .16s;
+        }
+        .pa-tab:last-child { border-bottom: none; }
+        .pa-tab:hover { background: rgba(37,99,235,.06); }
+        .pa-tab.active {
+            background: rgba(37,99,235,.1);
+            color: var(--accent-dark);
+            font-weight: 600;
+        }
+        .pa-tab .tab-icon { font-size: 18px; flex-shrink: 0; }
+
+        /* ---- editor panel ---- */
+        .pa-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            box-shadow: var(--panel-shadow);
+            backdrop-filter: blur(16px);
+            padding: 24px;
+        }
+        .pa-panel-header {
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        .pa-panel-header h2 { margin: 0 0 4px; font-size: 1.25rem; color: #0f172a; }
+        .pa-panel-header p { margin: 0; font-size: 14px; color: var(--text-muted); }
+        .pa-editor {
+            width: 100%; min-height: 580px;
+            border: 1px solid rgba(148,163,184,.34);
+            border-radius: 16px; padding: 18px;
+            font-size: 14px; line-height: 1.85; color: #0f172a;
+            resize: vertical; background: rgba(255,255,255,.96);
+            box-sizing: border-box; font-family: Menlo, Monaco, Consolas, monospace;
+        }
+        .pa-editor:focus { outline: none; border-color: rgba(37,99,235,.5); }
+        .pa-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; margin-top: 16px; flex-wrap: wrap;
+        }
+        .pa-meta { font-size: 13px; color: var(--text-muted); }
+        .pa-meta strong { color: #0f172a; }
+        .pa-save-btn {
+            border: none; border-radius: 12px; padding: 12px 28px;
+            font-size: 15px; font-weight: 600; cursor: pointer;
+            background: var(--accent); color: #fff;
+            box-shadow: 0 8px 18px rgba(37,99,235,.24);
+            transition: background .18s, transform .18s, box-shadow .18s;
+        }
+        .pa-save-btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
+        .pa-save-btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+        .pa-status {
+            font-size: 13px; min-width: 120px; text-align: right;
+        }
+        .pa-status.good { color: var(--good); }
+        .pa-status.warn { color: var(--warn); }
+        .pa-status.bad { color: var(--bad); }
+
+        /* ---- loading spinner ---- */
+        .pa-loading {
+            text-align: center; padding: 48px; color: var(--text-muted); font-size: 15px;
+        }
+
+        @media (max-width: 820px) {
+            .pa-layout { grid-template-columns: 1fr; }
+            .pa-sidebar { position: static; display: flex; flex-wrap: wrap; border-radius: 16px; }
+            .pa-sidebar-title { width: 100%; border-bottom: 1px solid var(--panel-border); }
+            .pa-tab { border-bottom: none; border-right: 1px solid var(--panel-border); flex: 1; }
+            .pa-editor { min-height: 420px; }
+        }
+    </style>
+</head>
+<body>
+    <script src="assets/js/auth-helpers.js?v=20260412a"></script>
+    <script src="auth.js?v=20260409a"></script>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-emoji">🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="genbi.html" class="nav-link">GenBI</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li class="nav-item-dropdown">
+                    <span class="nav-link active">更多 <span class="nav-dropdown-arrow">▾</span></span>
+                    <div class="nav-dropdown">
+                        <a href="metric-rules.html">指标规则</a>
+                        <a href="prompt-admin.html" class="active">Prompt 管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn"><span></span><span></span><span></span></button>
+        </div>
+    </nav>
+
+    <main class="pa-shell">
+        <div id="err-banner" class="err-banner"></div>
+
+        <div class="pa-layout">
+            <!-- 左侧分类导航 -->
+            <nav class="pa-sidebar">
+                <div class="pa-sidebar-title">Prompt 分类</div>
+                <button class="pa-tab active" data-key="memory" type="button">
+                    <span class="tab-icon">🧠</span>长期记忆
+                </button>
+                <button class="pa-tab" data-key="soul" type="button">
+                    <span class="tab-icon">✨</span>灵魂
+                </button>
+                <button class="pa-tab" data-key="skills" type="button">
+                    <span class="tab-icon">⚡</span>技能
+                </button>
+                <button class="pa-tab" data-key="daily" type="button">
+                    <span class="tab-icon">📊</span>数据分析
+                </button>
+                <button class="pa-tab" data-key="single" type="button">
+                    <span class="tab-icon">🏷️</span>单品广告分析
+                </button>
+                <button class="pa-tab" data-key="ops" type="button">
+                    <span class="tab-icon">🚀</span>运营业务
+                </button>
+                <button class="pa-tab" data-key="redlines" type="button">
+                    <span class="tab-icon">🚫</span>业务红线
+                </button>
+            </nav>
+
+            <!-- 右侧编辑区 -->
+            <article class="pa-panel">
+                <div class="pa-panel-header">
+                    <div>
+                        <h2 id="cat-title">长期记忆</h2>
+                        <p id="cat-desc">加载中…</p>
+                    </div>
+                    <div id="identity-chip" style="font-size:13px;color:var(--text-muted);white-space:nowrap;"></div>
+                </div>
+
+                <div id="editor-loading" class="pa-loading">正在加载 Prompt…</div>
+                <textarea id="prompt-editor" class="pa-editor" spellcheck="false" style="display:none;"></textarea>
+
+                <div class="pa-footer">
+                    <div class="pa-meta" id="version-meta">--</div>
+                    <div style="display:flex;align-items:center;gap:16px;">
+                        <span id="save-status" class="pa-status"></span>
+                        <button id="save-btn" class="pa-save-btn" type="button" disabled>保存</button>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <div id="page-toast" class="page-toast"></div>
+
+    <script src="assets/js/config.js"></script>
+    <script src="script.js?v=20260403"></script>
+    <script src="prompt-admin.js?v=20260412a"></script>
+</body>
+</html>

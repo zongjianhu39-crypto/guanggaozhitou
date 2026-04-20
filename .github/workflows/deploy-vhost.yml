@@ -1,0 +1,38 @@
+name: 部署到虚拟主机（FTP）
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'supabase/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 部署到 FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: jiangfeng1012.gotoftp4.com
+          username: jiangfeng1012
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: /wwwroot/
+          exclude: |
+            .git/**
+            .github/**
+            node_modules/**
+            supabase/**
+            scripts/**
+            docs/**
+            README*
+            .env
+            .env.*
+            **/*.ts
+            **/*.map
+            tsconfig.json
+            package*.json

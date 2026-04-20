@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计划拆解 - 交个朋友广告智投工作台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; }
+        
+        /* 顶部导航 */
+        .nav { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 12px 24px; display: flex; gap: 24px; }
+        .nav-item { color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; }
+        .nav-item.active { background: rgba(255,255,255,0.15); }
+        .nav-item:hover { background: rgba(255,255,255,0.1); }
+        
+        /* 主内容区 */
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        
+        /* 页面标题 */
+        .page-title { font-size: 24px; font-weight: 600; margin-bottom: 20px; color: #1a1a2e; }
+        
+        /* 筛选卡片 */
+        .filter-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .filter-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .filter-label { font-weight: 500; color: #666; min-width: 70px; }
+        .date-input { padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
+        .channel-tabs { display: flex; gap: 8px; }
+        .channel-tab { padding: 8px 20px; border: 1px solid #e0e0e0; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; }
+        .channel-tab.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+        
+        /* 活动轴卡片 */
+        .timeline-card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .timeline-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .timeline-bar { position: relative; height: 40px; background: #f0f0f0; border-radius: 8px; overflow: hidden; display: flex; }
+        .timeline-segment { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 500; }
+        .segment-1 { background: #8b5cf6; width: 20%; } /* 预售期 */
+        .segment-2 { background: #ec4899; width: 12%; } /* 尾款期 */
+        .segment-3 { background: #f59e0b; width: 8%; }  /* 专场 */
+        .segment-4 { background: #f59e0b; width: 60%; }  /* 日常 */
+        
+        /* 图表卡片 */
+        .chart-card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .chart-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .chart-container { height: 200px; display: flex; align-items: flex-end; gap: 4px; padding: 20px 0; }
+        .chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .bar-plan { width: 16px; background: #3b82f6; border-radius: 2px 2px 0 0; }
+        .bar-actual { width: 16px; background: #10b981; border-radius: 2px 2px 0 0; }
+        .bar-label { font-size: 10px; color: #999; }
+        
+        /* 汇总卡片 */
+        .summary-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 24px; margin-bottom: 20px; color: #fff; display: flex; justify-content: space-around; }
+        .summary-item { text-align: center; }
+        .summary-label { font-size: 14px; opacity: 0.9; margin-bottom: 8px; }
+        .summary-value { font-size: 28px; font-weight: 700; }
+        
+        /* 数据表格 */
+        .table-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th { background: #f8fafc; padding: 12px 16px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+        .data-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
+        .data-table tr:nth-child(even) { background: #fafbfc; }
+        .data-table tr:hover { background: #f0f7ff; }
+        .number { text-align: right; font-family: 'SF Mono', monospace; }
+        .highlight { color: #10b981; font-weight: 600; }
+        .negative { color: #ef4444; }
+        
+        /* 页面 */
+        .page { display: none; }
+        .page.active { display: block; }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <nav class="nav">
+        <a href="supabase-dashboard.html" class="nav-item">🎯 投放分析</a>
+        <a href="supabase-dashboard.html" class="nav-item">👥 人群维度</a>
+        <a href="supabase-dashboard.html" class="nav-item">📦 单品广告</a>
+        <a href="plan-dashboard.html" class="nav-item active">📈 计划拆解</a>
+        <a href="genbi.html" class="nav-item">🤖 GenBI</a>
+    </nav>
+
+    <div class="container">
+        <h1 class="page-title">📈 计划拆解</h1>
+        
+        <!-- 筛选区域 -->
+        <div class="filter-card">
+            <div class="filter-row">
+                <span class="filter-label">📅 日期范围</span>
+                <input type="date" class="date-input" value="2026-01-01">
+                <span>~</span>
+                <input type="date" class="date-input" value="2026-04-30">
+                <button style="padding: 8px 20px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer;">查询</button>
+            </div>
+            <div class="filter-row" style="margin-top: 16px;">
+                <span class="filter-label">🎯 渠道筛选</span>
+                <div class="channel-tabs">
+                    <span class="channel-tab active">全部</span>
+                    <span class="channel-tab">有客代投</span>
+                    <span class="channel-tab">万相台</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 活动轴 -->
+        <div class="timeline-card">
+            <div class="timeline-title">📅 活动时间轴</div>
+            <div class="timeline-bar">
+                <div class="timeline-segment segment-1">预售期 1/1-1/5</div>
+                <div class="timeline-segment segment-2">尾款期 1/6-1/8</div>
+                <div class="timeline-segment segment-4">日常投放</div>
+                <div class="timeline-segment segment-1">预售期 3/1-3/5</div>
+                <div class="timeline-segment segment-2">尾款期 3/6-3/10</div>
+                <div class="timeline-segment segment-3">专场 2/14</div>
+                <div class="timeline-segment segment-4">日常投放...</div>
+            </div>
+        </div>
+        
+        <!-- 汇总卡片 -->
+        <div class="summary-card">
+            <div class="summary-item">
+                <div class="summary-label">📊 总计划金额</div>
+                <div class="summary-value">¥9,185,538</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">💰 总实际花费</div>
+                <div class="summary-value">¥8,924,000</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">📈 完成率</div>
+                <div class="summary-value">97.2%</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">📊 25年参考</div>
+                <div class="summary-value">¥7,385,738</div>
+            </div>
+        </div>
+        
+        <!-- 图表 -->
+        <div class="chart-card">
+            <div class="chart-title">计划 vs 实际 对比（万元）</div>
+            <div class="chart-container">
+                <!-- 示例柱状图 -->
+                <div class="chart-bar-group"><div class="bar-plan" style="height:80px"></div><div class="bar-actual" style="height:75px"></div><span class="bar-label">1月</span></div>
+                <div class="chart-bar-group"><div class="bar-plan" style="height:90px"></div><div class="bar-actual" style="height:88px"></div><span class="bar-label">2月</span></div>
+                <div class="chart-bar-group"><div class="bar-plan" style="height:120px"></div><div class="bar-actual" style="height:115px"></div><span class="bar-label">3月</span></div>
+                <div class="chart-bar-group"><div class="bar-plan" style="height:60px"></div><div class="bar-actual" style="height:58px"></div><span class="bar-label">4月</span></div>
+            </div>
+            <div style="display:flex;gap:20px;justify-content:center;margin-top:10px;">
+                <span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;background:#3b82f6;border-radius:2px;"></span> 计划</span>
+                <span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;background:#10b981;border-radius:2px;"></span> 实际</span>
+            </div>
+        </div>
+        
+        <!-- 数据表格 -->
+        <div class="table-card">
+            <div class="chart-title">📋 数据明细</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>计划金额</th>
+                        <th>实际花费</th>
+                        <th>25年参考</th>
+                        <th>万相台-观看</th>
+                        <th>万相台-成交</th>
+                        <th>万相台-加购</th>
+                        <th>直播间-UV</th>
+                        <th>直播间-成交</th>
+                        <th>佣金收入</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2026-01-01</td>
+                        <td class="number">160,000</td>
+                        <td class="number">158,000</td>
+                        <td class="number" style="color:#999">145,000</td>
+                        <td class="number">52,000</td>
+                        <td class="number">3,200</td>
+                        <td class="number">8,500</td>
+                        <td class="number">480,000</td>
+                        <td class="number">2,850</td>
+                        <td class="number highlight">12,500</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-02</td>
+                        <td class="number">160,000</td>
+                        <td class="number">162,000</td>
+                        <td class="number" style="color:#999">148,000</td>
+                        <td class="number">55,000</td>
+                        <td class="number">3,400</td>
+                        <td class="number">9,200</td>
+                        <td class="number">520,000</td>
+                        <td class="number">3,100</td>
+                        <td class="number highlight">13,200</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-03</td>
+                        <td class="number">170,000</td>
+                        <td class="number">168,000</td>
+                        <td class="number" style="color:#999">150,000</td>
+                        <td class="number">58,000</td>
+                        <td class="number">3,600</td>
+                        <td class="number">10,100</td>
+                        <td class="number">550,000</td>
+                        <td class="number">3,350</td>
+                        <td class="number highlight">14,800</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-04</td>
+                        <td class="number">200,000</td>
+                        <td class="number">195,000</td>
+                        <td class="number" style="color:#999">180,000</td>
+                        <td class="number">72,000</td>
+                        <td class="number">4,200</td>
+                        <td class="number">12,500</td>
+                        <td class="number">680,000</td>
+                        <td class="number">4,200</td>
+                        <td class="number highlight">18,500</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-05</td>
+                        <td class="number">430,000</td>
+                        <td class="number">425,000</td>
+                        <td class="number" style="color:#999">390,000</td>
+                        <td class="number">150,000</td>
+                        <td class="number">8,500</td>
+                        <td class="number">22,000</td>
+                        <td class="number">1,200,000</td>
+                        <td class="number">9,800</td>
+                        <td class="number highlight">42,000</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-06</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number" style="color:#999">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-07</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number" style="color:#999">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                    </tr>
+                    <tr>
+                        <td>2026-01-08</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number" style="color:#999">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                        <td class="number">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

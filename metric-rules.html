@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>指标与规则台 - 交个朋友·广告智投工作台</title>
+    <meta name="description" content="查看当前生效的指标定义、口径规则、人群分层和 GenBI 语义配置">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        body { background:#f5f7fb; color:#111827; }
+        .rules-shell { max-width: 1240px; margin: 0 auto; padding: 24px 20px 60px; }
+        .rules-hero {
+            background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 48%, #fff8f2 100%);
+            border: 1px solid #dbe5ff;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+            margin-bottom: 24px;
+        }
+        .rules-kicker {
+            display:inline-flex;
+            align-items:center;
+            padding:6px 12px;
+            border-radius:999px;
+            background:#e8efff;
+            color:#4053b5;
+            font-size:12px;
+            font-weight:700;
+            letter-spacing:0.04em;
+        }
+        .rules-hero h1 {
+            margin: 16px 0 12px;
+            font-size: 36px;
+            line-height: 1.15;
+        }
+        .rules-hero p {
+            margin: 0;
+            max-width: 780px;
+            color: #5f6b7a;
+            line-height: 1.85;
+            font-size: 15px;
+        }
+        .rules-stats {
+            display:grid;
+            grid-template-columns:repeat(4, minmax(0, 1fr));
+            gap:14px;
+            margin-top: 22px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.82);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 18px;
+            padding: 16px 18px;
+        }
+        .stat-card strong {
+            display:block;
+            font-size: 28px;
+            color:#1d4ed8;
+            line-height:1;
+            margin-bottom:8px;
+        }
+        .stat-card span {
+            color:#667085;
+            font-size:13px;
+        }
+        .rules-toolbar {
+            display:flex;
+            gap:14px;
+            align-items:center;
+            justify-content:space-between;
+            flex-wrap:wrap;
+            margin-bottom: 18px;
+        }
+        .rules-tabs {
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+        }
+        .rules-tab {
+            border:none;
+            border-radius:999px;
+            background:#e9eef8;
+            color:#445064;
+            padding:10px 16px;
+            font-size:14px;
+            font-weight:600;
+            cursor:pointer;
+        }
+        .rules-tab.active {
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            color:#fff;
+            box-shadow:0 10px 24px rgba(79,70,229,0.22);
+        }
+        .rules-search {
+            width:min(360px, 100%);
+            border:1px solid #d7deee;
+            border-radius:14px;
+            padding:12px 14px;
+            font:inherit;
+            background:#fff;
+        }
+        .rules-search:focus {
+            outline:none;
+            border-color:#6e7ff5;
+            box-shadow:0 0 0 4px rgba(110,127,245,0.12);
+        }
+        .rules-summary {
+            display:grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+            gap:18px;
+            margin-bottom: 18px;
+        }
+        .rules-panel, .rule-card {
+            background:#fff;
+            border:1px solid #e8ecf4;
+            border-radius:20px;
+            box-shadow:0 12px 28px rgba(15,23,42,0.05);
+        }
+        .rules-panel {
+            padding:22px 24px;
+        }
+        .rules-panel h2 {
+            margin:0 0 8px;
+            font-size:20px;
+        }
+        .rules-panel p {
+            margin:0;
+            color:#667085;
+            font-size:14px;
+            line-height:1.75;
+        }
+        .rules-panel .source {
+            margin-top:14px;
+            display:inline-flex;
+            gap:8px;
+            flex-wrap:wrap;
+            font-size:12px;
+            color:#475467;
+            background:#f8faff;
+            border:1px solid #e5ebf8;
+            border-radius:999px;
+            padding:8px 12px;
+        }
+        .rules-list {
+            display:grid;
+            gap:16px;
+        }
+        .rule-card {
+            padding:20px 22px;
+        }
+        .rule-card h3 {
+            margin:0 0 8px;
+            font-size:18px;
+            color:#0f172a;
+        }
+        .rule-card p {
+            margin:0;
+            color:#667085;
+            font-size:14px;
+            line-height:1.8;
+        }
+        .rule-meta {
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+            margin-top:12px;
+        }
+        .meta-chip {
+            display:inline-flex;
+            align-items:center;
+            padding:6px 10px;
+            border-radius:999px;
+            background:#f2f4f7;
+            color:#475467;
+            font-size:12px;
+            font-weight:600;
+        }
+        .rule-table {
+            width:100%;
+            border-collapse:collapse;
+            margin-top:16px;
+            font-size:13px;
+        }
+        .rule-table th,
+        .rule-table td {
+            padding:12px 10px;
+            border-bottom:1px solid #eef2f7;
+            text-align:left;
+            vertical-align:top;
+        }
+        .rule-table th {
+            color:#475467;
+            background:#fbfcfe;
+            font-weight:700;
+        }
+        .rule-empty {
+            text-align:center;
+            padding:36px 20px;
+            color:#667085;
+            background:#fff;
+            border:1px dashed #d7deee;
+            border-radius:20px;
+        }
+        .rule-bullets {
+            margin-top: 12px;
+            display:grid;
+            gap:8px;
+        }
+        .rule-bullets div {
+            padding:10px 12px;
+            border-radius:14px;
+            background:#f8faff;
+            border:1px solid #e7ecf8;
+            font-size:13px;
+            color:#475467;
+            line-height:1.7;
+        }
+        @media (max-width: 1024px) {
+            .rules-stats { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+            .rules-summary { grid-template-columns:1fr; }
+        }
+        @media (max-width: 720px) {
+            .rules-hero h1 { font-size: 30px; }
+            .rules-stats { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span>🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="genbi.html" class="nav-link">GenBI</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li class="nav-item-dropdown">
+                    <span class="nav-link active">更多 <span class="nav-dropdown-arrow">▾</span></span>
+                    <div class="nav-dropdown">
+                        <a href="metric-rules.html" class="active">指标规则</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="rules-shell">
+        <section class="rules-hero">
+            <span class="rules-kicker">Read-only Rules Console</span>
+            <h1>把业务规则从代码里拉到台面上。</h1>
+            <p>第一版只做查看，不做编辑。目标是让运营、投手和分析同学能直接看到当前线上生效的指标定义、字段口径、人群分层规则和 GenBI 语义配置，及时发现问题，再决定是否进入技术改动流程。</p>
+            <div class="rules-stats" id="rules-stats"></div>
+        </section>
+
+        <section class="rules-toolbar">
+            <div class="rules-tabs">
+                <button class="rules-tab active" type="button" data-tab="dashboard">数据看板规则</button>
+                <button class="rules-tab" type="button" data-tab="genbi">GenBI 语义规则</button>
+                <button class="rules-tab" type="button" data-tab="all">全部</button>
+            </div>
+            <input id="rules-search" class="rules-search" type="search" placeholder="搜索指标、字段、规则、示例问题">
+        </section>
+
+        <section class="rules-summary">
+            <article class="rules-panel">
+                <h2 id="rules-summary-title">加载中...</h2>
+                <p id="rules-summary-copy">正在读取当前生效的规则文件。</p>
+                <div class="source" id="rules-summary-source" style="display:none;"></div>
+            </article>
+            <article class="rules-panel">
+                <h2>查看边界</h2>
+                <div class="rule-bullets">
+                    <div>当前只读，不提供在线编辑。先解决“看不见规则”的问题，再进入可视化维护。</div>
+                    <div>这里展示的是当前文件层面的真实配置，而不是写给外部看的说明文案。</div>
+                    <div>如果规则有问题，优先在这里确认“当前实际生效值”，避免误以为代码和业务口径一致。</div>
+                </div>
+            </article>
+        </section>
+
+        <section id="rules-list" class="rules-list"></section>
+    </main>
+
+    <script src="assets/js/auth-helpers.js?v=20260411c"></script>
+    <script src="auth.js?v=20260409a"></script>
+    <script src="script.js?v=20260403"></script>
+    <script src="assets/js/metric-rules-page.js?v=20260410a"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<svg width="1440" height="1080" viewBox="0 0 1440 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="110" y1="40" x2="1320" y2="1010" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FBF8FF"/>
+      <stop offset="1" stop-color="#ECE4FF"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="120" y1="90" x2="1280" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2A1C47"/>
+      <stop offset="0.48" stop-color="#523998"/>
+      <stop offset="1" stop-color="#8C74E1"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity="0.98"/>
+      <stop offset="1" stop-color="#F5F0FF" stop-opacity="0.96"/>
+    </linearGradient>
+    <linearGradient id="kpi1" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#322156"/>
+      <stop offset="1" stop-color="#6B4ED6"/>
+    </linearGradient>
+    <linearGradient id="kpi2" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFF6E7"/>
+      <stop offset="1" stop-color="#FFE4BA"/>
+    </linearGradient>
+    <linearGradient id="kpi3" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#EAFBF2"/>
+      <stop offset="1" stop-color="#CFF5DE"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#6E5BE0"/>
+      <stop offset="1" stop-color="#C06AD8"/>
+    </linearGradient>
+    <filter id="shadow" x="60" y="40" width="1320" height="1000" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#452E84" flood-opacity="0.22"/>
+    </filter>
+    <filter id="soft" x="0" y="0" width="1440" height="1080" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+  </defs>
+
+  <rect width="1440" height="1080" rx="48" fill="url(#bg)"/>
+  <circle cx="180" cy="140" r="120" fill="#FFFFFF" fill-opacity="0.7" filter="url(#soft)"/>
+  <circle cx="1260" cy="168" r="136" fill="#CDBEFF" fill-opacity="0.44" filter="url(#soft)"/>
+  <circle cx="1180" cy="930" r="180" fill="#D6C9FF" fill-opacity="0.4" filter="url(#soft)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="96" y="88" width="1248" height="904" rx="40" fill="url(#frame)"/>
+  </g>
+
+  <rect x="118" y="112" width="1204" height="860" rx="34" fill="#F7F2FF"/>
+  <rect x="118" y="112" width="1204" height="72" rx="34" fill="#211736"/>
+  <circle cx="162" cy="148" r="8" fill="#FF8C7A"/>
+  <circle cx="190" cy="148" r="8" fill="#FFD061"/>
+  <circle cx="218" cy="148" r="8" fill="#56D08B"/>
+  <rect x="264" y="132" width="306" height="32" rx="16" fill="#342450"/>
+  <rect x="288" y="143" width="122" height="10" rx="5" fill="#6A57A8"/>
+  <rect x="1122" y="130" width="72" height="36" rx="18" fill="#FFFFFF" fill-opacity="0.1"/>
+  <rect x="1208" y="130" width="90" height="36" rx="18" fill="#FFFFFF" fill-opacity="0.16"/>
+
+  <rect x="144" y="206" width="214" height="738" rx="28" fill="#24193C"/>
+  <rect x="170" y="236" width="162" height="62" rx="20" fill="#FFFFFF" fill-opacity="0.08"/>
+  <circle cx="202" cy="267" r="14" fill="#FFDA91"/>
+  <rect x="228" y="257" width="78" height="10" rx="5" fill="#FFFFFF" fill-opacity="0.72"/>
+  <rect x="228" y="275" width="58" height="8" rx="4" fill="#B3A6D5"/>
+
+  <rect x="170" y="334" width="162" height="54" rx="18" fill="#6E5BE0"/>
+  <rect x="194" y="356" width="78" height="10" rx="5" fill="#FFFFFF"/>
+  <circle cx="297" cy="361" r="8" fill="#FFFFFF" fill-opacity="0.78"/>
+
+  <rect x="170" y="406" width="162" height="54" rx="18" fill="#FFFFFF" fill-opacity="0.06"/>
+  <rect x="194" y="428" width="102" height="10" rx="5" fill="#D3C7FF"/>
+  <rect x="170" y="478" width="162" height="54" rx="18" fill="#FFFFFF" fill-opacity="0.06"/>
+  <rect x="194" y="500" width="92" height="10" rx="5" fill="#D3C7FF"/>
+  <rect x="170" y="550" width="162" height="54" rx="18" fill="#FFFFFF" fill-opacity="0.06"/>
+  <rect x="194" y="572" width="110" height="10" rx="5" fill="#D3C7FF"/>
+  <rect x="170" y="622" width="162" height="54" rx="18" fill="#FFFFFF" fill-opacity="0.06"/>
+  <rect x="194" y="644" width="98" height="10" rx="5" fill="#D3C7FF"/>
+
+  <rect x="170" y="764" width="162" height="152" rx="22" fill="#FFFFFF" fill-opacity="0.08"/>
+  <text x="194" y="802" fill="#FFFFFF" font-size="22" font-family="Arial, sans-serif" font-weight="700">Ops note</text>
+  <rect x="194" y="824" width="94" height="8" rx="4" fill="#C6B9ED"/>
+  <rect x="194" y="846" width="114" height="8" rx="4" fill="#998CC3"/>
+  <rect x="194" y="868" width="122" height="8" rx="4" fill="#998CC3"/>
+
+  <rect x="390" y="206" width="908" height="738" rx="30" fill="#F3EEFF"/>
+  <text x="430" y="252" fill="#261B3C" font-size="28" font-family="Arial, sans-serif" font-weight="700">Live advertising workspace</text>
+  <rect x="1098" y="224" width="176" height="34" rx="17" fill="#E4DBFF"/>
+  <rect x="1120" y="236" width="88" height="10" rx="5" fill="#6D59D8"/>
+  <circle cx="1240" cy="241" r="8" fill="#56D08B"/>
+
+  <rect x="430" y="286" width="242" height="128" rx="24" fill="url(#kpi1)"/>
+  <text x="456" y="324" fill="#F2EEFF" font-size="18" font-family="Arial, sans-serif" font-weight="700">Ad spend</text>
+  <text x="456" y="376" fill="#FFFFFF" font-size="44" font-family="Arial, sans-serif" font-weight="700">2.48M</text>
+  <rect x="456" y="390" width="86" height="24" rx="12" fill="#FFFFFF" fill-opacity="0.14"/>
+  <text x="474" y="407" fill="#FFFFFF" font-size="12" font-family="Arial, sans-serif" font-weight="700">+9.2% DoD</text>
+
+  <rect x="694" y="286" width="242" height="128" rx="24" fill="url(#kpi2)"/>
+  <text x="720" y="324" fill="#7A5C28" font-size="18" font-family="Arial, sans-serif" font-weight="700">ROI</text>
+  <text x="720" y="376" fill="#342450" font-size="44" font-family="Arial, sans-serif" font-weight="700">2.87</text>
+  <rect x="720" y="390" width="96" height="24" rx="12" fill="#FFFFFF" fill-opacity="0.4"/>
+  <text x="740" y="407" fill="#7A5C28" font-size="12" font-family="Arial, sans-serif" font-weight="700">Top quartile</text>
+
+  <rect x="958" y="286" width="316" height="128" rx="24" fill="url(#kpi3)"/>
+  <text x="984" y="324" fill="#226A44" font-size="18" font-family="Arial, sans-serif" font-weight="700">AI status</text>
+  <text x="984" y="372" fill="#21442F" font-size="34" font-family="Arial, sans-serif" font-weight="700">Analysis ready</text>
+  <rect x="984" y="390" width="148" height="24" rx="12" fill="#FFFFFF" fill-opacity="0.5"/>
+  <text x="1008" y="407" fill="#226A44" font-size="12" font-family="Arial, sans-serif" font-weight="700">3 reports pending</text>
+
+  <rect x="430" y="438" width="540" height="280" rx="28" fill="url(#panel)" stroke="#E6DEFF" stroke-width="2"/>
+  <text x="460" y="482" fill="#251B3B" font-size="24" font-family="Arial, sans-serif" font-weight="700">Spend trend</text>
+  <rect x="460" y="500" width="110" height="22" rx="11" fill="#EEE8FF"/>
+  <text x="484" y="515" fill="#6A57C9" font-size="11" font-family="Arial, sans-serif" font-weight="700">Last 7 days</text>
+  <path d="M474 652H926" stroke="#E2D9FF" stroke-width="4" stroke-linecap="round"/>
+  <path d="M474 544V652" stroke="#EEE7FF" stroke-width="4" stroke-linecap="round"/>
+  <path d="M474 620C526 596 560 608 608 562C650 522 706 530 744 560C786 592 836 596 926 486" stroke="url(#accent)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M474 614C524 632 576 622 620 638C676 658 760 654 926 570" stroke="#B9A5FF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+  <circle cx="608" cy="562" r="10" fill="#6E5BE0"/>
+  <circle cx="744" cy="560" r="10" fill="#B968D8"/>
+  <circle cx="926" cy="486" r="10" fill="#6E5BE0"/>
+  <rect x="760" y="536" width="158" height="76" rx="20" fill="#251B3B"/>
+  <text x="786" y="568" fill="#F7F3FF" font-size="16" font-family="Arial, sans-serif" font-weight="700">AI anomaly</text>
+  <text x="786" y="590" fill="#CFC5EE" font-size="13" font-family="Arial, sans-serif">ROI dipped at 14:00</text>
+  <text x="786" y="610" fill="#CFC5EE" font-size="13" font-family="Arial, sans-serif">Suggest checking live room mix</text>
+
+  <rect x="994" y="438" width="280" height="280" rx="28" fill="#251B3B"/>
+  <text x="1024" y="482" fill="#FFFFFF" font-size="24" font-family="Arial, sans-serif" font-weight="700">AI insight</text>
+  <rect x="1024" y="502" width="146" height="22" rx="11" fill="#FFFFFF" fill-opacity="0.12"/>
+  <text x="1044" y="517" fill="#E5DDFF" font-size="11" font-family="Arial, sans-serif" font-weight="700">Generated 3 mins ago</text>
+  <rect x="1024" y="548" width="220" height="82" rx="20" fill="#FFFFFF" fill-opacity="0.08"/>
+  <text x="1046" y="578" fill="#FFFFFF" font-size="16" font-family="Arial, sans-serif" font-weight="700">Why did ROI move?</text>
+  <text x="1046" y="603" fill="#D2C7F5" font-size="13" font-family="Arial, sans-serif">High spend pushed by two live plans.</text>
+  <rect x="1024" y="648" width="220" height="82" rx="20" fill="#FFFFFF" fill-opacity="0.08"/>
+  <text x="1046" y="678" fill="#FFFFFF" font-size="16" font-family="Arial, sans-serif" font-weight="700">What to do next?</text>
+  <text x="1046" y="703" fill="#D2C7F5" font-size="13" font-family="Arial, sans-serif">Cut low intent traffic and rebalance slots.</text>
+
+  <rect x="430" y="744" width="412" height="172" rx="26" fill="url(#panel)" stroke="#E6DEFF" stroke-width="2"/>
+  <text x="460" y="786" fill="#251B3B" font-size="22" font-family="Arial, sans-serif" font-weight="700">Ops pipeline</text>
+  <rect x="460" y="816" width="112" height="18" rx="9" fill="#EFE8FF"/>
+  <rect x="460" y="854" width="332" height="18" rx="9" fill="#E4DAFF"/>
+  <rect x="460" y="886" width="278" height="18" rx="9" fill="#EFE8FF"/>
+  <circle cx="776" cy="852" r="18" fill="#6E5BE0"/>
+  <path d="M768 852L774 858L786 846" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="864" y="744" width="410" height="172" rx="26" fill="url(#panel)" stroke="#E6DEFF" stroke-width="2"/>
+  <text x="894" y="786" fill="#251B3B" font-size="22" font-family="Arial, sans-serif" font-weight="700">Insight archive</text>
+  <rect x="894" y="814" width="344" height="34" rx="17" fill="#F3EEFF"/>
+  <text x="918" y="837" fill="#6E5BE0" font-size="14" font-family="Arial, sans-serif" font-weight="700">Weekly summary: cost up, ROI stable</text>
+  <rect x="894" y="862" width="344" height="34" rx="17" fill="#F7F3FF"/>
+  <text x="918" y="885" fill="#7B7294" font-size="14" font-family="Arial, sans-serif" font-weight="700">New prompt tuned for volatility review</text>
+
+  <g transform="translate(1150 620)">
+    <ellipse cx="96" cy="202" rx="82" ry="24" fill="#D3C6FF" fill-opacity="0.3"/>
+    <path d="M110 72C138 68 158 91 160 120C162 152 136 172 106 174C76 176 53 160 52 129C51 102 69 76 110 72Z" fill="#F2C6A8"/>
+    <path d="M61 121C63 81 88 42 134 51C162 57 178 78 177 114C164 99 148 98 133 101C112 105 97 113 76 112C69 112 64 116 61 121Z" fill="#433350"/>
+    <path d="M66 103C80 77 105 51 144 57" stroke="#433350" stroke-width="10" stroke-linecap="round"/>
+    <path d="M80 84C94 60 119 42 156 50" stroke="#433350" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="94" cy="126" r="5" fill="#2D2037"/>
+    <circle cx="130" cy="124" r="5" fill="#2D2037"/>
+    <path d="M95 149C107 157 120 158 133 150" stroke="#A06660" stroke-width="5" stroke-linecap="round"/>
+    <rect x="67" y="176" width="92" height="104" rx="28" fill="url(#accent)"/>
+    <path d="M80 202L58 276" stroke="#F2C6A8" stroke-width="14" stroke-linecap="round"/>
+    <path d="M148 202L190 252" stroke="#F2C6A8" stroke-width="14" stroke-linecap="round"/>
+    <path d="M102 280L95 362" stroke="#F2C6A8" stroke-width="14" stroke-linecap="round"/>
+    <path d="M140 280L162 362" stroke="#F2C6A8" stroke-width="14" stroke-linecap="round"/>
+    <path d="M56 276L44 324" stroke="#433350" stroke-width="14" stroke-linecap="round"/>
+    <path d="M191 252L220 296" stroke="#433350" stroke-width="14" stroke-linecap="round"/>
+    <path d="M95 362L90 410" stroke="#433350" stroke-width="14" stroke-linecap="round"/>
+    <path d="M162 362L181 410" stroke="#433350" stroke-width="14" stroke-linecap="round"/>
+  </g>
+
+  <rect x="1000" y="830" width="246" height="78" rx="22" fill="#FFF7E7" stroke="#FFE0A6" stroke-width="2"/>
+  <text x="1024" y="862" fill="#81591A" font-size="16" font-family="Arial, sans-serif" font-weight="700">"Less guesswork, more ROI."</text>
+  <text x="1024" y="886" fill="#A17D45" font-size="12" font-family="Arial, sans-serif">The system watches, explains and records.</text>
+</svg>

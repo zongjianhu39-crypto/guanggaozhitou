@@ -1,0 +1,236 @@
+{
+  "version": "2026-04-10",
+  "docsSource": "docs/current/报表字段及关系-标准文档.md",
+  "defaults": {
+    "primaryRoiMetric": "breakeven_roi",
+    "fallbackEfficiencyMetricForCrowdAndSingle": "order_cost",
+    "timezone": "Asia/Shanghai"
+  },
+  "rag": {
+    "enabled": true,
+    "maxReferences": 5,
+    "sources": {
+      "rulesDocs": {
+        "enabled": true,
+        "docs": [
+          "docs/current/报表字段及关系-标准文档.md"
+        ]
+      },
+      "promptTemplates": {
+        "enabled": true,
+        "limit": 6
+      },
+      "aiReports": {
+        "enabled": true,
+        "limit": 12
+      },
+      "aiPlaybooks": {
+        "enabled": false,
+        "limit": 0
+      }
+    }
+  },
+  "rules": {
+    "crowdBudget": {
+      "minCostShare": 0.05,
+      "topCount": 3,
+      "tableLimit": 10
+    },
+    "dailyDropReason": {
+      "topDropCount": 3
+    },
+    "weakProducts": {
+      "minFocusPoolSize": 20,
+      "focusPoolCostCoverage": 0.85,
+      "topCount": 8,
+      "highlightCount": 3
+    },
+    "productPotential": {
+      "topCount": 6,
+      "highlightCount": 3
+    },
+    "periodicReport": {
+      "topCrowdCount": 5,
+      "topProductCount": 5
+    },
+    "lossReason": {
+      "topCrowdCount": 3,
+      "topProductCount": 3
+    }
+  },
+  "sources": {
+    "financial": {
+      "label": "财务报表",
+      "grain": [
+        "day",
+        "week",
+        "month"
+      ],
+      "primaryDateField": "日期",
+      "expandable": true
+    },
+    "single_product_ad": {
+      "label": "单品广告",
+      "grain": [
+        "day",
+        "week",
+        "month"
+      ],
+      "primaryDateField": "日期",
+      "expandable": true
+    },
+    "taobao_live": {
+      "label": "淘宝直播",
+      "grain": [
+        "day",
+        "week",
+        "month"
+      ],
+      "primaryDateField": "日期",
+      "expandable": true
+    },
+    "super_live": {
+      "label": "超级直播",
+      "grain": [
+        "day",
+        "week",
+        "month"
+      ],
+      "primaryDateField": "日期",
+      "expandable": true
+    }
+  },
+  "dimensions": {
+    "crowd_layer": {
+      "label": "人群分层",
+      "derivedFrom": "人群名字",
+      "extensible": true
+    },
+    "plan_type": {
+      "label": "计划分类",
+      "derivedFrom": "计划名字",
+      "extensible": true
+    },
+    "product_name": {
+      "label": "商品名称"
+    },
+    "date": {
+      "label": "日期"
+    }
+  },
+  "metrics": {
+    "breakeven_roi": {
+      "label": "盈亏平衡ROI",
+      "description": "默认 ROI 口径",
+      "sourceScope": [
+        "super_live",
+        "financial",
+        "taobao_live"
+      ],
+      "formula": "((保量佣金 + 预估结算线下佣金 + 预估结算机构佣金 - 直播间红包 - 严选红包) * (总成交笔数 / 成交笔数)) / 花费"
+    },
+    "order_cost": {
+      "label": "订单成本",
+      "description": "单品/人群无法计算盈亏平衡ROI时的默认效率指标",
+      "sourceScope": [
+        "super_live",
+        "single_product_ad"
+      ],
+      "formula": "花费 / 成交笔数"
+    },
+    "direct_roi": {
+      "label": "直接ROI",
+      "formula": "直接成交金额 / 花费"
+    },
+    "ad_cost": {
+      "label": "花费"
+    },
+    "gmv": {
+      "label": "总成交金额"
+    },
+    "product_direct_gmv": {
+      "label": "该商品直接成交金额"
+    },
+    "crowd_cost_share": {
+      "label": "人群花费占比"
+    },
+    "wow": {
+      "label": "周环比"
+    },
+    "mom": {
+      "label": "月环比"
+    }
+  },
+  "intentGroups": [
+    {
+      "key": "crowd_budget",
+      "label": "人群预算建议",
+      "examples": [
+        "哪些具体人群效果好需要增加预算，哪些人群差需要降低预算"
+      ]
+    },
+    {
+      "key": "weak_products",
+      "label": "高花费低回报商品诊断",
+      "examples": [
+        "单品广告里哪些商品花费高但回报差"
+      ]
+    },
+    {
+      "key": "crowd_mix",
+      "label": "老客新客结构分析",
+      "examples": [
+        "老客和新客的占比情况如何，是否合理"
+      ]
+    },
+    {
+      "key": "product_potential",
+      "label": "冲销售额商品识别",
+      "examples": [
+        "哪些商品适合冲销售额"
+      ]
+    },
+    {
+      "key": "product_sales",
+      "label": "单商品销售查询",
+      "examples": [
+        "某个商品近期的单品广告销售数据如何"
+      ]
+    },
+    {
+      "key": "weekly_report",
+      "label": "周报生成",
+      "examples": [
+        "帮我整理一下上周的周报需要有近期周环比"
+      ]
+    },
+    {
+      "key": "monthly_report",
+      "label": "月报生成",
+      "examples": [
+        "帮我整理一下上月的月报需要有近期月环比"
+      ]
+    },
+    {
+      "key": "daily_drop_reason",
+      "label": "昨日花费波动归因",
+      "examples": [
+        "为什么昨日的花费下降了，在人群上有什么变化"
+      ]
+    },
+    {
+      "key": "loss_reason",
+      "label": "亏损原因分析",
+      "examples": [
+        "为什么上周的花费盈亏ROI低于1是亏钱的，亏在了哪里"
+      ]
+    },
+    {
+      "key": "budget_plan",
+      "label": "预算分配建议",
+      "examples": [
+        "如果本月还有100万预算，按照目前的情况接下来的费用该怎么花"
+      ]
+    }
+  ]
+}

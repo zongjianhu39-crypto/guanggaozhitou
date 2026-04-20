@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交个朋友·广告智投工作台</title>
+    <meta name="description" content="直播广告投放自动化平台，数据驱动决策，实时监控花费、ROI、转化率，AI智能分析辅助投放决策">
+    <meta name="keywords" content="广告投放,数据看板,ROI优化,直播广告,自动化报表">
+    <meta property="og:title" content="交个朋友·广告智投工作台">
+    <meta property="og:description" content="直播广告投放自动化平台，数据驱动决策">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="style.css?v=20260406k">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body class="home-page">
+    <script src="assets/js/auth-helpers.js?v=20260412a"></script>
+    <script src="auth.js?v=20260409a"></script>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-emoji">🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link active">首页</a></li>
+                <li><a href="genbi.html" class="nav-link">GenBI</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li class="nav-item-dropdown">
+                    <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
+                    <div class="nav-dropdown" role="menu">
+                        <a href="metric-rules.html">指标规则</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <header class="home-hero">
+        <div class="hero-blobs">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+        </div>
+        <div class="container home-hero-grid">
+            <div class="home-hero-copy">
+                <span class="hero-kicker">交个朋友控股 · 广告业务组内部平台</span>
+                <h1>把直播广告投放，做成一条<span class="hero-title-accent">自动化链路</span></h1>
+                <p class="home-hero-lead">
+                    统一采数，实时看 ROI，AI 解释波动，再把关键结论沉淀成日报、周报和经营洞察。
+                </p>
+                <p class="home-hero-meta">一套给投手、运营、管理者共用的广告工作台。</p>
+                <div class="home-hero-tags">
+                    <span class="home-tag">实时监控</span>
+                    <span class="home-tag">异常预警</span>
+                    <span class="home-tag">AI 归因</span>
+                    <span class="home-tag">自动报表</span>
+                </div>
+                <div class="hero-cta">
+                    <a href="supabase-dashboard.html" class="btn btn-primary">进入数据看板</a>
+                    <a href="plan-dashboard.html" class="btn btn-secondary">进入计划拆解</a>
+                </div>
+                <div class="hero-proof-grid">
+                    <div class="hero-proof-card">
+                        <strong>149</strong>
+                        <span>个指标统一口径</span>
+                    </div>
+                    <div class="hero-proof-card">
+                        <strong>AI</strong>
+                        <span>自动解释异常波动</span>
+                    </div>
+                    <div class="hero-proof-card">
+                        <strong>24h</strong>
+                        <span>持续盯住投放变化</span>
+                    </div>
+                </div>
+            </div>
+            <div class="home-hero-stage">
+                <div class="hero-stage-summary">
+                    <p class="stage-eyebrow">打开后，通常只做三件事</p>
+                    <ul class="stage-list">
+                        <li>先看今天花费和 ROI 有没有偏离</li>
+                        <li>再看 AI 给出的原因和动作</li>
+                        <li>最后把结论沉淀成可复用洞察</li>
+                    </ul>
+                </div>
+                <div class="hero-stage-visual">
+                    <div class="hero-stage-toolbar">
+                        <span class="toolbar-pill active">Live Dashboard</span>
+                        <span class="toolbar-pill">AI Analysis Ready</span>
+                    </div>
+                    <img src="assets/hero-dashboard-scene.svg" alt="广告智投工作台首页产品主视觉">
+                    <div class="hero-stage-metric">
+                        <span class="metric-label">今日 ROI</span>
+                        <strong>2.87</strong>
+                        <span class="metric-meta">较昨日 +12.4%</span>
+                    </div>
+                    <div class="hero-stage-note">
+                        AI 已给出波动解释和下一步动作，不用再手工拼结论。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="home-signal-section">
+        <div class="container">
+            <div class="home-signal-bar">
+                <article class="signal-card">
+                    <span class="signal-label">数据看板</span>
+                    <strong>今天先看什么</strong>
+                    <p>花费和 ROI 的偏离，会先在这里被看见。</p>
+                </article>
+                <article class="signal-card">
+                    <span class="signal-label">AI 分析</span>
+                    <strong>问题不是只被发现</strong>
+                    <p>系统会继续给出原因和动作，而不是停在告警。</p>
+                </article>
+                <article class="signal-card">
+                    <span class="signal-label">洞察沉淀</span>
+                    <strong>结果可被复用</strong>
+                    <p>日报、周报和经营洞察自动留档，复盘不用再重拼。</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section id="role-entry" class="section home-role-section">
+        <div class="container">
+            <div class="home-role-shell">
+                <div class="section-intro home-role-intro">
+                    <span class="section-kicker">按角色进入</span>
+                    <h2 class="section-title left">你是谁，就从哪个入口进</h2>
+                    <p class="section-copy">不用先理解整套系统。先按你的职责进入，再看最相关的数据、洞察和动作。</p>
+                </div>
+                <div class="home-role-grid">
+                    <article class="role-card role-card-trader is-active" data-role="trader" tabindex="0" role="button" aria-pressed="true">
+                        <span class="role-card-label">投手入口</span>
+                        <h3>我今天要看投放表现</h3>
+                        <p>优先看花费、ROI、异常波动和 AI 分析结果，判断今天要不要调。</p>
+                        <ul class="role-points">
+                            <li>先看今天是否偏离</li>
+                            <li>再看 AI 给出的原因和动作</li>
+                            <li>最后决定是否继续优化</li>
+                        </ul>
+                        <div class="role-actions">
+                            <a href="supabase-dashboard.html" class="btn btn-primary role-btn">我是投手，进数据看板</a>
+                            <a href="#system-entry" class="role-link">看投手推荐入口</a>
+                        </div>
+                    </article>
+                    <article class="role-card role-card-operator" data-role="operator" tabindex="0" role="button" aria-pressed="false">
+                        <span class="role-card-label">运营入口</span>
+                        <h3>我今天要看异常和复盘</h3>
+                        <p>优先看最近发生了什么、哪些结论值得沉淀，以及团队接下来怎么协同。</p>
+                        <ul class="role-points">
+                            <li>先看最近报告和经营结论</li>
+                            <li>再定位最近波动的主题</li>
+                            <li>最后回看需要沉淀的动作</li>
+                        </ul>
+                        <div class="role-actions">
+                            <a href="insights.html" class="btn btn-secondary role-btn">我是运营，进洞察中心</a>
+                            <a href="#system-entry" class="role-link">看运营推荐入口</a>
+                        </div>
+                    </article>
+                    <article class="role-card role-card-manager" data-role="manager" tabindex="0" role="button" aria-pressed="false">
+                        <span class="role-card-label">管理者入口</span>
+                        <h3>我今天只想快速看结果</h3>
+                        <p>优先看这段时间发生了什么、哪些判断已经形成结论，以及接下来该关注什么。</p>
+                        <ul class="role-points">
+                            <li>先看洞察结论和风险等级</li>
+                            <li>再看关键变化是否持续</li>
+                            <li>最后决定下一轮关注重点</li>
+                        </ul>
+                        <div class="role-actions">
+                            <a href="insights.html" class="btn btn-secondary role-btn">我是管理者，看经营洞察</a>
+                            <a href="#system-entry" class="role-link">看管理者推荐入口</a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section home-why-section">
+        <div class="container">
+            <div class="home-why-layout">
+                <div class="home-why-copy">
+                    <span class="section-kicker">这网站到底是干什么的</span>
+                    <h2 class="section-title left">它不是另一个后台，而是广告团队每天都会回来的工作台</h2>
+                    <p class="section-copy">
+                        它把采数、盯盘、归因和沉淀连成一条链路，让业务判断不再断在 Excel、群聊和人工汇总里。
+                    </p>
+                    <div class="why-emphasis-card">
+                        <span class="why-emphasis-label">碎片动作，被收成一条链路</span>
+                        <p>同一套数据在这里被采集、解释、复盘和复用，不用先找数据，再找解释，最后临时拼总结。</p>
+                    </div>
+                    <div class="why-mini-stats">
+                        <article class="why-mini-stat">
+                            <strong>采数</strong>
+                            <span>统一口径，不再来回切平台和手工对表。</span>
+                        </article>
+                        <article class="why-mini-stat">
+                            <strong>归因</strong>
+                            <span>AI 先给解释和建议，人再做判断。</span>
+                        </article>
+                    </div>
+                </div>
+                <div class="home-why-stack">
+                    <article class="value-card value-card-tall">
+                        <span class="value-badge">01</span>
+                        <h3>自动采数</h3>
+                        <p>把投放数据统一拉到一处，省掉切平台和手工对表。</p>
+                        <span class="value-note">先省掉找数据这一步。</span>
+                    </article>
+                    <article class="value-card">
+                        <span class="value-badge">02</span>
+                        <h3>实时盯盘</h3>
+                        <p>花费、ROI 和异常波动即时可见，先发现问题，再追原因。</p>
+                        <span class="value-note">当天波动，当天就能看见。</span>
+                    </article>
+                    <article class="value-card">
+                        <span class="value-badge">03</span>
+                        <h3>AI 归因</h3>
+                        <p>不只告诉你“掉了”，还会解释为什么掉、下一步怎么调。</p>
+                        <span class="value-note">少花时间猜，多花时间决策。</span>
+                    </article>
+                    <article class="value-card value-card-accent">
+                        <span class="value-badge">04</span>
+                        <h3>沉淀洞察</h3>
+                        <p>日报、周报和经营洞察自动留档，方便复盘和回看。</p>
+                        <span class="value-note">一次分析，后面都能复用。</span>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section home-flow-section">
+        <div class="container">
+            <div class="home-flow-layout">
+                <div class="home-flow-copy">
+                    <span class="section-kicker">你进入首页后应该怎么用</span>
+                    <h2 class="section-title left">首页先告诉用户，这套系统到底怎么跑</h2>
+                    <p class="section-copy">先看实时表现，再运行 AI 分析，最后沉淀洞察和维护口径。首页应该像总控台，而不是功能目录。</p>
+                    <div class="flow-persona-list">
+                        <span class="flow-persona">投手看表现</span>
+                        <span class="flow-persona">运营看异常</span>
+                        <span class="flow-persona">管理者看结果</span>
+                    </div>
+                </div>
+                <div class="home-flow-rail">
+                    <article class="flow-step">
+                        <span class="flow-index">01</span>
+                        <span class="flow-step-label">Monitor</span>
+                        <h3>先进数据看板</h3>
+                        <p>先确认今天的花费和 ROI 有没有偏离。</p>
+                        <a href="supabase-dashboard.html" class="flow-link">打开数据看板</a>
+                    </article>
+                    <article class="flow-step">
+                        <span class="flow-index">02</span>
+                        <span class="flow-step-label">Explain</span>
+                        <h3>运行 AI 分析</h3>
+                        <p>让系统自动解释波动原因，并给出可执行动作。</p>
+                        <a href="supabase-dashboard.html" class="flow-link">查看 AI 分析</a>
+                    </article>
+                    <article class="flow-step">
+                        <span class="flow-index">03</span>
+                        <span class="flow-step-label">Archive</span>
+                        <h3>回看洞察沉淀</h3>
+                        <p>把单次分析变成可复用结论，方便团队持续回看。</p>
+                        <a href="insights.html" class="flow-link">进入洞察中心</a>
+                    </article>
+                    <article class="flow-step">
+                        <span class="flow-index">04</span>
+                        <span class="flow-step-label">Tune</span>
+                        <h3>调优 Prompt</h3>
+                        <p>需要调整 AI 口径或表达方式时，直接在后台维护 Prompt。</p>
+                        <a href="prompt-admin.html" class="flow-link">管理 Prompt</a>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="system-entry" class="section home-entry-section">
+        <div class="container">
+            <div class="section-intro">
+                <span class="section-kicker">系统入口</span>
+                <h2 class="section-title left">如果你已经知道去哪，也可以直接进系统页</h2>
+                <div class="entry-role-bridge" id="entry-role-bridge" data-active-role="trader">
+                    <span class="entry-role-badge">当前推荐：投手</span>
+                    <p class="entry-role-copy">先看数据看板，再继续跑 AI 分析；如果需要复盘，再回看洞察中心。</p>
+                </div>
+            </div>
+            <div class="home-entry-grid">
+                <a href="supabase-dashboard.html" class="entry-card entry-card-primary entry-dashboard is-recommended" data-entry-key="dashboard" data-roles="trader,operator">
+                    <span class="entry-label">实时决策</span>
+                    <h3>数据看板</h3>
+                    <p>看当日核心指标、异常变化和 AI 分析入口，是一线最常打开的页面。</p>
+                    <span class="entry-detail">先判断有没有偏离，再决定是否继续分析。</span>
+                    <span class="entry-role-tag">投手优先</span>
+                    <span class="entry-action">立即进入</span>
+                </a>
+                <a href="insights.html" class="entry-card entry-insights" data-entry-key="insights" data-roles="operator,manager">
+                    <span class="entry-label">结论沉淀</span>
+                    <h3>洞察中心</h3>
+                    <p>查看历史 AI 报告和经营洞察，快速了解最近发生了什么。</p>
+                    <span class="entry-detail">适合复盘、周会和管理层回看。</span>
+                    <span class="entry-role-tag">运营 / 管理者优先</span>
+                    <span class="entry-action">查看报告</span>
+                </a>
+                <a href="prompt-admin.html" class="entry-card entry-prompt" data-entry-key="prompt" data-roles="operator,manager">
+                    <div class="entry-prompt-meta">
+                        <span class="entry-label">分析口径</span>
+                        <h3>Prompt 管理</h3>
+                    </div>
+                    <div class="entry-prompt-copy">
+                        <p>维护 AI 分析规则和表达方式，确保洞察逻辑和业务保持一致。</p>
+                        <span class="entry-detail">适合需要优化分析质量的人。</span>
+                    </div>
+                    <span class="entry-role-tag entry-role-tag-inline">运营 / 管理者优先</span>
+                    <span class="entry-action">去维护</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section home-proof-section">
+        <div class="container home-proof-layout">
+            <div class="proof-story">
+                <span class="section-kicker">为什么团队会反复回来</span>
+                <h2 class="section-title left">它减少的，不是一个步骤，而是一整串重复动作</h2>
+                <p class="section-copy">
+                    对广告团队来说，价值不是功能数量，而是响应速度、判断质量和信息复用。
+                </p>
+                <ul class="proof-list">
+                    <li>不用每天重复拉表、拷表、对口径</li>
+                    <li>不用靠经验猜测 ROI 波动原因</li>
+                    <li>不用临时拼周报和复盘结论</li>
+                    <li>不用在群聊里反复追问同一个问题</li>
+                </ul>
+            </div>
+            <div class="proof-matrix">
+                <article class="proof-stat-card">
+                    <strong>149</strong>
+                    <span>统一指标口径</span>
+                </article>
+                <article class="proof-stat-card">
+                    <strong>ROI</strong>
+                    <span>围绕投放效率持续追踪</span>
+                </article>
+                <article class="proof-stat-card">
+                    <strong>AI</strong>
+                    <span>自动归因与建议输出</span>
+                </article>
+                <article class="proof-stat-card">
+                    <strong>日报</strong>
+                    <span>结论自动沉淀可复用</span>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section insights-preview-section home-insights-section">
+        <div class="container">
+            <div class="home-insights-shell">
+                <div class="insights-preview-header home-insights-top">
+                    <div>
+                        <span class="section-kicker">最新结果</span>
+                        <h2 class="section-title left">最新洞察，直接显示在首页</h2>
+                        <p class="insights-preview-desc">首页不只是说明页，也是一块每天都在变化的业务入口。</p>
+                    </div>
+                    <aside class="home-insights-aside">
+                        <span class="home-insights-aside-label">这块为什么重要</span>
+                        <p>最后一屏不该只是收尾，而要证明这个平台每天真的在产出结果。</p>
+                    </aside>
+                </div>
+                <div class="home-insights-toolbar">
+                    <div class="home-insights-pills">
+                        <span class="home-insights-pill active">AI 报告</span>
+                        <span class="home-insights-pill">经营结论</span>
+                        <span class="home-insights-pill">周会复盘</span>
+                    </div>
+                    <a href="insights.html" class="btn btn-outline">进入洞察中心</a>
+                </div>
+                <div id="insights-preview-state" class="insights-preview-state">正在加载最新报告...</div>
+                <div id="insights-preview-grid" class="insights-preview-grid"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-shell">
+                <div class="footer-main">
+                    <div>
+                        <div class="footer-brand">
+                            <span class="footer-emoji">🎯</span>
+                            <span>交个朋友·广告智投工作台</span>
+                        </div>
+                        <p class="footer-intro">给投手、运营和管理者共用的一套内部工作台，把实时投放、AI 分析和洞察沉淀放进同一条链路里。</p>
+                    </div>
+                    <div class="footer-column">
+                        <span class="footer-title">高频入口</span>
+                        <div class="footer-links footer-links-stack">
+                            <a href="supabase-dashboard.html">数据看板</a>
+                            <a href="insights.html">洞察中心</a>
+                            <a href="prompt-admin.html">Prompt 管理</a>
+                        </div>
+                    </div>
+                    <div class="footer-column">
+                        <span class="footer-title">使用支持</span>
+                        <div class="footer-links footer-links-stack">
+                            <a href="index.html">首页</a>
+                            <a href="metric-rules.html">指标规则</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <div class="footer-copy">
+                        <p>交个朋友控股 · 广告业务组内部平台</p>
+                    </div>
+                    <div class="footer-badges">
+                        <span class="footer-badge">实时投放</span>
+                        <span class="footer-badge">AI 归因</span>
+                        <span class="footer-badge">经营沉淀</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/config.js"></script>
+    <script src="script.js?v=20260406a"></script>
+    <script>
+        const authHelpers = window.authHelpers || {};
+        const INSIGHTS_PREVIEW_URL = authHelpers.getSupabaseUrl
+            ? authHelpers.getSupabaseUrl()
+            : ((typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SB_URL) ? CONFIG.SB_URL : 'https://qjscsikithbxuxmjyjsp.supabase.co');
+
+        let homeInsightsAuthRedirectScheduled = false;
+
+        function previewEscapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function previewRiskLabel(level) {
+            const labels = {
+                low: '低风险',
+                medium: '中风险',
+                high: '高风险',
+                critical: '严重风险'
+            };
+            return labels[level] || '未评级';
+        }
+
+        function renderPreviewCards(items) {
+            const grid = document.getElementById('insights-preview-grid');
+            grid.innerHTML = items.map((item) => {
+                const metrics = item.overview_metrics || {};
+                const tags = Array.isArray(item.tags) ? item.tags.slice(0, 3) : [];
+                return `
+                    <article class="insight-preview-card">
+                        <div class="insight-preview-meta">
+                            <span>${previewEscapeHtml(item.report_date || '--')}</span>
+                            <span class="insight-risk ${previewEscapeHtml(item.risk_level || '')}">${previewEscapeHtml(previewRiskLabel(item.risk_level))}</span>
+                        </div>
+                        <h3>${previewEscapeHtml(item.title || '未命名报告')}</h3>
+                        <p class="insight-preview-summary">${previewEscapeHtml(item.summary || '暂无摘要')}</p>
+                        <div class="insight-preview-metrics">
+                            <div class="insight-metric-box">
+                                <span class="insight-metric-label">ROI</span>
+                                <strong>${previewEscapeHtml(metrics.roi || '--')}</strong>
+                            </div>
+                            <div class="insight-metric-box">
+                                <span class="insight-metric-label">去退 ROI</span>
+                                <strong>${previewEscapeHtml(metrics.returnRoi || '--')}</strong>
+                            </div>
+                        </div>
+                        <div class="insight-preview-tags">${tags.map((tag) => `<span class="insight-chip">${previewEscapeHtml(tag)}</span>`).join('')}</div>
+                        <a href="insights.html?slug=${encodeURIComponent(item.slug || '')}" class="btn btn-outline insight-preview-link">查看详情</a>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function rememberHomeRedirect() {
+            const currentUrl = window.location.origin + window.location.pathname + window.location.search + window.location.hash;
+            if (authHelpers.rememberRedirect) {
+                authHelpers.rememberRedirect(currentUrl);
+            } else {
+                localStorage.setItem('feishu_redirect', currentUrl);
+            }
+        }
+
+        function redirectToHomeLogin(message) {
+            if (homeInsightsAuthRedirectScheduled) return;
+            homeInsightsAuthRedirectScheduled = true;
+
+            const stateEl = document.getElementById('insights-preview-state');
+            if (stateEl) {
+                stateEl.classList.add('is-error');
+                stateEl.textContent = message || '登录状态已失效，正在跳转重新登录...';
+            }
+
+            if (typeof authHelpers.handleReauthRequired === 'function') {
+                authHelpers.handleReauthRequired({
+                    source: 'home-insights',
+                    targetUrl: window.location.href,
+                    force: true,
+                    reason: 'prompt_admin_reauth_required',
+                    delayMs: 1200,
+                });
+                return;
+            }
+
+            rememberHomeRedirect();
+            localStorage.removeItem('prompt_admin_token');
+            localStorage.removeItem('prompt_admin_expires_at');
+            setTimeout(() => {
+                window.location.replace('auth/index.html?force=1');
+            }, 1200);
+        }
+
+        async function loadInsightsPreview() {
+            const stateEl = document.getElementById('insights-preview-state');
+            const gridEl = document.getElementById('insights-preview-grid');
+
+            try {
+                const resolved = await authHelpers.fetchFunctionJson('ai-reports', {
+                    query: { limit: 3 },
+                    parseErrorMessage: '洞察服务返回了无法解析的响应，请稍后重试',
+                    onUnauthorized: () => {
+                        redirectToHomeLogin('登录状态已失效，正在跳转重新登录...');
+                    },
+                }).then(({ data }) => data);
+
+                const items = Array.isArray(resolved.items) ? resolved.items : [];
+                if (items.length === 0) {
+                    stateEl.textContent = '洞察中心还没有生成过报告，先去数据看板运行一次 AI 分析。';
+                    gridEl.innerHTML = '';
+                    return;
+                }
+
+                stateEl.style.display = 'none';
+                renderPreviewCards(items);
+            } catch (error) {
+                stateEl.classList.add('is-error');
+                const errorState = authHelpers.describeFetchError
+                    ? authHelpers.describeFetchError(error, '最新洞察读取失败，请稍后重试。')
+                    : { message: `最新洞察加载失败：${error.message || '请稍后重试'}` };
+                stateEl.textContent = errorState.message;
+                gridEl.innerHTML = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadInsightsPreview);
+    </script>
+
+</body>
+</html>
+<!-- pipeline-test-1776679844 -->

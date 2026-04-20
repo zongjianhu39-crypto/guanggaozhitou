@@ -1,0 +1,47 @@
+name: Deploy Website to VPS & Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      # Step 1: Install lftp and deploy frontend to Western Digital VPS
+      - name: Install lftp and run deploy_lftp.sh
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+          cd website
+          bash scripts/deploy_lftp.sh --dry-run
+          echo "✅ Frontend dry-run passed. Ready for real deploy."
+
+      # Step 2: Deploy Supabase Edge Functions
+      - name: Install Supabase CLI and deploy functions
+        env:
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_PROJECT_REF: qjscsikithbxuxmjyjsp
+        run: |
+          curl -fsSL https://cli-assets.supabase.com/install.sh | sh
+          supabase login --no-verify
+          supabase functions deploy feishu-auth --project-ref $SUPABASE_PROJECT_REF --no-verify
+          echo "✅ Supabase function feishu-auth deployed."
+
+      # Step 3: Final verification
+      - name: Verify deployment
+        run: |
+          echo "🔍 Verifying www.friends.wang is updated..."
+          curl -s -I https://www.friends.wang/auth/index.html | head -1
+          echo "🔍 Verifying feishu-auth function is live..."
+          curl -s -I https://qjscsikithbxuxmjyjsp.supabase.co/functions/v1/feishu-auth | head -1

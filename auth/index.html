@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞书登录 - 交个朋友·广告智投工作台</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <style>
+        body {
+            background: linear-gradient(135deg, #9b8fd4 0%, #a88bc4 50%, #8c82c8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 48px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        .login-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .login-card h1 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .login-card p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .feishu-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #3370ff;
+            color: white;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .feishu-btn:hover {
+            background: #2860e0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(51, 112, 255, 0.4);
+        }
+        .feishu-btn img {
+            width: 24px;
+            height: 24px;
+        }
+        .back-link {
+            display: block;
+            margin-top: 24px;
+            color: #999;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-icon">🦞</div>
+        <h1 id="login-title">交个朋友·广告智投工作台</h1>
+        <p id="login-desc">使用飞书账号登录，访问广告业务组内部数据平台</p>
+        
+        <button id="feishu-login-btn" class="feishu-btn" type="button">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <span id="login-button-text">飞书登录</span>
+        </button>
+
+        <a href="../index.html" class="back-link">← 返回首页</a>
+    </div>
+
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/auth-helpers.js?v=20260411c"></script>
+    <script>
+        const authParams = new URLSearchParams(window.location.search);
+        const forceLogin = authParams.get('force') === '1';
+
+        if (forceLogin) {
+            localStorage.removeItem('feishu_user');
+            localStorage.removeItem('prompt_admin_token');
+            localStorage.removeItem('prompt_admin_expires_at');
+            document.getElementById('login-title').textContent = '刷新 Prompt 管理权限';
+            document.getElementById('login-desc').textContent = '当前账号需要重新走一次飞书授权，以刷新 Prompt 管理令牌。';
+            document.getElementById('login-button-text').textContent = '重新登录飞书';
+        }
+
+        const sessionState = authHelpers.getSessionState ? authHelpers.getSessionState('/index.html') : null;
+        if (sessionState && sessionState.user && sessionState.isAuthenticated) {
+            localStorage.setItem('feishu_user', JSON.stringify(sessionState.user));
+            const savedRedirect = localStorage.getItem('feishu_redirect');
+            const redirectUrl = authHelpers.getSafeRedirectUrl
+                ? authHelpers.getSafeRedirectUrl(savedRedirect, '/index.html')
+                : (window.location.origin + '/index.html');
+            window.location.href = redirectUrl;
+        } else if (!forceLogin && sessionState && sessionState.user && !sessionState.backendSession) {
+            if (authHelpers.clearUserSession) {
+                authHelpers.clearUserSession();
+            } else {
+                localStorage.removeItem('feishu_user');
+                sessionStorage.removeItem('feishu_user');
+            }
+        }
+    </script>
+
+    <script>
+        const APP_ID = 'cli_a93911f3a9ba5bd1';
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const REDIRECT_URI = encodeURIComponent(
+            isLocal
+                ? 'http://localhost:3000/auth/feishu/callback.html'
+                : 'https://www.friends.wang/auth/feishu/callback.html'
+        );
+        
+        function loginWithFeishu() {
+            const state = generateState();
+            localStorage.setItem('oauth_state', state);
+
+            const authUrl = `https://open.feishu.cn/open-apis/authen/v1/authorize?app_id=${APP_ID}&redirect_uri=${REDIRECT_URI}&state=${state}`;
+
+            // Debug: 保存并打印 authUrl 与 state，便于定位回调不带 state 的问题
+            try {
+                localStorage.setItem('feishu_last_auth_url', authUrl);
+                localStorage.setItem('feishu_last_state', state);
+                localStorage.setItem('feishu_last_auth_at', new Date().toISOString());
+            } catch (e) {
+                console.warn('failed to write debug localStorage', e);
+            }
+            console.info('[feishu login] redirecting to', { authUrl, state });
+
+            window.location.href = authUrl;
+        }
+
+        function generateState() {
+            const arr = new Uint8Array(16);
+            crypto.getRandomValues(arr);
+            return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        document.getElementById('feishu-login-btn').addEventListener('click', loginWithFeishu);
+    </script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenBI - 交个朋友·广告智投工作台</title>
+    <meta name="description" content="面向广告投放业务的受控问数与经营分析页面">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        body { background:#f5f5f7; color:#1d1d1f; }
+        .genbi-shell { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; }
+        .genbi-hero { background: linear-gradient(135deg, #f8fbff 0%, #eef2ff 54%, #fff7f1 100%); border:1px solid #dfe7ff; border-radius:24px; padding:32px; margin-bottom:24px; box-shadow:0 18px 40px rgba(38,56,120,0.08); }
+        .genbi-kicker { display:inline-flex; padding:6px 12px; border-radius:999px; background:#e9efff; color:#4053b5; font-size:12px; font-weight:700; letter-spacing:0.04em; }
+        .genbi-hero h1 { font-size:36px; line-height:1.15; margin:16px 0 12px; }
+        .genbi-hero p { max-width:760px; color:#5b6476; font-size:15px; line-height:1.8; margin:0; }
+        .genbi-layout { display:grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr); gap:20px; align-items:stretch; }
+        .genbi-card { background:#fff; border:1px solid #eaecf3; border-radius:20px; padding:24px; box-shadow:0 12px 28px rgba(15,23,42,0.05); }
+        .genbi-card--question,
+        .genbi-card--examples { display:flex; flex-direction:column; min-height:100%; }
+        .genbi-card h2 { margin:0 0 10px; font-size:20px; }
+        .genbi-card p.meta { margin:0 0 18px; color:#667085; font-size:14px; line-height:1.7; min-height:56px; }
+        .genbi-form { display:flex; flex-direction:column; flex:1; }
+        .genbi-form textarea { width:100%; height:160px; min-height:160px; max-height:160px; border:1px solid #d7ddea; border-radius:16px; padding:16px; font:inherit; resize:none; box-sizing:border-box; background:#fcfdff; }
+        .genbi-form textarea:focus { outline:none; border-color:#6e7ff5; box-shadow:0 0 0 4px rgba(110,127,245,0.12); }
+        .genbi-actions { margin-top:14px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+        .genbi-submit { border:none; border-radius:14px; background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; padding:12px 20px; font-size:14px; font-weight:700; cursor:pointer; }
+        .genbi-submit:disabled { opacity:0.7; cursor:wait; }
+        .genbi-status { margin-top:10px; min-height:20px; font-size:13px; color:#667085; }
+        .genbi-status.error { color:#c0362c; }
+        .genbi-status.success { color:#18794e; }
+        .genbi-help { margin-top:16px; padding:14px 16px; border:1px solid #e7ebf5; border-radius:16px; background:#fafbff; }
+        .genbi-help h3 { margin:0 0 10px; font-size:13px; color:#344054; }
+        .genbi-help p { margin:0; color:#667085; font-size:12px; line-height:1.7; }
+        .genbi-help p + p { margin-top:8px; }
+        .genbi-help-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+        .genbi-help-card { border:1px solid #e7ebf5; border-radius:14px; background:#fff; padding:12px; }
+        .genbi-help-card h4 { margin:0 0 8px; font-size:12px; color:#344054; }
+        .genbi-help-card p { margin:0; color:#667085; font-size:12px; line-height:1.7; }
+        .example-list { display:grid; gap:10px; flex:1; min-height:160px; overflow:auto; padding-right:6px; scrollbar-width:thin; scrollbar-color:#cdd5ea transparent; }
+        .example-list::-webkit-scrollbar { width:8px; }
+        .example-list::-webkit-scrollbar-track { background:transparent; }
+        .example-list::-webkit-scrollbar-thumb { background:linear-gradient(180deg,#d6ddf2,#c5cde8); border-radius:999px; }
+        .example-list::-webkit-scrollbar-thumb:hover { background:linear-gradient(180deg,#bcc7e9,#aeb9df); }
+        .example-btn { border:1px solid #dde3f0; background:#fff; border-radius:14px; padding:12px 14px; min-height:54px; text-align:left; cursor:pointer; font:inherit; color:#1f2937; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .example-btn:hover { border-color:#9fb0ff; background:#f8faff; }
+        .result-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:16px; }
+        .result-title { margin:0; font-size:22px; }
+        .result-range { font-size:13px; color:#667085; }
+        .result-answer { font-size:15px; line-height:1.9; color:#1f2937; white-space:pre-wrap; }
+        .tag-list { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 0; }
+        .tag { display:inline-flex; padding:6px 12px; border-radius:999px; background:#f2f4f7; color:#475467; font-size:12px; font-weight:600; }
+        .table-card { margin-top:18px; border:1px solid #eaecf3; border-radius:16px; overflow:hidden; }
+        .table-card h3 { margin:0; padding:14px 16px; font-size:15px; border-bottom:1px solid #eaecf3; background:#fafbff; }
+        .table-scroll { overflow:auto; }
+        .result-table { width:100%; border-collapse:collapse; font-size:13px; }
+        .result-table th, .result-table td { padding:12px 14px; border-bottom:1px solid #f0f2f6; text-align:left; white-space:nowrap; }
+        .result-table th { background:#fcfdff; color:#475467; position:sticky; top:0; z-index:1; }
+        .notes { margin-top:18px; color:#667085; font-size:13px; line-height:1.8; }
+        .reference-card-list { display:grid; gap:12px; margin-top:12px; }
+        .reference-card {
+            display:block;
+            text-decoration:none;
+            color:inherit;
+            border:1px solid #e6ebf5;
+            border-radius:16px;
+            padding:14px 16px;
+            background:linear-gradient(180deg,#fbfcff 0%,#ffffff 100%);
+            box-shadow:0 10px 24px rgba(15,23,42,0.04);
+            transition:transform 0.16s ease,border-color 0.16s ease,box-shadow 0.16s ease;
+        }
+        .reference-card:hover {
+            transform:translateY(-1px);
+            border-color:#bfcaf7;
+            box-shadow:0 14px 28px rgba(79,70,229,0.10);
+        }
+        .reference-card.is-static { cursor:default; }
+        .reference-card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+        .reference-type {
+            display:inline-flex;
+            align-items:center;
+            padding:5px 10px;
+            border-radius:999px;
+            background:#edf2ff;
+            color:#4053b5;
+            font-size:12px;
+            font-weight:700;
+        }
+        .reference-title { font-size:14px; font-weight:700; color:#1f2937; line-height:1.6; }
+        .reference-summary { margin-top:6px; font-size:12px; color:#667085; line-height:1.7; }
+        .reference-action { margin-top:10px; font-size:12px; font-weight:600; color:#4f46e5; }
+        .result-card { margin-top:20px; display:none; }
+        @media (max-width: 960px) {
+            .genbi-layout { grid-template-columns: 1fr; }
+            .genbi-hero h1 { font-size:30px; }
+            .genbi-help-grid { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span>🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="genbi.html" class="nav-link active">GenBI</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li class="nav-item-dropdown">
+                    <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
+                    <div class="nav-dropdown" role="menu">
+                        <a href="metric-rules.html">指标规则</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="genbi-shell">
+        <section class="genbi-hero">
+            <span class="genbi-kicker">Controlled GenBI MVP</span>
+            <h1>直接问经营问题，不再自己翻表。</h1>
+            <p>第一版 GenBI 只回答真实广告投放数据问题。当前覆盖投放分析、人群分层、单品广告，默认口径以盈亏平衡 ROI 为主；人群和单品无法计算盈亏平衡 ROI 时，退化为订单成本。</p>
+        </section>
+
+        <section class="genbi-layout">
+            <div class="genbi-card genbi-card--question">
+                <h2>智能问数</h2>
+                <p class="meta">先用自然语言提问，系统会命中受控问题集，再调用真实数据回答。当前不做开放百科，也不会编造无法确认的结论。</p>
+                <div class="genbi-form">
+                    <textarea id="genbi-question" placeholder="例如：哪些具体人群效果好需要增加预算，哪些人群差需要降低预算"></textarea>
+                    <div class="genbi-actions">
+                        <button id="genbi-submit" class="genbi-submit" type="button">开始分析</button>
+                    </div>
+                    <div id="genbi-status" class="genbi-status">支持人群预算、差商品识别、老客新客占比、单商品表现、周报、月报、昨日花费波动、亏损原因。</div>
+                    <div class="genbi-help">
+                        <h3>推荐提问方式</h3>
+                        <p>优先带上时间范围、分析对象、判断目标。例：`4月7日哪些人群该加预算`、`3月单品广告里哪些商品花费高但回报差`。</p>
+                        <p>当前默认口径：投放分析优先看盈亏平衡 ROI；人群和单品没有该口径时，退化看订单成本。</p>
+                        <div class="genbi-help-grid">
+                            <div class="genbi-help-card">
+                                <h4>推荐结构</h4>
+                                <p>时间范围 + 对象 + 判断目标。例：`上周哪个人群该降预算`、`3月哪些商品适合冲销售额`。</p>
+                            </div>
+                            <div class="genbi-help-card">
+                                <h4>输出内容</h4>
+                                <p>系统会给结论、分析范围、关键表格和补充说明。暂不支持可靠回答的问题会直接说明，不会编造。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="genbi-card genbi-card--examples">
+                <h2>示例问题</h2>
+                <p class="meta">先从这些已验证的问题开始。第一版更强调准确率，不追求什么都能答。</p>
+                <div class="example-list" id="genbi-example-list">
+                    <button class="example-btn" type="button">哪些具体人群效果好需要增加预算，哪些人群差需要降低预算</button>
+                    <button class="example-btn" type="button">单品广告里哪些商品花费高但回报差</button>
+                    <button class="example-btn" type="button">老客和新客的占比情况如何，是否合理</button>
+                    <button class="example-btn" type="button">哪些商品适合冲销售额</button>
+                    <button class="example-btn" type="button">帮我整理一下上周的周报需要有近期周环比</button>
+                    <button class="example-btn" type="button">帮我整理一下上月的月报需要有近期月环比</button>
+                    <button class="example-btn" type="button">为什么昨日的花费下降了，在人群上有什么变化</button>
+                    <button class="example-btn" type="button">为什么上周的花费盈亏ROI低于 1 是亏钱的，亏在了哪里</button>
+                </div>
+            </aside>
+        </section>
+
+        <section id="genbi-result-section" class="genbi-card result-card">
+            <div id="genbi-result" style="display:none;">
+                <div class="result-header">
+                    <div>
+                        <h2 id="genbi-result-title" class="result-title"></h2>
+                        <div id="genbi-result-range" class="result-range"></div>
+                    </div>
+                </div>
+                <div id="genbi-result-answer" class="result-answer"></div>
+                <div id="genbi-highlight-tags" class="tag-list"></div>
+                <div id="genbi-result-tables"></div>
+                <div id="genbi-result-references" class="notes"></div>
+                <div id="genbi-result-notes" class="notes"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="assets/js/auth-helpers.js?v=20260412a"></script>
+    <script src="auth.js?v=20260409a"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="script.js?v=20260403"></script>
+    <script src="assets/js/genbi-page.js?v=20260412a"></script>
+</body>
+</html>
