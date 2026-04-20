@@ -17,24 +17,22 @@ jobs:
       - name: 检查部署配置
         shell: bash
         env:
-          FTP_SERVER: ${{ vars.FTP_SERVER }}
-          FTP_USERNAME: ${{ vars.FTP_USERNAME }}
-          FTP_SERVER_DIR: ${{ vars.FTP_SERVER_DIR }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_HOST: ${{ vars.FTP_HOST }}
+          FTP_USER: ${{ vars.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
         run: |
-          [[ -n "$FTP_SERVER" ]] || { echo "Missing repository variable: FTP_SERVER"; exit 1; }
-          [[ -n "$FTP_USERNAME" ]] || { echo "Missing repository variable: FTP_USERNAME"; exit 1; }
-          [[ -n "$FTP_SERVER_DIR" ]] || { echo "Missing repository variable: FTP_SERVER_DIR"; exit 1; }
-          [[ -n "$FTP_PASSWORD" ]] || { echo "Missing repository secret: FTP_PASSWORD"; exit 1; }
+          [[ -n "$FTP_HOST" ]] || { echo "Missing repository variable: FTP_HOST"; exit 1; }
+          [[ -n "$FTP_USER" ]] || { echo "Missing repository variable: FTP_USER"; exit 1; }
+          [[ -n "$FTP_PASS" ]] || { echo "Missing repository secret: FTP_PASS"; exit 1; }
 
       - name: 部署到 FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          server: ${{ vars.FTP_SERVER }}
-          username: ${{ vars.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+          server: ${{ vars.FTP_HOST }}
+          username: ${{ vars.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
           local-dir: ./
-          server-dir: ${{ vars.FTP_SERVER_DIR }}
+          server-dir: /wwwroot/
           exclude: |
             .git/**
             .github/**
