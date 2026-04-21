@@ -5,6 +5,7 @@ import { detectIntent, type GenbiIntent } from '../_shared/genbi-intent.ts';
 import { buildGenbiRagContext } from '../_shared/genbi-rag.ts';
 import { dispatchGenbiIntent } from '../genbi-rules/registry.ts';
 import { authenticateEdgeRequest } from '../_shared/request-auth.ts';
+import { createErrorResponse } from '../_shared/error-handler.ts';
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
 
@@ -83,10 +84,6 @@ Deno.serve(async (req: Request) => {
       headers: CORS_HEADERS,
     });
   } catch (error) {
-    console.error('[genbi-query] error:', error instanceof Error ? error.message : error);
-    return new Response(JSON.stringify({ success: false, error: 'GenBI 查询失败，请稍后重试' }), {
-      status: 500,
-      headers: CORS_HEADERS,
-    });
+    return createErrorResponse(error, 'genbi-query');
   }
 });

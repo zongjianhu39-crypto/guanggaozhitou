@@ -8,6 +8,9 @@ import { requirePromptAdminToken } from '../_shared/prompt-admin-auth.ts';
 import { resolveActivePromptTemplate, type ActivePromptTemplate } from '../_shared/prompt-store.ts';
 import { authenticateEdgeRequest } from '../_shared/request-auth.ts';
 import { getDashboardPayload } from '../_shared/dashboard-payload.ts';
+import { createErrorResponse } from '../_shared/error-handler.ts';
+import { validatePromptInput, sanitizePromptInput, validateDateString } from '../_shared/input-validator.ts';
+import { checkRateLimit, createRateLimitResponse } from '../_shared/rate-limiter.ts';
 import {
   getFinancialTablesForDateRange,
   getSingleProductAdTablesForDateRange,
@@ -129,7 +132,7 @@ async function resolvePromptRuntimeTemplate(input: {
   promptOverride?: string | null;
   promptAdminToken?: string | null;
 }): Promise<ActivePromptTemplate> {
-  const overrideContent = String(input.promptOverride ?? '').trim();
+  const overrideContent = sanitizePromptInput(String(input.promptOverride ?? ''));
   if (overrideContent) {
     await requirePromptAdminToken(String(input.promptAdminToken ?? ''));
     return {
@@ -1969,7 +1972,24 @@ Deno.serve(async (req: Request) => {
     const promptAdminToken = req.headers.get('x-prompt-admin-token') ?? promptAdminTokenFromBody ?? '';
     const shouldPublish = Boolean(publish) && !Boolean(previewOnly);
 
-    // Rate limiting: skip for prompt_admin; limit for normal supabase users
+    // 限流：每分钟请求数限制
+    const rateLimitKey = auth.type === 'prompt_admin'
+      ? `admin:${auth.payload?.sub ?? 'unknown'}`
+      : auth.type === 'supabase_user'
+        ? `user:${auth.user?.id ?? auth.user?.email ?? 'unknown'}`
+        : 'anonymous';
+
+    // prompt_admin 限流更宽松（30 次/分钟），普通用户 10 次/分钟
+    const rateLimitResult = checkRateLimit(rateLimitKey, {
+      maxRequests: auth.type === 'prompt_admin' ? 30 : 10,
+      windowMs: 60000,
+    });
+
+    if (!rateLimitResult.allowed) {
+      return createRateLimitResponse(rateLimitResult);
+    }
+
+    // 每日次数限制（仅普通用户）
     if (auth.type !== 'prompt_admin') {
       const userId = auth.type === 'supabase_user' ? String(auth.user?.id || auth.user?.email || '') : '';
       if (userId) {
@@ -1992,11 +2012,30 @@ Deno.serve(async (req: Request) => {
     }
 
     // 日期格式校验
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date) || !/^\d{4}-\d{2}-\d{2}$/.test(end_date)) {
-      return new Response(JSON.stringify({ error: '日期格式错误，请使用 YYYY-MM-DD' }), {
+    const startDateValidation = validateDateString(start_date);
+    if (!startDateValidation.valid) {
+      return new Response(JSON.stringify({ error: startDateValidation.errors[0] }), {
         status: 400,
         headers: CORS_HEADERS,
       });
+    }
+    const endDateValidation = validateDateString(end_date);
+    if (!endDateValidation.valid) {
+      return new Response(JSON.stringify({ error: endDateValidation.errors[0] }), {
+        status: 400,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    // prompt_override 输入验证
+    if (promptOverride && typeof promptOverride === 'string') {
+      const promptValidation = validatePromptInput(promptOverride);
+      if (!promptValidation.valid) {
+        return new Response(JSON.stringify({ error: `Prompt 输入无效: ${promptValidation.errors.join('，')}` }), {
+          status: 400,
+          headers: CORS_HEADERS,
+        });
+      }
     }
 
     if (start_date > end_date) {
@@ -2207,12 +2246,13 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     const err = error as Error;
-    console.error(`[ai-analysis] 错误: ${err.message}`, err.stack);
     const status = getErrorStatus(err);
-    const clientMessage = status === 429 ? err.message : 'AI 分析请求失败，请稍后重试';
-    return new Response(JSON.stringify({ error: clientMessage }), {
-      status,
-      headers: CORS_HEADERS,
-    });
+    if (status === 429) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status,
+        headers: CORS_HEADERS,
+      });
+    }
+    return createErrorResponse(error, 'ai-analysis');
   }
 });

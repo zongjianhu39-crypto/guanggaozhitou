@@ -1,5 +1,6 @@
 import { SB_SERVICE_ROLE_KEY, SB_URL, getSupabaseHeaders } from '../_shared/supabase-client.ts';
 import { authenticateEdgeRequest } from '../_shared/request-auth.ts';
+import { createErrorResponse } from '../_shared/error-handler.ts';
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
 function getCorsHeaders(req: Request) {
@@ -328,10 +329,6 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error('[ai-reports] error:', error instanceof Error ? error.message : error);
-    return new Response(JSON.stringify({ success: false, error: '查询报告失败，请稍后重试' }), {
-      status: 500,
-      headers: CORS_HEADERS,
-    });
+    return createErrorResponse(error, 'ai-reports');
   }
 });

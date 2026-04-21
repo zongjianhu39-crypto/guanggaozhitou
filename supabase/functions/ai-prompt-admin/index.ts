@@ -7,6 +7,7 @@ import {
   rollbackPromptVersion,
   saveDraftPromptVersion,
 } from '../_shared/prompt-store.ts';
+import { createErrorResponseWithStatus } from '../_shared/error-handler.ts';
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
 
@@ -166,13 +167,19 @@ Deno.serve(async (req: Request) => {
     const isAuthError = rawMessage.includes('无效或已过期');
     const isPermError = rawMessage.includes('权限');
     const status = isAuthError ? 401 : isPermError ? 403 : 500;
-    const clientMessage = isAuthError ? '无效或已过期的 Prompt 管理令牌'
-      : isPermError ? '没有 Prompt 管理权限'
-      : 'Prompt 管理请求失败，请稍后重试';
-    if (status === 500) console.error('[ai-prompt-admin] error:', rawMessage);
-    return new Response(JSON.stringify({ success: false, error: clientMessage }), {
-      status,
-      headers: CORS_HEADERS,
-    });
+
+    if (status === 401) {
+      return new Response(JSON.stringify({ success: false, error: '无效或已过期的 Prompt 管理令牌' }), {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+    if (status === 403) {
+      return new Response(JSON.stringify({ success: false, error: '没有 Prompt 管理权限' }), {
+        status: 403,
+        headers: CORS_HEADERS,
+      });
+    }
+    return createErrorResponseWithStatus(error, 'ai-prompt-admin', 500, CORS_HEADERS);
   }
 });

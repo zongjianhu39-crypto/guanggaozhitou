@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { authenticateEdgeRequest } from '../_shared/request-auth.ts';
 import { SB_SERVICE_ROLE_KEY, SB_URL } from '../_shared/supabase-client.ts';
 import { getSuperLiveTablesForDates } from '../_shared/table-routes.ts';
+import { createErrorResponse } from '../_shared/error-handler.ts';
 import {
   DATA_SOURCE_CONFIG,
   buildPlanDashboardSummary,
@@ -406,7 +407,6 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'POST') return await handlePost(req, client, headers, authResult);
     return json({ error: '仅支持 GET / POST / OPTIONS' }, 405, headers);
   } catch (error) {
-    console.error('[plan-dashboard-summary] error:', error instanceof Error ? error.message : error);
-    return json({ error: '计划拆解查询失败，请刷新页面后重试' }, 500, headers);
+    return createErrorResponse(error, 'plan-dashboard-summary');
   }
 });

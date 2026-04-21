@@ -360,6 +360,16 @@ async function saveAndPublish() {
     const content = document.getElementById('prompt-editor').value.trim();
     if (!content) { showToast('内容不能为空'); return; }
 
+    // 输入验证
+    if (content.length > 5000) {
+        showToast(`内容过长（${content.length} 字符），最大允许 5000 字符`);
+        return;
+    }
+    if (/<\s*script|javascript\s*:|on\w+\s*=/i.test(content)) {
+        showToast('内容包含潜在的不安全字符，请修改后保存');
+        return;
+    }
+
     btn.disabled = true;
     setStatus('保存中…', 'warn');
 

@@ -5,6 +5,7 @@ import {
 } from '../_shared/dashboard-payload.ts';
 import { authenticateEdgeRequest } from '../_shared/request-auth.ts';
 import { SB_SERVICE_ROLE_KEY, SB_URL } from '../_shared/supabase-client.ts';
+import { createErrorResponse } from '../_shared/error-handler.ts';
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
 const EXTRA_ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
@@ -123,10 +124,6 @@ Deno.serve(async (req: Request) => {
       headers: corsHeaders,
     });
   } catch (error) {
-    console.error('[dashboard-data] error:', error instanceof Error ? error.message : error);
-    return new Response(JSON.stringify({ success: false, error: '数据看板查询失败，请稍后重试' }), {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return createErrorResponse(error, 'dashboard-data');
   }
 });
