@@ -20,6 +20,14 @@ if (typeof CONFIG === 'undefined' || !CONFIG || !CONFIG.SB_URL) {
 }
 const SB_URL = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SB_URL) ? CONFIG.SB_URL : '';
 const SB_KEY = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SUPABASE_ANON_KEY) ? CONFIG.SUPABASE_ANON_KEY : '';
+
+// 模块依赖校验：确保核心模块已加载
+const REQUIRED_DASHBOARD_MODULES = ['DashboardState', 'DashboardRender', 'DashboardApi', 'DashboardLoader', 'DashboardEvents'];
+const MISSING_MODULES = REQUIRED_DASHBOARD_MODULES.filter((ns) => !window[ns]);
+if (MISSING_MODULES.length > 0) {
+    console.error(`Dashboard 核心模块缺失: ${MISSING_MODULES.join(', ')}`);
+}
+
 const authHelpers = window.authHelpers || {};
 const dashboardState = window.DashboardState || {};
 const dashboardRender = window.DashboardRender || {};
@@ -87,15 +95,25 @@ const {
     renderSingleTable,
     toggleCrowdRow,
 } = dashboardRender;
-const hydrateDashboardSpec = dashboardApi.hydrateDashboardSpec;
-const requestDashboardSummary = dashboardApi.fetchDashboardSummary;
+const hydrateDashboardSpec = dashboardApi.hydrateDashboardSpec || function() { return Promise.resolve(null); };
+const requestDashboardSummary = dashboardApi.fetchDashboardSummary || function() { return Promise.reject(new Error('数据接口未就绪')); };
 const {
     loadAds,
     loadCrowd,
     loadSingle: loadSingleSection,
     loadAll,
 } = dashboardLoader;
-const bindDashboardInteractions = dashboardEvents.bindDashboardInteractions;
+const bindDashboardInteractions = dashboardEvents.bindDashboardInteractions || function() { console.warn('DashboardEvents 模块未加载'); };
+
+// 安全访问模块方法
+function safeModuleCall(moduleName, methodName, fallback) {
+    const mod = window[moduleName];
+    if (mod && typeof mod[methodName] === 'function') {
+        return mod[methodName];
+    }
+    console.warn(`${moduleName}.${methodName} 不可用`);
+    return fallback;
+}
 
 function loadDashboardFeatureScript(featureName) {
     const feature = DASHBOARD_FEATURE_SCRIPTS[featureName];
@@ -116,7 +134,15 @@ function loadDashboardFeatureScript(featureName) {
         script.src = feature.url;
         script.async = true;
         script.dataset.dashboardFeature = featureName;
+
+        const loadTimeout = setTimeout(() => {
+            script.onerror = null;
+            script.onload = null;
+            reject(new Error(`${feature.label}模块加载超时，请检查网络后重试`));
+        }, 15000);
+
         script.onload = () => {
+            clearTimeout(loadTimeout);
             if (window[feature.namespace]) {
                 resolve(window[feature.namespace]);
                 return;
@@ -124,6 +150,7 @@ function loadDashboardFeatureScript(featureName) {
             reject(new Error(`${feature.label}模块加载后未完成初始化`));
         };
         script.onerror = () => {
+            clearTimeout(loadTimeout);
             reject(new Error(`${feature.label}模块加载失败，请刷新页面后重试`));
         };
         document.head.appendChild(script);
@@ -515,6 +542,8 @@ window.DashboardApp = {
     openReportCenter,
     maybeResumePendingAIAnalysis,
     initDateRanges,
+    safeModuleCall,
+    bumpCacheGeneration: dashboardState.bumpCacheGeneration || function() {},
 };
 
 document.addEventListener('DOMContentLoaded', () => {

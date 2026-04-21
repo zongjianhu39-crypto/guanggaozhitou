@@ -1,5 +1,6 @@
 (function attachDashboardApi(window) {
     const DASHBOARD_SPEC_URL = 'assets/data/dashboard-spec.json?v=20260412a';
+    const IN_FLIGHT_TIMEOUT_MS = 30000; // 30 秒超时清理挂起的请求
     let dashboardSpecPromise = null;
 
     async function loadDashboardSpec() {
@@ -38,8 +39,13 @@
 
         const inFlightRequest = state.dashboardRequestsInFlight.get(cacheKey);
         if (inFlightRequest) {
-            const resolved = await inFlightRequest;
-            return includeMeta ? { data: resolved, source: 'network', cachedAt: Date.now() } : resolved;
+            try {
+                const resolved = await inFlightRequest;
+                return includeMeta ? { data: resolved, source: 'network', cachedAt: Date.now() } : resolved;
+            } catch {
+                // 挂起的请求已失败或超时，清理后继续发起新请求
+                state.dashboardRequestsInFlight.delete(cacheKey);
+            }
         }
 
         const requestPromise = (async () => {
@@ -67,10 +73,18 @@
 
         state.dashboardRequestsInFlight.set(cacheKey, requestPromise);
 
+        // 超时清理：如果请求在超时时间内未完成，主动清理 in-flight 记录
+        const cleanupTimer = setTimeout(() => {
+            if (state.dashboardRequestsInFlight.get(cacheKey) === requestPromise) {
+                state.dashboardRequestsInFlight.delete(cacheKey);
+            }
+        }, IN_FLIGHT_TIMEOUT_MS);
+
         try {
             const data = await requestPromise;
             return includeMeta ? { data, source: 'network', cachedAt: Date.now() } : data;
         } finally {
+            clearTimeout(cleanupTimer);
             state.dashboardRequestsInFlight.delete(cacheKey);
         }
     }

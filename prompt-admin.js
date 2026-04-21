@@ -24,29 +24,85 @@ let loadedContent  = '';        // 上次从服务器加载的内容（判断是
 let latestDraftId  = '';        // 最新草稿 version_id（用于 publish）
 let authRedirectScheduled = false;
 
-const DRAFT_STORAGE_PREFIX = 'prompt_admin_draft_v1';
+const DRAFT_STORAGE_PREFIX = 'prompt_admin_draft_v2';
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 草稿有效期 7 天
+const DRAFT_CIPHER = { name: 'AES-GCM', length: 256 };
 
-function getDraftStorageKey(templateKey = currentKey) {
-    return `${DRAFT_STORAGE_PREFIX}:${templateKey}`;
+// ── Web Crypto 加密/解密 ──────────────────────────────────────────────────
+async function getDraftCryptoKey() {
+    const material = `prompt-draft:${window.location.origin}:${navigator.userAgent}`;
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.digest('SHA-256', encoder.encode(material));
+    return crypto.subtle.importKey('raw', keyMaterial, DRAFT_CIPHER, false, ['encrypt', 'decrypt']);
 }
 
-function readLocalDraft(templateKey = currentKey) {
+async function encryptDraftContent(plaintext) {
+    const key = await getDraftCryptoKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(plaintext);
+    const ciphertext = await crypto.subtle.encrypt({ name: DRAFT_CIPHER.name, iv }, key, encoded);
+    const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(ciphertext), iv.length);
+    return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptDraftContent(b64) {
     try {
-        const raw = localStorage.getItem(getDraftStorageKey(templateKey));
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed.content !== 'string') return null;
-        return parsed;
+        const key = await getDraftCryptoKey();
+        const combined = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        const iv = combined.slice(0, 12);
+        const data = combined.slice(12);
+        const decrypted = await crypto.subtle.decrypt({ name: DRAFT_CIPHER.name, iv }, key, data);
+        return new TextDecoder().decode(decrypted);
     } catch {
         return null;
     }
 }
 
-function saveLocalDraft(templateKey = currentKey, content = '') {
+function getDraftStorageKey(templateKey = currentKey) {
+    return `${DRAFT_STORAGE_PREFIX}:${templateKey}`;
+}
+
+async function readLocalDraft(templateKey = currentKey) {
     try {
+        const raw = localStorage.getItem(getDraftStorageKey(templateKey));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed.content !== 'string') return null;
+
+        // 过期清理
+        if (Date.now() - parsed.savedAt > DRAFT_TTL_MS) {
+            clearLocalDraft(templateKey);
+            return null;
+        }
+
+        // 兼容旧版明文草稿（无 encrypted 标记）
+        if (parsed.encrypted) {
+            const decrypted = await decryptDraftContent(parsed.content);
+            if (decrypted === null) return null;
+            return { content: decrypted, savedAt: parsed.savedAt };
+        }
+        // 旧版明文 → 迁移为加密格式
+        const encrypted = await encryptDraftContent(parsed.content);
         localStorage.setItem(getDraftStorageKey(templateKey), JSON.stringify({
-            content,
+            content: encrypted,
+            savedAt: parsed.savedAt,
+            encrypted: true,
+        }));
+        return { content: parsed.content, savedAt: parsed.savedAt };
+    } catch {
+        return null;
+    }
+}
+
+async function saveLocalDraft(templateKey = currentKey, content = '') {
+    try {
+        const encrypted = await encryptDraftContent(content);
+        localStorage.setItem(getDraftStorageKey(templateKey), JSON.stringify({
+            content: encrypted,
             savedAt: Date.now(),
+            encrypted: true,
         }));
     } catch (error) {
         console.warn('failed to persist prompt draft', error);
@@ -57,7 +113,7 @@ function clearLocalDraft(templateKey = currentKey) {
     localStorage.removeItem(getDraftStorageKey(templateKey));
 }
 
-function syncCurrentDraft() {
+async function syncCurrentDraft() {
     const editor = document.getElementById('prompt-editor');
     if (!editor) return;
     const value = editor.value || '';
@@ -65,11 +121,11 @@ function syncCurrentDraft() {
         clearLocalDraft(currentKey);
         return;
     }
-    saveLocalDraft(currentKey, value);
+    await saveLocalDraft(currentKey, value);
 }
 
-function maybeRestoreDraft(templateKey, serverContent) {
-    const draft = readLocalDraft(templateKey);
+async function maybeRestoreDraft(templateKey, serverContent) {
+    const draft = await readLocalDraft(templateKey);
     if (!draft || typeof draft.content !== 'string') {
         return serverContent;
     }
@@ -247,7 +303,7 @@ async function loadCategory(key) {
         loadedContent = content;
         latestDraftId = '';
 
-        document.getElementById('prompt-editor').value = maybeRestoreDraft(key, content);
+        document.getElementById('prompt-editor').value = await maybeRestoreDraft(key, content);
 
         // 版本元数据
         const pv = data.published_version;
@@ -275,11 +331,11 @@ async function loadCategory(key) {
 }
 
 // ── 切换分类 ──────────────────────────────────────────────────────────────
-function switchTab(btn) {
+async function switchTab(btn) {
     // 检查未保存改动
     const editor = document.getElementById('prompt-editor');
     if (editor.value !== loadedContent) {
-        syncCurrentDraft();
+        await syncCurrentDraft();
         if (!confirm('当前有未保存的修改，已自动暂存到本地草稿。切换分类后继续？')) return;
     }
 
@@ -378,7 +434,7 @@ function bindPromptAdminInteractions() {
     const editor = document.getElementById('prompt-editor');
     if (editor) {
         editor.addEventListener('input', () => {
-            syncCurrentDraft();
+            syncCurrentDraft(); // fire-and-forget, encryption is fast enough
             if (editor.value !== loadedContent) {
                 setStatus('有未发布的本地修改', 'warn');
             }
@@ -388,7 +444,7 @@ function bindPromptAdminInteractions() {
     window.addEventListener('beforeunload', (event) => {
         const currentValue = editor?.value || '';
         if (currentValue !== loadedContent) {
-            syncCurrentDraft();
+            syncCurrentDraft(); // fire-and-forget
             event.preventDefault();
             event.returnValue = '';
         }

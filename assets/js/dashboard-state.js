@@ -2,6 +2,7 @@
     const PENDING_AI_ANALYSIS_KEY = 'pending_ai_analysis_request';
     const DASHBOARD_VIEW_STATE_KEY = 'dashboard_view_state_v3';
     const DASHBOARD_CACHE_PREFIX = 'dashboard_summary_cache_v5';
+    const DASHBOARD_CACHE_GENERATION_KEY = 'dashboard_cache_generation_v1';
     const DASHBOARD_CACHE_TTL_MS = 20 * 60 * 1000;
     const DASHBOARD_HISTORICAL_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
     const DASHBOARD_BACKGROUND_REFRESH_AFTER_MS = 5 * 60 * 1000;
@@ -13,6 +14,32 @@
     const dashboardDataCache = new Map();
     const dashboardRequestsInFlight = new Map();
     const buttonLabelStore = new WeakMap();
+
+    // 缓存版本号：每次部署或重大变更时递增，可主动失效所有旧缓存
+    function getCacheGeneration() {
+        try {
+            const raw = localStorage.getItem(DASHBOARD_CACHE_GENERATION_KEY);
+            return raw ? Number(raw) : 1;
+        } catch {
+            return 1;
+        }
+    }
+
+    function bumpCacheGeneration() {
+        try {
+            const next = getCacheGeneration() + 1;
+            localStorage.setItem(DASHBOARD_CACHE_GENERATION_KEY, String(next));
+            // 清理旧版本内存缓存
+            dashboardDataCache.clear();
+        } catch {
+            // noop
+        }
+    }
+
+    function isCacheGenerationValid(cachedGeneration) {
+        if (!cachedGeneration) return false;
+        return cachedGeneration === getCacheGeneration();
+    }
     const dashboardRuntimeState = {
         activeTab: 'ads',
         requestMode: 'idle',
@@ -261,6 +288,11 @@
                     storage.removeItem(storageKey);
                     continue;
                 }
+                // 版本号校验：世代不匹配则失效
+                if (!isCacheGenerationValid(parsed.generation)) {
+                    storage.removeItem(storageKey);
+                    continue;
+                }
                 if (Date.now() - Number(parsed.cachedAt) > getDashboardCacheTtlMs(endDate)) {
                     storage.removeItem(storageKey);
                     continue;
@@ -310,6 +342,7 @@
         const payload = JSON.stringify({
             cachedAt: Date.now(),
             data,
+            generation: getCacheGeneration(),
         });
         CACHE_BACKENDS.forEach(({ storage }) => {
             try {
@@ -433,5 +466,7 @@
         setActiveTabState,
         setRequestMode,
         clearDashboardCaches,
+        bumpCacheGeneration,
+        getCacheGeneration,
     };
 })(window);

@@ -10,6 +10,9 @@ MAX_RETRIES=3
 RETRY_DELAY=15
 DRY_RUN=false
 
+# 自动生成部署版本号（日期+时间戳），用于缓存破坏
+DEPLOY_VERSION="$(date +%Y%m%d%H%M)"
+
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
 load_env_file() {
@@ -160,7 +163,30 @@ upload_one() {
 echo "🚀 部署到 $FTP_HOST$REMOTE_ROOT"
 echo "   本地目录: $LOCAL_DIR"
 echo "   文件数量: ${#FILES[@]}"
+echo "   部署版本: $DEPLOY_VERSION"
 $DRY_RUN && echo "   *** DRY RUN 模式 ***"
+echo ""
+
+# 版本号注入：替换 HTML/JS 中的 ?v= 缓存破坏参数
+inject_versions() {
+  if $DRY_RUN; then
+    echo "  [dry-run] 跳过版本号注入"
+    return
+  fi
+  echo "  注入部署版本号 $DEPLOY_VERSION..."
+  # 替换所有 HTML 文件中的 ?v= 参数
+  find "$LOCAL_DIR" -name "*.html" -type f | while read -r file; do
+    sed -i '' -E "s/\?v=[a-zA-Z0-9]+/?v=$DEPLOY_VERSION/g" "$file" 2>/dev/null || true
+  done
+  # 替换 dashboard.js 中的 FEATURE_SCRIPTS 版本号
+  if [[ -f "$LOCAL_DIR/dashboard.js" ]]; then
+    sed -i '' -E "s/\?v=[a-zA-Z0-9]+/?v=$DEPLOY_VERSION/g" "$LOCAL_DIR/dashboard.js" 2>/dev/null || true
+  fi
+  echo "  版本号注入完成"
+}
+
+inject_versions
+
 echo ""
 
 for f in "${FILES[@]}"; do
@@ -219,6 +245,9 @@ if ! $DRY_RUN; then
     if [[ ${#VERIFY_SKIPPED[@]} -gt 0 ]]; then
       echo "ℹ 已跳过可选文件: ${VERIFY_SKIPPED[*]}"
     fi
+    echo ""
+    echo "💡 提示：用户刷新页面后将自动使用新版本缓存，旧缓存将在 TTL 后失效。"
+    echo "   如需强制所有用户立即失效缓存，可在控制台运行: window.DashboardApp.bumpCacheGeneration()"
   else
     echo "⚠ 以下文件验证失败: ${VERIFY_FAILED[*]}"
     echo "  可尝试重新运行此脚本。"
