@@ -11,6 +11,7 @@ import { getDashboardPayload } from '../_shared/dashboard-payload.ts';
 import { createErrorResponse } from '../_shared/error-handler.ts';
 import { validatePromptInput, sanitizePromptInput, validateDateString } from '../_shared/input-validator.ts';
 import { checkRateLimit, createRateLimitResponse } from '../_shared/rate-limiter.ts';
+import { callMiniMax } from '../_shared/minimax-client.ts';
 import {
   getFinancialTablesForDateRange,
   getSingleProductAdTablesForDateRange,
@@ -20,13 +21,11 @@ import {
 } from '../_shared/table-routes.ts';
 
 // ============ 环境变量 =============
-const MINIMAX_API_KEY = Deno.env.get('MINIMAX_API_KEY') ?? '';
 const SB_URL = Deno.env.get('SB_URL') ?? Deno.env.get('SUPABASE_URL') ?? 'https://qjscsikithbxuxmjyjsp.supabase.co';
 const SB_SERVICE_ROLE_KEY =
   Deno.env.get('SB_SERVICE_ROLE_KEY') ??
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ??
   '';
-const MINIMAX_MODEL = 'MiniMax-M2.7';
 const REPORT_SCHEMA_VERSION = 'v2-high-spend-ops';
 const DAILY_SECTION_TITLES = ['大盘结论', '高消耗人群分析', '重点人群点名', '财务与退款修正', '明日执行建议'];
 const SINGLE_SECTION_TITLES = ['单品整体结论', '高消耗商品分析', '高效率与低效率商品点名', '转化与加购机会', '明日执行建议'];
@@ -1836,41 +1835,7 @@ function buildReportFromDashboardPayload(
   };
 }
 
-// ============ AI 调用 =============
-
-async function callMiniMax(prompt: string, systemPrompt?: string, analysisType = 'daily'): Promise<string> {
-  if (!MINIMAX_API_KEY) {
-    throw new Error('Missing MINIMAX_API_KEY');
-  }
-
-  const response = await fetch('https://api.minimax.chat/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${MINIMAX_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: MINIMAX_MODEL,
-      max_tokens: 4096,
-      messages: [
-        ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error(`[ai-analysis] MiniMax API 错误: ${response.status} - ${errText}`);
-    throw new Error(`MiniMax API error: ${response.status}`);
-  }
-
-  const result = await response.json();
-  return result.choices?.[0]?.message?.content ?? '';
-}
+// ============ AI 调用（使用共享 minimax-client） =============
 
 async function insertAiReportRun(payload: Record<string, unknown>): Promise<string | null> {
   try {
@@ -2174,7 +2139,7 @@ Deno.serve(async (req: Request) => {
       title: reportResult.reportTitle,
       summary: headline,
       risk_level: reportResult.riskLevel,
-      model_name: MINIMAX_MODEL,
+      model_name: 'MiniMax-M2.7',
       prompt_version: promptDefinition.versionLabel,
       prompt_template_key: promptDefinition.templateKey,
       prompt_version_id: promptDefinition.versionId,

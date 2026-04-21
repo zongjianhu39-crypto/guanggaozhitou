@@ -109,9 +109,10 @@
             resultSection.style.display = 'block';
         }
         document.getElementById('genbi-result').style.display = 'block';
+        const isAiEnhanced = Boolean(safePayload.ai_enhanced);
         document.getElementById('genbi-result-title').textContent = typeof safePayload.title === 'string' && safePayload.title.trim() ? safePayload.title : '问数结果';
         document.getElementById('genbi-result-range').textContent = safePayload.range?.start
-            ? `分析范围：${safePayload.range.start} 至 ${safePayload.range.end || safePayload.range.start}`
+            ? `分析范围：${safePayload.range.start} 至 ${safePayload.range.end || safePayload.range.start}${isAiEnhanced ? ' · AI 增强分析' : ''}`
             : '分析范围：未提供';
         document.getElementById('genbi-result-answer').textContent = typeof safePayload.answer === 'string' ? safePayload.answer : '';
         const highlights = Array.isArray(safePayload.highlights) ? safePayload.highlights.filter((item) => typeof item === 'string' && item.trim()) : [];
@@ -136,7 +137,7 @@
 
         button.disabled = true;
         button.textContent = '分析中...';
-        setStatus('正在查询真实数据并生成结果...', '');
+        setStatus('正在调用 AI 分析真实数据，预计需要 10-30 秒...', '');
 
         try {
             const { data } = await authHelpers.fetchFunctionJson('genbi-query', {
