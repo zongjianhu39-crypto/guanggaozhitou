@@ -1,4 +1,4 @@
-name: 部署 Supabase 函数
+name: 部署 Supabase（Migration + 函数）
 
 on:
   workflow_dispatch:
@@ -24,9 +24,19 @@ jobs:
         env:
           SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           [[ -n "$SUPABASE_PROJECT_REF" ]] || { echo "Missing repository variable: SUPABASE_PROJECT_REF"; exit 1; }
           [[ -n "$SUPABASE_ACCESS_TOKEN" ]] || { echo "Missing repository secret: SUPABASE_ACCESS_TOKEN"; exit 1; }
+          [[ -n "$SUPABASE_DB_URL" ]] || { echo "Missing repository secret: SUPABASE_DB_URL"; exit 1; }
+
+      - name: 部署数据库 migration
+        shell: bash
+        run: |
+          echo "Pushing database migrations..."
+          supabase db push --db-url "$SUPABASE_DB_URL"
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
       - name: 部署所有边函数
         shell: bash
