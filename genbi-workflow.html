@@ -258,6 +258,80 @@
             line-height: 1.7;
         }
 
+        .mapping-section {
+            margin-bottom: 22px;
+        }
+
+        .mapping-table-wrap {
+            margin-top: 18px;
+            overflow-x: auto;
+            border: 1px solid #e5e9f5;
+            border-radius: 22px;
+            background: #fff;
+            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.05);
+        }
+
+        .mapping-table {
+            width: 100%;
+            min-width: 920px;
+            border-collapse: collapse;
+        }
+
+        .mapping-table thead th {
+            background: #f7f8ff;
+            color: #344054;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: left;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e9f5;
+        }
+
+        .mapping-table tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #edf1f7;
+            vertical-align: top;
+            color: #475467;
+            font-size: 14px;
+            line-height: 1.75;
+        }
+
+        .mapping-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .mapping-table strong {
+            color: #0f172a;
+        }
+
+        .mapping-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }
+
+        .mapping-summary-card {
+            padding: 18px 18px;
+            border-radius: 22px;
+            border: 1px solid #e5e9f5;
+            background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.05);
+        }
+
+        .mapping-summary-card h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #0f172a;
+        }
+
+        .mapping-summary-card p {
+            margin: 0;
+            color: #667085;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
         .logic-flow {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -362,7 +436,8 @@
             }
 
             .logic-grid,
-            .logic-flow {
+            .logic-flow,
+            .mapping-summary {
                 grid-template-columns: 1fr;
             }
 
@@ -635,6 +710,145 @@
                     </ul>
                     <div class="logic-note">所以“保存”不是前端本地收藏，而是正式进入洞察中心的报告链路。</div>
                 </article>
+            </div>
+        </section>
+
+        <section class="workflow-panel mapping-section">
+            <h2 class="section-title">意图模块与数据表映射</h2>
+            <p class="section-desc">
+                更准确的说法不是“每个问题对应一张表”，而是“每个问题先进入一个规则模块，再由这个模块声明自己需要 ads、crowd、single 哪几类数据，底层统一去取汇总表；如果汇总表缺失，再回退到原始表”。
+            </p>
+
+            <div class="mapping-summary">
+                <article class="mapping-summary-card">
+                    <h3>人群模块</h3>
+                    <p>处理人群预算、老客新客结构、昨日花费波动等问题，核心依赖 crowd 数据。</p>
+                </article>
+                <article class="mapping-summary-card">
+                    <h3>商品模块</h3>
+                    <p>处理高花费低回报商品、潜力商品、单商品销售查询，核心依赖 single 数据。</p>
+                </article>
+                <article class="mapping-summary-card">
+                    <h3>报告模块</h3>
+                    <p>处理周报、月报、亏损原因等综合问题，会同时拉取 ads、crowd、single 三类数据。</p>
+                </article>
+            </div>
+
+            <div class="mapping-table-wrap">
+                <table class="mapping-table">
+                    <thead>
+                        <tr>
+                            <th>意图</th>
+                            <th>规则模块</th>
+                            <th>取数类型</th>
+                            <th>优先读取的汇总表</th>
+                            <th>汇总表缺失时回退的原始表</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>crowd_budget</strong><br>人群预算建议</td>
+                            <td><strong>crowd.ts</strong></td>
+                            <td><strong>crowd</strong></td>
+                            <td><code>dashboard_crowd_daily_summary</code></td>
+                            <td><code>super_live_2025</code> / <code>super_live_YYYYMM</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>crowd_mix</strong><br>老客新客结构</td>
+                            <td><strong>crowd.ts</strong></td>
+                            <td><strong>crowd</strong></td>
+                            <td><code>dashboard_crowd_daily_summary</code></td>
+                            <td><code>super_live_2025</code> / <code>super_live_YYYYMM</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>daily_drop_reason</strong><br>昨日花费波动归因</td>
+                            <td><strong>crowd.ts</strong></td>
+                            <td><strong>crowd</strong></td>
+                            <td><code>dashboard_crowd_daily_summary</code></td>
+                            <td><code>super_live_2025</code> / <code>super_live_YYYYMM</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>weak_products</strong><br>高花费低回报商品</td>
+                            <td><strong>product.ts</strong></td>
+                            <td><strong>single</strong></td>
+                            <td><code>dashboard_single_product_daily_summary</code></td>
+                            <td><code>single_product_ad_YYYY</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>product_potential</strong><br>冲销售额商品识别</td>
+                            <td><strong>product.ts</strong></td>
+                            <td><strong>single</strong></td>
+                            <td><code>dashboard_single_product_daily_summary</code></td>
+                            <td><code>single_product_ad_YYYY</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>product_sales</strong><br>单商品销售查询</td>
+                            <td><strong>product.ts</strong></td>
+                            <td><strong>single</strong></td>
+                            <td><code>dashboard_single_product_daily_summary</code></td>
+                            <td><code>single_product_ad_YYYY</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>weekly_report</strong><br>周报生成</td>
+                            <td><strong>report.ts</strong></td>
+                            <td><strong>ads + crowd + single</strong></td>
+                            <td>
+                                <code>dashboard_ads_daily_summary</code><br>
+                                <code>dashboard_crowd_daily_summary</code><br>
+                                <code>dashboard_single_product_daily_summary</code>
+                            </td>
+                            <td>
+                                <code>financial_YYYY</code><br>
+                                <code>taobao_live_YYYY</code><br>
+                                <code>super_live_2025</code> / <code>super_live_YYYYMM</code><br>
+                                <code>single_product_ad_YYYY</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>monthly_report</strong><br>月报生成</td>
+                            <td><strong>report.ts</strong></td>
+                            <td><strong>ads + crowd + single</strong></td>
+                            <td>
+                                <code>dashboard_ads_daily_summary</code><br>
+                                <code>dashboard_crowd_daily_summary</code><br>
+                                <code>dashboard_single_product_daily_summary</code>
+                            </td>
+                            <td>
+                                <code>financial_YYYY</code><br>
+                                <code>taobao_live_YYYY</code><br>
+                                <code>super_live_2025</code> / <code>super_live_YYYYMM</code><br>
+                                <code>single_product_ad_YYYY</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>loss_reason</strong><br>亏损原因分析</td>
+                            <td><strong>report.ts</strong></td>
+                            <td><strong>ads + crowd + single</strong></td>
+                            <td>
+                                <code>dashboard_ads_daily_summary</code><br>
+                                <code>dashboard_crowd_daily_summary</code><br>
+                                <code>dashboard_single_product_daily_summary</code>
+                            </td>
+                            <td>
+                                <code>financial_YYYY</code><br>
+                                <code>taobao_live_YYYY</code><br>
+                                <code>super_live_2025</code> / <code>super_live_YYYYMM</code><br>
+                                <code>single_product_ad_YYYY</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>budget_plan</strong><br>预算分配建议</td>
+                            <td><strong>registry.ts</strong></td>
+                            <td><strong>未接入</strong></td>
+                            <td>当前无</td>
+                            <td>当前无，仍是 unsupported</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="logic-note">
+                当前 GenBI 的规则模块并不是各自维护独立 SQL，而是统一复用 dashboard 的取数层。也就是说，规则模块真正决定的是“需要什么类型的数据”，底层再由统一的数据层决定查汇总表还是回退到原始表。
             </div>
         </section>
 
