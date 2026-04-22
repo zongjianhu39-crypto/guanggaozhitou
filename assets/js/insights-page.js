@@ -20,6 +20,13 @@
             yoyRoi: 'ROI 同比'
         };
 
+        function getDetailSubtitle(item) {
+            if (item.report_type === 'genbi' || item.source_channel === 'genbi' || item.raw_payload?.source?.channel === 'genbi') {
+                return `GenBI 洞察 · ${item.report_date || '--'}`;
+            }
+            return `${item.report_type === 'daily' ? '日报洞察' : '经营洞察'} · ${item.report_date || '--'}`;
+        }
+
         function rememberInsightRedirect() {
             const currentUrl = window.location.origin + window.location.pathname + window.location.search + window.location.hash;
             if (authHelpers.rememberRedirect) {
@@ -158,7 +165,7 @@ async function loadList(force = false) {
             const cleanedMarkdown = sanitizeReportText(item.raw_markdown || payload.markdown || '');
             currentDetailItem = item;
 
-            document.getElementById('detail-subtitle').textContent = `${item.report_type === 'daily' ? '日报洞察' : '经营洞察'} · ${item.report_date || '--'}`;
+            document.getElementById('detail-subtitle').textContent = getDetailSubtitle(item);
             document.getElementById('detail-title').textContent = item.title || '未命名报告';
             document.getElementById('detail-summary').textContent = readableSummary;
             const tags = Array.isArray(item.tags) ? item.tags : [];

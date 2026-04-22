@@ -15,7 +15,7 @@ function getCorsHeaders(req: Request) {
 }
 
 const ALLOWED_STATUSES = new Set(['draft', 'published', 'archived']);
-const ALLOWED_REPORT_TYPES = new Set(['daily', 'weekly', 'monthly', 'single']);
+const ALLOWED_REPORT_TYPES = new Set(['daily', 'weekly', 'monthly', 'single', 'genbi']);
 const ALLOWED_RISK_LEVELS = new Set(['low', 'medium', 'high', 'critical']);
 const SAFE_SLUG_RE = /^[a-zA-Z0-9_-]{1,200}$/;
 const SAFE_TAG_RE = /^[\u4e00-\u9fffA-Za-z0-9_-]{1,100}$/;
@@ -32,7 +32,7 @@ function buildListUrl(req: Request): string {
 
   url.searchParams.set(
     'select',
-    'id,slug,title,report_type,report_date,start_date,end_date,summary,risk_level,overview_metrics,high_spend_crowds,actions,tags,published_at,created_at'
+    'id,slug,title,report_type,report_date,start_date,end_date,summary,risk_level,overview_metrics,high_spend_crowds,actions,tags,source_channel,source_question,source_intent,source_range,published_at,created_at'
   );
   url.searchParams.set('order', 'report_date.desc,created_at.desc');
   url.searchParams.set('limit', String(limit));
@@ -61,7 +61,7 @@ function buildDetailUrl(slug: string): string {
   const url = new URL(`${SB_URL}/rest/v1/ai_reports`);
   url.searchParams.set(
     'select',
-    'id,slug,title,report_type,report_date,start_date,end_date,status,visibility,summary,risk_level,executive_summary,overview_metrics,highlights,high_spend_crowds,actions,finance_adjustment,live_session_insight,tags,raw_markdown,raw_payload,published_at,created_at,updated_at'
+    'id,slug,title,report_type,report_date,start_date,end_date,status,visibility,summary,risk_level,executive_summary,overview_metrics,highlights,high_spend_crowds,actions,finance_adjustment,live_session_insight,tags,source_channel,source_question,source_intent,source_range,raw_markdown,raw_payload,published_at,created_at,updated_at'
   );
   url.searchParams.set('slug', `eq.${slug}`);
   url.searchParams.set('limit', '1');

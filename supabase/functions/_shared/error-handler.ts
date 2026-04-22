@@ -4,7 +4,7 @@
  * 详细错误自动打到 Supabase 日志
  */
 
-export type ErrorContext = 'ai-analysis' | 'ai-prompt-admin' | 'dashboard-data' | 'ai-reports' | 'genbi-query' | 'plan-dashboard-summary' | 'feishu-auth';
+export type ErrorContext = 'ai-analysis' | 'ai-prompt-admin' | 'dashboard-data' | 'ai-reports' | 'genbi-query' | 'save-insight-report' | 'plan-dashboard-summary' | 'feishu-auth';
 
 const USER_FRIENDLY_MESSAGES: Record<string, string> = {
   'ai-analysis': 'AI 分析失败，请稍后重试',
@@ -12,6 +12,7 @@ const USER_FRIENDLY_MESSAGES: Record<string, string> = {
   'dashboard-data': '数据查询失败，请稍后重试',
   'ai-reports': '报告查询失败，请稍后重试',
   'genbi-query': 'GenBI 查询失败，请稍后重试',
+  'save-insight-report': '保存洞察报告失败，请稍后重试',
   'plan-dashboard-summary': '计划看板查询失败，请刷新页面后重试',
   'feishu-auth': '飞书认证失败，请稍后重试',
 };

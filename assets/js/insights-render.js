@@ -47,6 +47,12 @@
                 .trim();
         }
 
+        function isGenbiReport(item, payload = {}) {
+            return item?.report_type === 'genbi'
+                || item?.source_channel === 'genbi'
+                || payload?.source?.channel === 'genbi';
+        }
+
         function isWeakSummary(text) {
             const normalized = sanitizeReportText(text).replace(/\s+/g, ' ').trim();
             if (!normalized) return true;
@@ -64,6 +70,14 @@
         }
 
         function buildSummaryFallback(item, payload = {}) {
+            if (isGenbiReport(item, payload)) {
+                const article = sanitizeReportText(item.raw_markdown || payload.article?.markdown || payload.markdown || '');
+                if (article) {
+                    return stripMarkdown(article).slice(0, 140);
+                }
+                return '该 GenBI 洞察已保存，可查看正文、结果表格与参考来源。';
+            }
+
             const metrics = item.overview_metrics || payload.overviewMetrics || {};
             const topRisk = (item.highlights || payload.issues || [])[0];
             const topAction = (item.actions || payload.actions || [])[0];
@@ -104,6 +118,40 @@
         }
 
         function buildDetailFocusCards(item, payload = {}) {
+            if (isGenbiReport(item, payload)) {
+                const source = payload.source || {};
+                const range = source.range || item.source_range || {};
+                const rangeText = range.start && range.end
+                    ? `${range.start} 至 ${range.end}`
+                    : (range.start || range.end || item.report_date || '--');
+                const question = source.question || item.source_question || '未记录原始问题';
+                const intent = source.intent || item.source_intent || item.title || '通用问数';
+
+                return [
+                    {
+                        label: '来源渠道',
+                        value: 'GenBI',
+                        desc: `保存时间范围：${rangeText}`,
+                    },
+                    {
+                        label: '识别意图',
+                        value: intent,
+                        desc: item.title || '已按 GenBI 结果生成正式洞察报告。',
+                    },
+                    {
+                        label: '原始问题',
+                        value: question,
+                        desc: '下面保留了正文、结果表格、参考来源与补充说明。',
+                    },
+                ].map((card) => `
+                    <div class="detail-focus-card">
+                        <div class="label">${escapeHtml(card.label)}</div>
+                        <div class="value">${escapeHtml(card.value)}</div>
+                        <div class="desc">${escapeHtml(card.desc)}</div>
+                    </div>
+                `).join('');
+            }
+
             const metrics = item.overview_metrics || payload.overviewMetrics || {};
             const topIssue = (item.highlights || payload.issues || [])[0];
             const topAction = (item.actions || payload.actions || [])[0];
@@ -189,7 +237,10 @@
             const readableSummary = getReadableSummary(item);
             const isLatest = index === 0;
             const metaLine = formatReportMetricsLine(metrics);
-            const riskClass = item.risk_level ? `is-${escapeHtml(item.risk_level)}` : '';
+            const genbiReport = isGenbiReport(item, item.raw_payload || {});
+            const riskClass = !genbiReport && item.risk_level ? `is-${escapeHtml(item.risk_level)}` : '';
+            const badgeLabel = genbiReport ? 'GenBI' : riskLabel(item.risk_level);
+            const badgeClass = genbiReport ? 'medium' : escapeHtml(item.risk_level || '');
             const slug = escapeHtml(item.slug || '');
 
             return `
@@ -201,7 +252,7 @@
                         </div>
                         <div class="report-entry-meta">
                             <span class="report-entry-date">${escapeHtml(item.report_date || '--')}</span>
-                            <span class="risk-pill ${escapeHtml(item.risk_level || '')}">${escapeHtml(riskLabel(item.risk_level))}</span>
+                            <span class="risk-pill ${badgeClass}">${escapeHtml(badgeLabel)}</span>
                         </div>
                     </div>
                     <p class="report-entry-summary">${escapeHtml(readableSummary)}</p>
@@ -217,7 +268,7 @@
             document.getElementById('list-state').innerHTML = '';
 
             if (normalizedItems.length === 0) {
-                renderEmpty('当前筛选下没有报告。请把「风险等级」「报告类型」设为「全部」后刷新；若刚在看板跑过 AI 分析，请点击「刷新报告」或到看板点「重新分析」以写入洞察列表。');
+                renderEmpty('当前筛选下没有报告。若刚在看板跑过 AI 分析，请点击「刷新报告」；若刚在 GenBI 保存结果，请回到 GenBI 点击「保存到洞察中心」后再刷新。');
                 return;
             }
 
@@ -312,9 +363,105 @@
             `;
         }
 
+        function getReferenceLabel(sourceType) {
+            if (sourceType === 'rules_doc') return '业务规则';
+            if (sourceType === 'prompt_template') return 'Prompt 模板';
+            if (sourceType === 'ai_report') return '历史报告';
+            if (sourceType === 'ai_playbook') return '经验库';
+            return '参考来源';
+        }
+
+        function getReferenceHref(reference) {
+            const pointer = String(reference?.pointer || '');
+            if (!pointer) return '';
+            if (reference?.sourceType === 'rules_doc') {
+                return `metric-rules.html?query=${encodeURIComponent(pointer.split('/').pop() || pointer)}`;
+            }
+            if (reference?.sourceType === 'prompt_template') {
+                const templateKey = pointer.split('/')[1] || '';
+                return templateKey ? `prompt-admin.html?template_key=${encodeURIComponent(templateKey)}` : 'prompt-admin.html';
+            }
+            if (reference?.sourceType === 'ai_report') {
+                const slug = pointer.split('/')[1] || '';
+                return slug ? `insights.html?slug=${encodeURIComponent(slug)}` : 'insights.html';
+            }
+            return '';
+        }
+
+        function normalizeTable(table) {
+            const safeTable = table && typeof table === 'object' ? table : {};
+            const rows = Array.isArray(safeTable.rows) ? safeTable.rows.filter((row) => row && typeof row === 'object') : [];
+            let columns = Array.isArray(safeTable.columns) ? safeTable.columns.filter((column) => typeof column === 'string' && column.trim()) : [];
+            if (!columns.length && rows.length) {
+                columns = Object.keys(rows[0]);
+            }
+            return {
+                title: typeof safeTable.title === 'string' && safeTable.title.trim() ? safeTable.title : '结果表',
+                columns,
+                rows,
+            };
+        }
+
+        function renderGenbiTable(table) {
+            const normalized = normalizeTable(table);
+            return `
+                <div class="appendix-block">
+                    <h4 class="appendix-h">${escapeHtml(normalized.title)}</h4>
+                    <div class="article-md-table-wrap">
+                        <table class="ai-analysis-table">
+                            <thead>
+                                <tr>${(normalized.columns.length ? normalized.columns : ['结果']).map((column) => `<th>${escapeHtml(column)}</th>`).join('')}</tr>
+                            </thead>
+                            <tbody>
+                                ${normalized.rows.length
+                                    ? normalized.rows.map((row) => `<tr>${(normalized.columns.length ? normalized.columns : ['结果']).map((column) => `<td>${escapeHtml(row[column] ?? (column === '结果' ? JSON.stringify(row) : '-'))}</td>`).join('')}</tr>`).join('')
+                                    : `<tr><td colspan="${normalized.columns.length || 1}">暂无数据</td></tr>`}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGenbiReference(reference) {
+            const href = getReferenceHref(reference);
+            const content = `
+                <div class="list-item">
+                    <div class="item-title">${escapeHtml(reference.title || '参考来源')}</div>
+                    <div class="item-meta">${escapeHtml(getReferenceLabel(reference.sourceType))}</div>
+                    <div class="item-desc">${escapeHtml(reference.summary || '暂无摘要')}</div>
+                </div>
+            `;
+            return href ? `<a href="${href}" style="text-decoration:none;color:inherit">${content}</a>` : content;
+        }
+
+        function renderGenbiAppendix(item, payload = {}) {
+            const artifacts = payload.artifacts || {};
+            const tables = Array.isArray(artifacts.tables) ? artifacts.tables : [];
+            const references = Array.isArray(artifacts.references) ? artifacts.references : [];
+            const notes = Array.isArray(artifacts.notes) ? artifacts.notes : [];
+            const blocks = [];
+
+            if (tables.length) {
+                blocks.push(`<div class="appendix-block"><h4 class="appendix-h">结果表格</h4>${tables.map(renderGenbiTable).join('')}</div>`);
+            }
+            if (references.length) {
+                blocks.push(`<div class="appendix-block"><h4 class="appendix-h">参考来源</h4>${references.map(renderGenbiReference).join('')}</div>`);
+            }
+            if (notes.length) {
+                blocks.push(`<div class="appendix-block"><h4 class="appendix-h">补充说明</h4>${notes.map((note) => `<div class="list-item"><div class="item-desc">${escapeHtml(note)}</div></div>`).join('')}</div>`);
+            }
+
+            if (!blocks.length) {
+                return '<p class="appendix-empty">该 GenBI 报告未附带额外表格或参考来源。</p>';
+            }
+
+            return blocks.join('');
+        }
+
         /** 报告正文：整篇 Markdown 渲染为可读 HTML，不再按固定小标题拆块 */
         function renderReportArticleBody(item, payload = {}) {
-            const md = sanitizeReportText(item.raw_markdown || payload.markdown || '');
+            const md = sanitizeReportText(item.raw_markdown || payload.article?.markdown || payload.markdown || '');
             if (!md.trim()) {
                 return `<p class="report-lead-fallback">${escapeHtml(getReadableSummary(item, payload))}</p>`;
             }
@@ -329,6 +476,9 @@
 
         /** 结构化条目合并为一区，默认折叠，需要时展开 */
         function buildStructuredAppendix(item, payload = {}) {
+            if (isGenbiReport(item, payload)) {
+                return renderGenbiAppendix(item, payload);
+            }
             const crowds = item.high_spend_crowds || payload.highSpendCrowds || [];
             const actions = item.actions || payload.actions || [];
             const issues = item.highlights || payload.issues || [];
@@ -371,4 +521,3 @@
                 detailView.style.display = 'none';
             }
         }
-

@@ -2133,6 +2133,11 @@ Deno.serve(async (req: Request) => {
     const runId = await insertAiReportRun({
       analysis_type: analysisType,
       source_tab: sourceTab,
+      source_channel: 'dashboard_ai',
+      source_range: {
+        start_date,
+        end_date,
+      },
       start_date,
       end_date,
       status: 'completed',
@@ -2164,6 +2169,11 @@ Deno.serve(async (req: Request) => {
         slug,
         title: reportResult.reportTitle,
         report_type: analysisType,
+        source_channel: 'dashboard_ai',
+        source_range: {
+          start_date,
+          end_date,
+        },
         report_date: end_date,
         start_date,
         end_date,

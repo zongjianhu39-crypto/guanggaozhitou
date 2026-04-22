@@ -28,9 +28,15 @@
         .genbi-actions { margin-top:14px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
         .genbi-submit { border:none; border-radius:14px; background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; padding:12px 20px; font-size:14px; font-weight:700; cursor:pointer; }
         .genbi-submit:disabled { opacity:0.7; cursor:wait; }
+        .genbi-secondary-btn { border:1px solid #d7ddea; border-radius:14px; background:#fff; color:#344054; padding:12px 18px; font-size:14px; font-weight:700; cursor:pointer; }
+        .genbi-secondary-btn:hover { border-color:#9fb0ff; background:#f8faff; }
+        .genbi-secondary-btn:disabled { opacity:0.7; cursor:wait; }
         .genbi-status { margin-top:10px; min-height:20px; font-size:13px; color:#667085; }
         .genbi-status.error { color:#c0362c; }
         .genbi-status.success { color:#18794e; }
+        .genbi-save-status { margin-top:12px; font-size:13px; color:#667085; }
+        .genbi-save-status.success { color:#18794e; }
+        .genbi-save-status.error { color:#c0362c; }
         .genbi-help { margin-top:16px; padding:14px 16px; border:1px solid #e7ebf5; border-radius:16px; background:#fafbff; }
         .genbi-help h3 { margin:0 0 10px; font-size:13px; color:#344054; }
         .genbi-help p { margin:0; color:#667085; font-size:12px; line-height:1.7; }
@@ -185,12 +191,17 @@
                         <h2 id="genbi-result-title" class="result-title"></h2>
                         <div id="genbi-result-range" class="result-range"></div>
                     </div>
+                    <div class="genbi-actions">
+                        <button id="genbi-save-btn" class="genbi-secondary-btn" type="button" style="display:none">保存到洞察中心</button>
+                        <button id="genbi-open-insights-btn" class="genbi-secondary-btn" type="button" style="display:none">查看洞察中心</button>
+                    </div>
                 </div>
                 <div id="genbi-result-answer" class="result-answer"></div>
                 <div id="genbi-highlight-tags" class="tag-list"></div>
                 <div id="genbi-result-tables"></div>
                 <div id="genbi-result-references" class="notes"></div>
                 <div id="genbi-result-notes" class="notes"></div>
+                <div id="genbi-save-status" class="genbi-save-status"></div>
             </div>
         </section>
     </main>

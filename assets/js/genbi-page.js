@@ -1,5 +1,7 @@
 (function attachGenbiPage(window) {
     const authHelpers = window.authHelpers || {};
+    let lastResultPayload = null;
+    let lastSavedReportSlug = '';
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -102,8 +104,31 @@
         el.textContent = message;
     }
 
+    function setSaveStatus(message, type = '') {
+        const el = document.getElementById('genbi-save-status');
+        if (!el) return;
+        el.className = `genbi-save-status ${type}`.trim();
+        el.textContent = message;
+    }
+
+    function toggleSaveActions(payload) {
+        const saveButton = document.getElementById('genbi-save-btn');
+        const openButton = document.getElementById('genbi-open-insights-btn');
+        const canSave = Boolean(payload && payload.intent && payload.intent !== 'unsupported' && String(payload.answer || '').trim());
+        if (saveButton) {
+            saveButton.style.display = canSave ? 'inline-flex' : 'none';
+            saveButton.disabled = false;
+            saveButton.textContent = '保存到洞察中心';
+        }
+        if (openButton) {
+            openButton.style.display = lastSavedReportSlug ? 'inline-flex' : 'none';
+        }
+    }
+
     function renderResult(payload) {
         const safePayload = payload && typeof payload === 'object' ? payload : {};
+        lastResultPayload = safePayload;
+        lastSavedReportSlug = '';
         const resultSection = document.getElementById('genbi-result-section');
         if (resultSection) {
             resultSection.style.display = 'block';
@@ -124,6 +149,91 @@
         document.getElementById('genbi-result-notes').innerHTML = notes.length
             ? `<strong>补充说明：</strong><br>${notes.map((item) => escapeHtml(item)).join('<br>')}`
             : '';
+        setSaveStatus('', '');
+        toggleSaveActions(safePayload);
+    }
+
+    function openSavedInsight() {
+        const target = lastSavedReportSlug
+            ? `insights.html?slug=${encodeURIComponent(lastSavedReportSlug)}`
+            : 'insights.html';
+        window.location.href = target;
+    }
+
+    async function saveToInsights() {
+        if (!lastResultPayload || !lastResultPayload.intent || lastResultPayload.intent === 'unsupported') {
+            setSaveStatus('当前结果不支持保存到洞察中心。', 'error');
+            return;
+        }
+
+        const question = document.getElementById('genbi-question')?.value?.trim() || '';
+        if (!question) {
+            setSaveStatus('缺少原始问题，无法保存。', 'error');
+            return;
+        }
+
+        const confirmed = window.confirm('保存后会在洞察中心生成一条正式报告，团队成员可查看。是否继续？');
+        if (!confirmed) {
+            return;
+        }
+
+        const button = document.getElementById('genbi-save-btn');
+        if (button) {
+            button.disabled = true;
+            button.textContent = '保存中...';
+        }
+        setSaveStatus('正在写入洞察中心...', '');
+
+        try {
+            const { data } = await authHelpers.fetchFunctionJson('save-insight-report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Idempotency-Key': (window.crypto && typeof window.crypto.randomUUID === 'function')
+                        ? window.crypto.randomUUID()
+                        : `genbi-${Date.now()}`,
+                },
+                body: {
+                    source_channel: 'genbi',
+                    save_mode: 'published',
+                    question,
+                    result: lastResultPayload,
+                },
+                useSessionToken: true,
+                includePromptAdminToken: true,
+                parseErrorMessage: '保存接口返回了无法解析的响应，请稍后重试',
+                unauthorizedPattern: /未登录|invalid token|Missing Authorization/i,
+                onUnauthorized: () => {
+                    if (typeof authHelpers.handleReauthRequired === 'function') {
+                        authHelpers.handleReauthRequired({
+                            source: 'genbi-save',
+                            targetUrl: window.location.href,
+                            force: true,
+                            delayMs: 800,
+                            reason: 'prompt_admin_reauth_required',
+                        });
+                    } else if (authHelpers.redirectToLogin) {
+                        authHelpers.redirectToLogin({
+                            targetUrl: window.location.href,
+                            force: true,
+                            delayMs: 800,
+                        });
+                    } else {
+                        window.location.href = 'auth/index.html?force=1';
+                    }
+                },
+            });
+
+            lastSavedReportSlug = data?.report_slug || '';
+            setSaveStatus(lastSavedReportSlug ? '已保存到洞察中心，可直接查看详情。' : '已保存到洞察中心。', 'success');
+            toggleSaveActions(lastResultPayload);
+        } catch (error) {
+            setSaveStatus(`保存失败：${error.message || '请稍后重试'}`, 'error');
+            if (button) {
+                button.disabled = false;
+                button.textContent = '保存到洞察中心';
+            }
+        }
     }
 
     async function submitQuestion() {
@@ -193,5 +303,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         bindExamples();
         document.getElementById('genbi-submit')?.addEventListener('click', submitQuestion);
+        document.getElementById('genbi-save-btn')?.addEventListener('click', saveToInsights);
+        document.getElementById('genbi-open-insights-btn')?.addEventListener('click', openSavedInsight);
     });
 })(window);
