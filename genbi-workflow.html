@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenBI 工作流程 - 交个朋友·广告智投工作台</title>
+    <meta name="description" content="用易懂的方式说明 GenBI 从提问到生成报告，再到保存进洞察中心的完整路径。">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="style.css?v=20260422a">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 34%),
+                linear-gradient(180deg, #f6f7fb 0%, #ffffff 100%);
+            color: #111827;
+        }
+
+        .workflow-shell {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 28px 20px 60px;
+        }
+
+        .workflow-hero {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #eef2ff 0%, #f8fbff 52%, #fff5ed 100%);
+            border: 1px solid #dbe3ff;
+            border-radius: 28px;
+            padding: 34px;
+            box-shadow: 0 22px 48px rgba(30, 41, 59, 0.08);
+            margin-bottom: 24px;
+        }
+
+        .workflow-kicker {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(79, 70, 229, 0.10);
+            color: #4655c4;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .workflow-hero h1 {
+            margin: 16px 0 12px;
+            font-size: 40px;
+            line-height: 1.12;
+            color: #0f172a;
+        }
+
+        .workflow-hero p {
+            margin: 0;
+            max-width: 760px;
+            color: #5b6476;
+            font-size: 15px;
+            line-height: 1.85;
+        }
+
+        .workflow-path {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .path-chip,
+        .path-arrow {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .path-chip {
+            padding: 0 16px;
+            background: #fff;
+            border: 1px solid #dde3f4;
+            color: #1f2937;
+        }
+
+        .path-arrow {
+            width: 42px;
+            color: #7c84a3;
+        }
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+            gap: 20px;
+            margin-bottom: 22px;
+        }
+
+        .workflow-panel,
+        .workflow-side-card,
+        .step-card {
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid #e6ebf5;
+            border-radius: 24px;
+            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.05);
+        }
+
+        .workflow-panel,
+        .workflow-side-card {
+            padding: 24px;
+        }
+
+        .section-title {
+            margin: 0 0 8px;
+            font-size: 24px;
+            color: #0f172a;
+        }
+
+        .section-desc {
+            margin: 0;
+            color: #667085;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }
+
+        .step-card {
+            padding: 22px 20px;
+            min-height: 210px;
+        }
+
+        .step-index {
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 14px;
+            box-shadow: 0 10px 22px rgba(79, 70, 229, 0.24);
+        }
+
+        .step-card h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+            color: #0f172a;
+        }
+
+        .step-card p {
+            margin: 0 0 12px;
+            color: #667085;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .step-note {
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: #f8faff;
+            border: 1px solid #e4e9f7;
+            color: #475467;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .workflow-side-card + .workflow-side-card {
+            margin-top: 16px;
+        }
+
+        .workflow-side-card h3 {
+            margin: 0 0 12px;
+            font-size: 18px;
+            color: #0f172a;
+        }
+
+        .workflow-side-card ul {
+            margin: 0;
+            padding-left: 18px;
+            color: #475467;
+        }
+
+        .workflow-side-card li {
+            margin: 8px 0;
+            line-height: 1.7;
+        }
+
+        .workflow-side-card strong {
+            color: #0f172a;
+        }
+
+        .cta-panel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 24px 26px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+            border: 1px solid #e4e8f7;
+            border-radius: 24px;
+            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.05);
+        }
+
+        .cta-panel h2 {
+            margin: 0 0 8px;
+            font-size: 24px;
+            color: #0f172a;
+        }
+
+        .cta-panel p {
+            margin: 0;
+            color: #667085;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .cta-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .cta-link {
+            min-height: 44px;
+            padding: 0 18px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1px solid #d8def0;
+            background: #fff;
+            color: #344054;
+        }
+
+        .cta-link.primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border: none;
+            color: #fff;
+            box-shadow: 0 12px 26px rgba(79, 70, 229, 0.22);
+        }
+
+        @media (max-width: 960px) {
+            .workflow-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .steps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-panel {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .workflow-shell {
+                padding: 20px 16px 40px;
+            }
+
+            .workflow-hero,
+            .workflow-panel,
+            .workflow-side-card,
+            .cta-panel {
+                padding: 22px 18px;
+                border-radius: 22px;
+            }
+
+            .workflow-hero h1 {
+                font-size: 30px;
+            }
+
+            .path-arrow {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script src="assets/js/auth-helpers.js?v=20260412a"></script>
+    <script src="auth.js?v=20260409a"></script>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-emoji">🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="genbi.html" class="nav-link">GenBI</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li class="nav-item-dropdown">
+                    <span class="nav-link active">更多 <span class="nav-dropdown-arrow">▾</span></span>
+                    <div class="nav-dropdown" role="menu">
+                        <a href="genbi-workflow.html" class="active">GenBI 工作流程</a>
+                        <a href="metric-rules.html">指标规则</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="workflow-shell">
+        <section class="workflow-hero">
+            <span class="workflow-kicker">GenBI 工作流程</span>
+            <h1>从提问到报告沉淀，GenBI 的完整路径</h1>
+            <p>
+                这个页面不讲技术细节，只说明 GenBI 在业务上的工作方式。你提出一个经营问题后，系统会识别问题类型、调取真实业务数据、生成分析结果，并支持一键沉淀到洞察中心，方便团队复盘与复用。
+            </p>
+            <div class="workflow-path" aria-label="GenBI 工作路径">
+                <span class="path-chip">输入问题</span>
+                <span class="path-arrow">→</span>
+                <span class="path-chip">识别问题</span>
+                <span class="path-arrow">→</span>
+                <span class="path-chip">提取数据</span>
+                <span class="path-arrow">→</span>
+                <span class="path-chip">AI 分析</span>
+                <span class="path-arrow">→</span>
+                <span class="path-chip">展示结果</span>
+                <span class="path-arrow">→</span>
+                <span class="path-chip">沉淀报告</span>
+            </div>
+        </section>
+
+        <section class="workflow-grid">
+            <div class="workflow-panel">
+                <h2 class="section-title">6 步看懂 GenBI</h2>
+                <p class="section-desc">
+                    这条路径对应的就是你在 GenBI 页面上的真实使用流程。前半段解决“快速拿答案”，后半段解决“把结果沉淀下来，方便后续查看和复用”。
+                </p>
+
+                <div class="steps-grid">
+                    <article class="step-card">
+                        <div class="step-index">01</div>
+                        <h3>提出问题</h3>
+                        <p>先输入你真正关心的经营问题，比如“哪些人群应该增加预算，哪些应该降低预算”。</p>
+                        <div class="step-note">重点不是写复杂，而是把问题说清楚，最好带上时间范围、对象和判断目标。</div>
+                    </article>
+
+                    <article class="step-card">
+                        <div class="step-index">02</div>
+                        <h3>识别问题</h3>
+                        <p>系统会自动判断你问的是哪类问题，并识别对应的分析时间范围。</p>
+                        <div class="step-note">例如会区分你是在问人群预算、单品表现、亏损原因、日报、周报还是月报。</div>
+                    </article>
+
+                    <article class="step-card">
+                        <div class="step-index">03</div>
+                        <h3>提取数据</h3>
+                        <p>系统根据问题类型，调用真实业务数据，提取和这个问题直接相关的人群、商品、花费、成交等信息。</p>
+                        <div class="step-note">这一层的重点是结构化取数，先把事实找准，再往下做分析。</div>
+                    </article>
+
+                    <article class="step-card">
+                        <div class="step-index">04</div>
+                        <h3>AI 分析</h3>
+                        <p>AI 会在真实数据基础上，结合业务规则、已发布模板和历史知识，生成可读的经营分析结论。</p>
+                        <div class="step-note">它不是空想输出，而是在受控范围内把数据解释成结论和动作建议。</div>
+                    </article>
+
+                    <article class="step-card">
+                        <div class="step-index">05</div>
+                        <h3>展示结果</h3>
+                        <p>页面会输出分析正文、表格结果、参考来源和补充说明，方便快速阅读和判断。</p>
+                        <div class="step-note">正文负责说明结论，表格负责给出依据，参考来源负责增强可信度。</div>
+                    </article>
+
+                    <article class="step-card">
+                        <div class="step-index">06</div>
+                        <h3>沉淀报告</h3>
+                        <p>如果这条分析值得保留，可以一键保存到洞察中心，形成正式报告，供团队后续查看、复盘和复用。</p>
+                        <div class="step-note">保存后的报告会成为洞察资产，也能为后续 GenBI 分析提供历史参考。</div>
+                    </article>
+                </div>
+            </div>
+
+            <div>
+                <aside class="workflow-side-card">
+                    <h3>一句话理解</h3>
+                    <ul>
+                        <li><strong>GenBI</strong> 负责把问题变成分析结果。</li>
+                        <li><strong>洞察中心</strong> 负责把有价值的结果沉淀成正式报告。</li>
+                    </ul>
+                </aside>
+
+                <aside class="workflow-side-card">
+                    <h3>你会看到什么</h3>
+                    <ul>
+                        <li><strong>分析正文：</strong> 直接说结论和建议。</li>
+                        <li><strong>结果表格：</strong> 展示关键数据对比。</li>
+                        <li><strong>参考来源：</strong> 说明这份分析参考了哪些受控知识。</li>
+                        <li><strong>补充说明：</strong> 提示数据口径、局限或额外背景。</li>
+                    </ul>
+                </aside>
+
+                <aside class="workflow-side-card">
+                    <h3>适合什么场景</h3>
+                    <ul>
+                        <li>快速判断哪些人群该加预算、减预算。</li>
+                        <li>解释花费下降、亏损、转化变差的原因。</li>
+                        <li>生成日报、周报、月报类经营总结。</li>
+                        <li>把临时分析沉淀成团队可复用的洞察报告。</li>
+                    </ul>
+                </aside>
+            </div>
+        </section>
+
+        <section class="cta-panel">
+            <div>
+                <h2>现在就可以这样用</h2>
+                <p>先去 GenBI 提问拿到结果；如果内容有沉淀价值，再保存到洞察中心，形成正式报告。</p>
+            </div>
+            <div class="cta-actions">
+                <a class="cta-link primary" href="genbi.html">前往 GenBI</a>
+                <a class="cta-link" href="insights.html">查看洞察中心</a>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js?v=20260403"></script>
+</body>
+</html>
