@@ -104,6 +104,34 @@
         el.textContent = message;
     }
 
+    function sanitizeReportText(text) {
+        return String(text || '')
+            .replace(/\r\n/g, '\n')
+            .replace(/<think>[\s\S]*?<\/think>/gi, '')
+            .replace(/<\/?think>/gi, '')
+            .replace(/```thinking[\s\S]*?```/gi, '')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+    }
+
+    function renderAnswerContent(answer) {
+        const el = document.getElementById('genbi-result-answer');
+        if (!el) return;
+        const text = sanitizeReportText(answer);
+        const render = window.AiArticleMarkdown && typeof window.AiArticleMarkdown.renderArticleMarkdown === 'function'
+            ? window.AiArticleMarkdown.renderArticleMarkdown
+            : null;
+
+        if (render && text) {
+            el.className = 'result-answer report-article-prose';
+            el.innerHTML = render(text);
+            return;
+        }
+
+        el.className = 'result-answer';
+        el.textContent = text;
+    }
+
     function setSaveStatus(message, type = '') {
         const el = document.getElementById('genbi-save-status');
         if (!el) return;
@@ -139,7 +167,7 @@
         document.getElementById('genbi-result-range').textContent = safePayload.range?.start
             ? `分析范围：${safePayload.range.start} 至 ${safePayload.range.end || safePayload.range.start}${isAiEnhanced ? ' · AI 增强分析' : ''}`
             : '分析范围：未提供';
-        document.getElementById('genbi-result-answer').textContent = typeof safePayload.answer === 'string' ? safePayload.answer : '';
+        renderAnswerContent(typeof safePayload.answer === 'string' ? safePayload.answer : '');
         const highlights = Array.isArray(safePayload.highlights) ? safePayload.highlights.filter((item) => typeof item === 'string' && item.trim()) : [];
         const notes = Array.isArray(safePayload.notes) ? safePayload.notes.map((item) => typeof item === 'string' ? item : JSON.stringify(item)).filter(Boolean) : [];
         const tables = Array.isArray(safePayload.tables) ? safePayload.tables : [];

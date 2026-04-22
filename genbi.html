@@ -55,7 +55,50 @@
         .result-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:16px; }
         .result-title { margin:0; font-size:22px; }
         .result-range { font-size:13px; color:#667085; }
-        .result-answer { font-size:15px; line-height:1.9; color:#1f2937; white-space:pre-wrap; }
+        .result-answer { font-size:15px; line-height:1.9; color:#1f2937; }
+        .result-answer.report-article-prose { font-size: 15px; line-height: 1.9; color: #334155; }
+        .result-answer.report-article-prose .ai-analysis-h1 { font-size: 1.35rem; margin: 0 0 14px; font-weight: 700; color: #0f172a; }
+        .result-answer.report-article-prose .ai-analysis-h2 { font-size: 1.2rem; margin: 28px 0 12px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #ece8ff; padding-bottom: 8px; }
+        .result-answer.report-article-prose .ai-analysis-h3 { font-size: 1.08rem; margin: 22px 0 10px; font-weight: 600; color: #1e293b; }
+        .result-answer.report-article-prose .ai-analysis-h4,
+        .result-answer.report-article-prose .ai-analysis-h5,
+        .result-answer.report-article-prose .ai-analysis-h6 { font-size: 1rem; margin: 16px 0 8px; font-weight: 600; color: #334155; }
+        .result-answer.report-article-prose p { margin: 0 0 14px; }
+        .result-answer.report-article-prose ul.ai-analysis-ul,
+        .result-answer.report-article-prose ol.ai-analysis-ol { margin: 0 0 16px; padding-left: 1.35em; }
+        .result-answer.report-article-prose li { margin: 5px 0; }
+        .result-answer.report-article-prose strong { font-weight: 600; color: #0f172a; }
+        .result-answer.report-article-prose code { font-family: ui-monospace, Menlo, monospace; font-size: 0.88em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; }
+        .result-answer.report-article-prose .ai-analysis-hr { border: none; border-top: 1px solid #e8e4f5; margin: 22px 0; }
+        .result-answer.report-article-prose .ai-analysis-quote { margin: 0 0 14px; padding: 10px 14px; border-left: 3px solid #7c6fd1; background: #f8f7ff; color: #475569; font-size: 15px; }
+        .result-answer.report-article-prose .article-md-table-wrap {
+            overflow-x: auto;
+            margin: 0 0 18px;
+            border: 1px solid #e6eaf5;
+            border-radius: 16px;
+            background: #fff;
+        }
+        .result-answer.report-article-prose table.ai-analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 560px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .result-answer.report-article-prose table.ai-analysis-table th,
+        .result-answer.report-article-prose table.ai-analysis-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #eef2f7;
+            text-align: left;
+            vertical-align: top;
+        }
+        .result-answer.report-article-prose table.ai-analysis-table thead th {
+            background: #f8f7ff;
+            color: #3f3a64;
+            font-weight: 600;
+        }
+        .result-answer.report-article-prose table.ai-analysis-table tbody tr:last-child td { border-bottom: none; }
+        .result-answer.report-article-prose table.ai-analysis-table tbody tr:hover td { background: #faf9ff; }
         .tag-list { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 0; }
         .tag { display:inline-flex; padding:6px 12px; border-radius:999px; background:#f2f4f7; color:#475467; font-size:12px; font-weight:600; }
         .table-card { margin-top:18px; border:1px solid #eaecf3; border-radius:16px; overflow:hidden; }
@@ -209,7 +252,8 @@
     <script src="assets/js/auth-helpers.js?v=20260422a"></script>
     <script src="auth.js?v=20260409a"></script>
     <script src="assets/js/config.js"></script>
+    <script src="assets/js/ai-article-markdown.js?v=20260422a"></script>
     <script src="script.js?v=20260403"></script>
-    <script src="assets/js/genbi-page.js?v=20260422a"></script>
+    <script src="assets/js/genbi-page.js?v=20260422b"></script>
 </body>
 </html>
