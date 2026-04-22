@@ -1,8 +1,8 @@
 import { getDashboardPayload } from '../_shared/dashboard-payload.ts';
-import { getGenbiRules } from '../_shared/genbi-semantic.ts';
 import type { GenbiRange } from '../_shared/genbi-time.ts';
 import { buildAnswerEnvelope, composeTable, money, ratio } from '../_shared/genbi-format.ts';
 import { mapPayloadSingleItems } from '../_shared/genbi-payload-adapters.ts';
+import { getProductPotentialRuleConfig, getProductSalesRuleConfig, getWeakProductsRuleConfig } from '../_shared/genbi-rule-resolver.ts';
 
 function extractProductName(question: string): string | null {
   const quoted = question.match(/[“"]([^”"]{2,40})[”"]/);
@@ -62,14 +62,14 @@ export function buildWeakProductsResponse(range: GenbiRange, allProducts: any[],
 }
 
 export async function answerWeakProducts(range: GenbiRange) {
-  const rules = await getGenbiRules() as any;
+  const config = await getWeakProductsRuleConfig();
   const payload = await getDashboardPayload(range.start, range.end, { ads: false, crowd: false, single: true }) as any;
   const allProducts = mapPayloadSingleItems(payload?.single?.items).filter((item) => item.cost > 0);
   return buildWeakProductsResponse(range, allProducts, {
-    minFocusPoolSize: Number(rules?.weakProducts?.minFocusPoolSize ?? 20),
-    focusPoolCostCoverage: Number(rules?.weakProducts?.focusPoolCostCoverage ?? 0.85),
-    topCount: Number(rules?.weakProducts?.topCount ?? 8),
-    highlightCount: Number(rules?.weakProducts?.highlightCount ?? 3),
+    minFocusPoolSize: config.minFocusPoolSize,
+    focusPoolCostCoverage: config.focusPoolCostCoverage,
+    topCount: config.topCount,
+    highlightCount: config.highlightCount,
   });
 }
 
@@ -97,16 +97,17 @@ export function buildProductPotentialResponse(range: GenbiRange, allProducts: an
 }
 
 export async function answerProductPotential(range: GenbiRange) {
-  const rules = await getGenbiRules() as any;
+  const config = await getProductPotentialRuleConfig();
   const payload = await getDashboardPayload(range.start, range.end, { ads: false, crowd: false, single: true }) as any;
   const products = mapPayloadSingleItems(payload?.single?.items);
   return buildProductPotentialResponse(range, products, {
-    topCount: Number(rules?.productPotential?.topCount ?? 6),
-    highlightCount: Number(rules?.productPotential?.highlightCount ?? 3),
+    topCount: config.topCount,
+    highlightCount: config.highlightCount,
   });
 }
 
 export async function answerProductSales(question: string, range: GenbiRange) {
+  const config = await getProductSalesRuleConfig();
   const productName = extractProductName(question);
   if (!productName) {
     return buildAnswerEnvelope(
@@ -121,7 +122,7 @@ export async function answerProductSales(question: string, range: GenbiRange) {
   if (!products.length) {
     return buildAnswerEnvelope('product_sales', '单商品销售查询', `在 ${range.start} 至 ${range.end} 期间没有找到与“${productName}”匹配的单品广告数据。`, range);
   }
-  const product = products[0];
+  const product = products.slice(0, config.resultLimit)[0];
   return buildAnswerEnvelope(
     'product_sales',
     '单商品销售查询',

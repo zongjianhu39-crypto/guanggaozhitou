@@ -2,6 +2,7 @@ import { authenticateEdgeRequest } from '../_shared/request-auth.ts';
 import { createErrorResponse } from '../_shared/error-handler.ts';
 import { SB_SERVICE_ROLE_KEY, SB_URL, getSupabaseHeaders } from '../_shared/supabase-client.ts';
 import { validatePromptInput } from '../_shared/input-validator.ts';
+import { resolveRuleByIntent } from '../_shared/genbi-rule-resolver.ts';
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
 
@@ -261,6 +262,7 @@ Deno.serve(async (req: Request) => {
     const slug = await buildReportSlug(result, question, range);
     const reportTitle = buildReportTitle(result, range);
     const tags = ['genbi', intent];
+    const resolvedRule = await resolveRuleByIntent(intent as any);
     const rawPayload = {
       schema_version: 'genbi-v1',
       source: {
@@ -268,6 +270,10 @@ Deno.serve(async (req: Request) => {
         question,
         intent,
         range,
+        rule: {
+          ruleKey: resolvedRule.ruleKey,
+          ruleVersion: resolvedRule.version,
+        },
       },
       article: {
         markdown: answer,

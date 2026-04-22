@@ -1,8 +1,8 @@
 import { getDashboardPayload } from '../_shared/dashboard-payload.ts';
-import { getGenbiRules } from '../_shared/genbi-semantic.ts';
 import type { GenbiRange } from '../_shared/genbi-time.ts';
 import { buildAnswerEnvelope, composeTable, computeChangeRate, money, percent, ratio } from '../_shared/genbi-format.ts';
 import { mapPayloadCrowdSummary, mapPayloadSingleItems } from '../_shared/genbi-payload-adapters.ts';
+import { getLossReasonRuleConfig, getPeriodicReportRuleConfig } from '../_shared/genbi-rule-resolver.ts';
 
 export function buildPeriodicReportResponse(
   kind: 'weekly_report' | 'monthly_report',
@@ -58,7 +58,7 @@ export function buildPeriodicReportResponse(
 }
 
 export async function answerPeriodicReport(kind: 'weekly_report' | 'monthly_report', range: GenbiRange) {
-  const rules = await getGenbiRules() as any;
+  const config = await getPeriodicReportRuleConfig();
   const [currentPayload, previousPayload] = await Promise.all([
     getDashboardPayload(range.start, range.end, { ads: true, crowd: true, single: true }),
     getDashboardPayload(range.compareStart || range.start, range.compareEnd || range.end, { ads: true, crowd: true, single: false }),
@@ -72,10 +72,10 @@ export async function answerPeriodicReport(kind: 'weekly_report' | 'monthly_repo
     breakevenRoi: Number((previousPayload as any)?.ads?.kpi?.totalBreakevenRoi || 0),
   };
   const crowdSummary = mapPayloadCrowdSummary((currentPayload as any)?.crowd?.summary);
-  const singleSummary = mapPayloadSingleItems((currentPayload as any)?.single?.items).slice(0, Number(rules?.periodicReport?.topProductCount ?? 5));
+  const singleSummary = mapPayloadSingleItems((currentPayload as any)?.single?.items).slice(0, config.topProductCount);
   return buildPeriodicReportResponse(kind, range, currentAds, previousAds, crowdSummary, singleSummary, {
-    topCrowdCount: Number(rules?.periodicReport?.topCrowdCount ?? 5),
-    topProductCount: Number(rules?.periodicReport?.topProductCount ?? 5),
+    topCrowdCount: config.topCrowdCount,
+    topProductCount: config.topProductCount,
   });
 }
 
@@ -107,14 +107,14 @@ export function buildLossReasonResponse(
 }
 
 export async function answerLossReason(range: GenbiRange) {
-  const rules = await getGenbiRules() as any;
+  const config = await getLossReasonRuleConfig();
   const payload = await getDashboardPayload(range.start, range.end, { ads: true, crowd: true, single: true }) as any;
   const ads = {
     cost: Number(payload?.ads?.kpi?.totalCost || 0),
     breakevenRoi: Number(payload?.ads?.kpi?.totalBreakevenRoi || 0),
     amount: Number(payload?.ads?.kpi?.totalAmount || 0),
   };
-  const crowd = mapPayloadCrowdSummary(payload?.crowd?.summary).sort((a, b) => b.orderCost - a.orderCost).slice(0, Number(rules?.lossReason?.topCrowdCount ?? 3));
-  const products = mapPayloadSingleItems(payload?.single?.items).sort((a, b) => b.orderCost - a.orderCost).slice(0, Number(rules?.lossReason?.topProductCount ?? 3));
+  const crowd = mapPayloadCrowdSummary(payload?.crowd?.summary).sort((a, b) => b.orderCost - a.orderCost).slice(0, config.topCrowdCount);
+  const products = mapPayloadSingleItems(payload?.single?.items).sort((a, b) => b.orderCost - a.orderCost).slice(0, config.topProductCount);
   return buildLossReasonResponse(range, ads, crowd, products);
 }

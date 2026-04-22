@@ -1,10 +1,10 @@
 import { getDashboardPayload } from '../_shared/dashboard-payload.ts';
-import { getGenbiRules } from '../_shared/genbi-semantic.ts';
 import type { GenbiRange } from '../_shared/genbi-time.ts';
 import { buildAnswerEnvelope, composeTable, money, percent } from '../_shared/genbi-format.ts';
 import { mapPayloadCrowdSummary } from '../_shared/genbi-payload-adapters.ts';
+import { getCrowdBudgetRuleConfig, getDailyDropReasonRuleConfig } from '../_shared/genbi-rule-resolver.ts';
 
-export function buildCrowdBudgetResponse(range: GenbiRange, summary: any[], options: { minCostShare: number; topCount: number; tableLimit: number }) {
+export function buildCrowdBudgetResponse(range: GenbiRange, summary: any[], options: { minCostShare: number; topIncreaseCount: number; topDecreaseCount: number; tableLimit: number }) {
   const totalCost = summary.reduce((sum, item) => sum + item.cost, 0);
   summary.forEach((item) => {
     item.costShare = totalCost > 0 ? item.cost / totalCost : 0;
@@ -12,11 +12,11 @@ export function buildCrowdBudgetResponse(range: GenbiRange, summary: any[], opti
   const increase = summary
     .filter((item) => Number.isFinite(item.orderCost) && item.costShare >= options.minCostShare)
     .sort((a, b) => a.orderCost - b.orderCost)
-    .slice(0, options.topCount);
+    .slice(0, options.topIncreaseCount);
   const decrease = summary
     .filter((item) => Number.isFinite(item.orderCost) && item.costShare >= options.minCostShare)
     .sort((a, b) => b.orderCost - a.orderCost)
-    .slice(0, options.topCount);
+    .slice(0, options.topDecreaseCount);
 
   const answer = [
     `分析范围是 ${range.start} 至 ${range.end}。`,
@@ -54,13 +54,15 @@ export function buildCrowdBudgetResponse(range: GenbiRange, summary: any[], opti
 }
 
 export async function answerCrowdBudget(range: GenbiRange) {
-  const rules = await getGenbiRules() as any;
+  const config = await getCrowdBudgetRuleConfig();
   const payload = await getDashboardPayload(range.start, range.end, { ads: false, crowd: true, single: false }) as any;
-  const summary = mapPayloadCrowdSummary(payload?.crowd?.summary).filter((item) => item.layer !== '未知');
+  const excluded = new Set(config.excludeLayers);
+  const summary = mapPayloadCrowdSummary(payload?.crowd?.summary).filter((item) => !excluded.has(item.layer));
   return buildCrowdBudgetResponse(range, summary, {
-    minCostShare: Number(rules?.crowdBudget?.minCostShare ?? 0.05),
-    topCount: Number(rules?.crowdBudget?.topCount ?? 3),
-    tableLimit: Number(rules?.crowdBudget?.tableLimit ?? 10),
+    minCostShare: config.minCostShare,
+    topIncreaseCount: config.topIncreaseCount,
+    topDecreaseCount: config.topDecreaseCount,
+    tableLimit: config.tableLimit,
   });
 }
 
@@ -126,7 +128,7 @@ export function buildDailyDropReasonResponse(range: GenbiRange, currentCrowd: an
 }
 
 export async function answerDailyDropReason(range: GenbiRange) {
-  const rules = await getGenbiRules() as any;
+  const config = await getDailyDropReasonRuleConfig();
   const [todayPayload, comparePayload] = await Promise.all([
     getDashboardPayload(range.start, range.end, { ads: false, crowd: true, single: false }),
     getDashboardPayload(range.compareStart || range.start, range.compareEnd || range.end, { ads: false, crowd: true, single: false }),
@@ -134,6 +136,6 @@ export async function answerDailyDropReason(range: GenbiRange) {
   const currentCrowd = mapPayloadCrowdSummary((todayPayload as any)?.crowd?.summary);
   const previousCrowd = mapPayloadCrowdSummary((comparePayload as any)?.crowd?.summary);
   return buildDailyDropReasonResponse(range, currentCrowd, previousCrowd, {
-    topDropCount: Number(rules?.dailyDropReason?.topDropCount ?? 3),
+    topDropCount: config.topDropCount,
   });
 }
