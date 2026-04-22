@@ -40,23 +40,23 @@
         if (!items.length) return '';
         return `
             <strong>参考来源：</strong>
-            <div class="reference-card-list">
+            <div style="margin-top:8px">
                 ${items.map((item) => {
                     const href = getReferenceHref(item);
                     const typeLabel = escapeHtml(getReferenceLabel(item.sourceType));
                     const title = escapeHtml(item.title);
                     const summary = item.summary ? escapeHtml(item.summary) : '';
-                    const content = `
-                        <div class="reference-card-head">
-                            <span class="reference-type">${typeLabel}</span>
+                    const sourceLink = href
+                        ? `<a href="${href}" style="margin-left:8px;color:#4f46e5;text-decoration:none;font-weight:600">查看来源</a>`
+                        : '';
+                    return `
+                        <div style="margin:0 0 10px">
+                            <span style="font-weight:600;color:#475467">${typeLabel}：</span>
+                            <span style="font-weight:600;color:#1f2937">${title}</span>
+                            ${sourceLink}
+                            ${summary ? `<div style="margin-top:2px;color:#667085">${summary}</div>` : ''}
                         </div>
-                        <div class="reference-title">${title}</div>
-                        <div class="reference-summary">${summary || '暂无摘要'}</div>
-                        <div class="reference-action">查看来源</div>
                     `;
-                    return href
-                        ? `<a class="reference-card" href="${href}">${content}</a>`
-                        : `<div class="reference-card is-static">${content}</div>`;
                 }).join('')}
             </div>
         `;
