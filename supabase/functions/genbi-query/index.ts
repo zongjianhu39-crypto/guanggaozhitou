@@ -1,7 +1,7 @@
 import { getGenbiSemanticConfig } from '../_shared/genbi-semantic.ts';
 import { SB_SERVICE_ROLE_KEY, SB_URL } from '../_shared/supabase-client.ts';
 import { detectDateRange } from '../_shared/genbi-time.ts';
-import { detectIntent, type GenbiIntent } from '../_shared/genbi-intent.ts';
+import { detectIntentByAI, type GenbiIntent } from '../_shared/genbi-intent.ts';
 import { buildGenbiRagContext } from '../_shared/genbi-rag.ts';
 import { dispatchGenbiIntent } from '../genbi-rules/registry.ts';
 import { authenticateEdgeRequest } from '../_shared/request-auth.ts';
@@ -137,10 +137,10 @@ async function buildSystemPromptFromTemplates(): Promise<string> {
 
 async function handleIntent(question: string) {
   const semantic = await getGenbiSemanticConfig();
-  const intent: GenbiIntent = detectIntent(question);
+  const { intent, source: intentSource } = await detectIntentByAI(question);
   const range = detectDateRange(question);
 
-  console.log(`[genbi-query] intent=${intent}, range=${JSON.stringify(range)}, question="${question.slice(0, 80)}"`);
+  console.log(`[genbi-query] intent=${intent}(via ${intentSource}), range=${JSON.stringify(range)}, question="${question.slice(0, 80)}"`);
 
   // 1. 规则引擎：获取结构化数据（表格、高亮等）
   const ruleResult = await dispatchGenbiIntent(intent, {
