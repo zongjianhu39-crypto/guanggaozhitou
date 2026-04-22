@@ -200,6 +200,105 @@
             color: #0f172a;
         }
 
+        .logic-section {
+            margin-bottom: 22px;
+        }
+
+        .logic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }
+
+        .logic-card {
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid #e6ebf5;
+            border-radius: 24px;
+            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.05);
+            padding: 22px 20px;
+        }
+
+        .logic-card h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+            color: #0f172a;
+        }
+
+        .logic-card p {
+            margin: 0 0 12px;
+            color: #667085;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .logic-card ul {
+            margin: 0;
+            padding-left: 18px;
+            color: #475467;
+        }
+
+        .logic-card li {
+            margin: 8px 0;
+            line-height: 1.7;
+        }
+
+        .logic-card strong {
+            color: #0f172a;
+        }
+
+        .logic-note {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: #f8faff;
+            border: 1px solid #e4e9f7;
+            color: #475467;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .logic-flow {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .logic-flow-step {
+            padding: 16px 14px;
+            border-radius: 20px;
+            border: 1px solid #e4e8f4;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+        }
+
+        .logic-flow-step span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: rgba(79, 70, 229, 0.10);
+            color: #4f46e5;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .logic-flow-step h4 {
+            margin: 0 0 8px;
+            font-size: 16px;
+            color: #0f172a;
+        }
+
+        .logic-flow-step p {
+            margin: 0;
+            color: #667085;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
         .cta-panel {
             display: flex;
             align-items: center;
@@ -259,6 +358,11 @@
             }
 
             .steps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .logic-grid,
+            .logic-flow {
                 grid-template-columns: 1fr;
             }
 
@@ -425,6 +529,112 @@
                         <li>把临时分析沉淀成团队可复用的洞察报告。</li>
                     </ul>
                 </aside>
+            </div>
+        </section>
+
+        <section class="workflow-panel logic-section">
+            <h2 class="section-title">更具体的数据流转逻辑</h2>
+            <p class="section-desc">
+                如果你想知道 GenBI 到底是怎么“理解问题、取到数据、交给 AI、再把结果展示出来”的，可以看下面这部分。这里保留业务可理解性，但会比上面的 6 步更接近真实运行链路。
+            </p>
+
+            <div class="logic-flow" aria-label="GenBI 数据流转">
+                <div class="logic-flow-step">
+                    <span>1</span>
+                    <h4>接收问题</h4>
+                    <p>页面只把用户输入的问题提交给 GenBI 分析服务，不直接查数据库。</p>
+                </div>
+                <div class="logic-flow-step">
+                    <span>2</span>
+                    <h4>识别意图</h4>
+                    <p>先判断你问的是哪类业务问题，再识别对应的时间范围。</p>
+                </div>
+                <div class="logic-flow-step">
+                    <span>3</span>
+                    <h4>结构化取数</h4>
+                    <p>根据识别出的意图，进入对应规则链路，提取真实业务数据。</p>
+                </div>
+                <div class="logic-flow-step">
+                    <span>4</span>
+                    <h4>AI 解释</h4>
+                    <p>把问题、结构化数据和受控规则一起交给 AI，生成自然语言分析。</p>
+                </div>
+                <div class="logic-flow-step">
+                    <span>5</span>
+                    <h4>结果展示</h4>
+                    <p>页面按正文、表格、参考来源、补充说明 4 类结果分区展示。</p>
+                </div>
+            </div>
+
+            <div class="logic-grid">
+                <article class="logic-card">
+                    <h3>1. 问题识别是怎么做的</h3>
+                    <p>GenBI 不是单纯靠关键词匹配，它会先做一轮意图识别，再做时间范围识别。</p>
+                    <ul>
+                        <li><strong>问题意图：</strong> 这里会用到 AI，判断你是在问人群预算、单品表现、亏损原因、日报、周报还是月报。</li>
+                        <li><strong>时间范围：</strong> 这里主要是规则识别，把“昨天、上周、3 月、上个月”这类表达解析成具体日期范围。</li>
+                        <li><strong>异常分支：</strong> 如果识别结果不支持当前问题类型，系统会直接返回“不支持/信息不足”，不会继续强行生成分析。</li>
+                    </ul>
+                    <div class="logic-note">也就是说，问题分类会用 AI，时间范围识别更偏规则解析，两者是组合在一起的。</div>
+                </article>
+
+                <article class="logic-card">
+                    <h3>2. 数据是怎么提取出来的</h3>
+                    <p>识别出问题类型后，系统不会把原始问题直接丢给 AI 自己猜数据，而是先进入对应的业务规则链路。</p>
+                    <ul>
+                        <li><strong>按意图分发：</strong> 不同问题会进入不同的数据处理逻辑，比如人群预算、周报、商品表现各自对应不同规则模块。</li>
+                        <li><strong>真实数据优先：</strong> 先从真实业务数据里提取结构化结果，比如人群、商品、花费、订单成本、成交等。</li>
+                        <li><strong>结构化输出：</strong> 这一层通常会先得到标题、摘要、表格、高亮信息、补充说明、分析范围等内容。</li>
+                    </ul>
+                    <div class="logic-note">所以 AI 分析并不是直接查库，它看到的是规则链路已经整理好的“结构化事实”。</div>
+                </article>
+
+                <article class="logic-card">
+                    <h3>3. 发给 AI 的到底是什么</h3>
+                    <p>发给 AI 的不是只有一句用户问题，而是一组已经组织好的上下文。</p>
+                    <ul>
+                        <li><strong>用户原始问题：</strong> 让 AI 知道你真正要解决什么经营问题。</li>
+                        <li><strong>规则引擎结果：</strong> 包括当前系统已提炼出的摘要、表格数据、时间范围、关键发现、补充说明。</li>
+                        <li><strong>受控 Prompt：</strong> 还会叠加业务规则、长期记忆、技能指令、运营背景等已发布模板。</li>
+                        <li><strong>参考知识：</strong> 还会额外检索业务规则文档、Prompt 模板、历史报告、经验库，作为参考来源。</li>
+                    </ul>
+                    <div class="logic-note">换句话说，AI 接收到的是“问题 + 真实数据 + 规则模板 + 受控知识”，而不是裸问答。</div>
+                </article>
+
+                <article class="logic-card">
+                    <h3>4. 展示结果会以什么形式出现</h3>
+                    <p>GenBI 页面不会把后端原样文本直接糊出来，而是按阅读场景拆成几块。</p>
+                    <ul>
+                        <li><strong>分析正文：</strong> 用渲染后的可读格式展示标题、段落、列表、小标题。</li>
+                        <li><strong>结果表格：</strong> 规则引擎输出的结构化表会单独渲染成表格区域。</li>
+                        <li><strong>参考来源：</strong> 用轻量文本样式列出来源类型、标题和查看入口，只用于增强可信度。</li>
+                        <li><strong>补充说明：</strong> 展示口径、局限和本次检索到的受控知识说明。</li>
+                    </ul>
+                    <div class="logic-note">所以你在页面里看到的是“整理后的结果”，不是后端返回的原始 JSON。</div>
+                </article>
+
+                <article class="logic-card">
+                    <h3>5. 页面会过滤掉什么内容</h3>
+                    <p>为了让结果更干净，系统会在返回前和展示前各做一次清理。</p>
+                    <ul>
+                        <li><strong>隐藏思考痕迹：</strong> 会过滤 `<think>`、`thinking` 这类中间推理片段。</li>
+                        <li><strong>移除冗余开场：</strong> 会清掉“好的，我来分析”“根据提供的数据”这类低价值前缀。</li>
+                        <li><strong>压缩空行：</strong> 避免正文出现过多空段落，保持阅读连续性。</li>
+                        <li><strong>保存时再清洗：</strong> 如果保存到洞察中心，还会再做一次纯文本摘要提取和结构化落库。</li>
+                    </ul>
+                    <div class="logic-note">这就是为什么 GenBI 页面看到的正文，会比模型原始输出更整洁、更像正式报告。</div>
+                </article>
+
+                <article class="logic-card">
+                    <h3>6. 保存到洞察中心后发生了什么</h3>
+                    <p>点击“保存到洞察中心”后，当前分析结果会被重新整理成正式报告，而不是简单截图保存。</p>
+                    <ul>
+                        <li><strong>保存内容：</strong> 标题、时间范围、分析正文、表格、参考来源、补充说明都会一起落库。</li>
+                        <li><strong>留痕与发布分开：</strong> 一份写入运行留痕，一份写入洞察中心正式报告。</li>
+                        <li><strong>后续可复用：</strong> 保存后的历史报告还可以在后续 GenBI 分析里作为受控参考来源。</li>
+                    </ul>
+                    <div class="logic-note">所以“保存”不是前端本地收藏，而是正式进入洞察中心的报告链路。</div>
+                </article>
             </div>
         </section>
 
