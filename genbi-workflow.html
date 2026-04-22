@@ -273,7 +273,7 @@
 
         .mapping-table {
             width: 100%;
-            min-width: 920px;
+            min-width: 1180px;
             border-collapse: collapse;
         }
 
@@ -741,6 +741,7 @@
                             <th>意图</th>
                             <th>规则模块</th>
                             <th>取数类型</th>
+                            <th>主要使用指标</th>
                             <th>优先读取的汇总表</th>
                             <th>汇总表缺失时回退的原始表</th>
                         </tr>
@@ -750,6 +751,7 @@
                             <td><strong>crowd_budget</strong><br>人群预算建议</td>
                             <td><strong>crowd.ts</strong></td>
                             <td><strong>crowd</strong></td>
+                            <td>花费、花费占比、订单成本、成交金额、成交笔数</td>
                             <td><code>dashboard_crowd_daily_summary</code></td>
                             <td><code>super_live_2025</code> / <code>super_live_YYYYMM</code></td>
                         </tr>
@@ -757,6 +759,7 @@
                             <td><strong>crowd_mix</strong><br>老客新客结构</td>
                             <td><strong>crowd.ts</strong></td>
                             <td><strong>crowd</strong></td>
+                            <td>老客/新客/兴趣新客花费占比、订单成本</td>
                             <td><code>dashboard_crowd_daily_summary</code></td>
                             <td><code>super_live_2025</code> / <code>super_live_YYYYMM</code></td>
                         </tr>
@@ -764,6 +767,7 @@
                             <td><strong>daily_drop_reason</strong><br>昨日花费波动归因</td>
                             <td><strong>crowd.ts</strong></td>
                             <td><strong>crowd</strong></td>
+                            <td>昨日花费、前一日花费、变化额</td>
                             <td><code>dashboard_crowd_daily_summary</code></td>
                             <td><code>super_live_2025</code> / <code>super_live_YYYYMM</code></td>
                         </tr>
@@ -771,6 +775,7 @@
                             <td><strong>weak_products</strong><br>高花费低回报商品</td>
                             <td><strong>product.ts</strong></td>
                             <td><strong>single</strong></td>
+                            <td>花费、商品直接成交金额、商品直接成交笔数、商品订单成本、商品直接ROI</td>
                             <td><code>dashboard_single_product_daily_summary</code></td>
                             <td><code>single_product_ad_YYYY</code></td>
                         </tr>
@@ -778,6 +783,7 @@
                             <td><strong>product_potential</strong><br>冲销售额商品识别</td>
                             <td><strong>product.ts</strong></td>
                             <td><strong>single</strong></td>
+                            <td>花费、商品直接成交金额、商品直接ROI、商品订单成本</td>
                             <td><code>dashboard_single_product_daily_summary</code></td>
                             <td><code>single_product_ad_YYYY</code></td>
                         </tr>
@@ -785,6 +791,7 @@
                             <td><strong>product_sales</strong><br>单商品销售查询</td>
                             <td><strong>product.ts</strong></td>
                             <td><strong>single</strong></td>
+                            <td>花费、商品直接成交金额、商品直接成交笔数、商品直接ROI、商品订单成本</td>
                             <td><code>dashboard_single_product_daily_summary</code></td>
                             <td><code>single_product_ad_YYYY</code></td>
                         </tr>
@@ -792,6 +799,7 @@
                             <td><strong>weekly_report</strong><br>周报生成</td>
                             <td><strong>report.ts</strong></td>
                             <td><strong>ads + crowd + single</strong></td>
+                            <td>总花费、盈亏平衡ROI、花费环比、ROI 环比、重点人群花费与订单成本、重点商品成交金额与直接ROI</td>
                             <td>
                                 <code>dashboard_ads_daily_summary</code><br>
                                 <code>dashboard_crowd_daily_summary</code><br>
@@ -808,6 +816,7 @@
                             <td><strong>monthly_report</strong><br>月报生成</td>
                             <td><strong>report.ts</strong></td>
                             <td><strong>ads + crowd + single</strong></td>
+                            <td>总花费、盈亏平衡ROI、花费环比、ROI 环比、重点人群花费与订单成本、重点商品成交金额与直接ROI</td>
                             <td>
                                 <code>dashboard_ads_daily_summary</code><br>
                                 <code>dashboard_crowd_daily_summary</code><br>
@@ -824,6 +833,7 @@
                             <td><strong>loss_reason</strong><br>亏损原因分析</td>
                             <td><strong>report.ts</strong></td>
                             <td><strong>ads + crowd + single</strong></td>
+                            <td>总花费、盈亏平衡ROI、总成交金额、高订单成本人群、高订单成本商品</td>
                             <td>
                                 <code>dashboard_ads_daily_summary</code><br>
                                 <code>dashboard_crowd_daily_summary</code><br>
@@ -840,6 +850,7 @@
                             <td><strong>budget_plan</strong><br>预算分配建议</td>
                             <td><strong>registry.ts</strong></td>
                             <td><strong>未接入</strong></td>
+                            <td>当前未定义正式指标口径</td>
                             <td>当前无</td>
                             <td>当前无，仍是 unsupported</td>
                         </tr>
