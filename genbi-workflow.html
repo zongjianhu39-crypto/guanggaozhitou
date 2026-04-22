@@ -332,6 +332,60 @@
             font-size: 14px;
         }
 
+        .decision-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .decision-card {
+            padding: 22px 20px;
+            border-radius: 24px;
+            border: 1px solid #e5e9f5;
+            background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+            box-shadow: 0 16px 38px rgba(15, 23, 42, 0.05);
+        }
+
+        .decision-card h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+            color: #0f172a;
+        }
+
+        .decision-card p {
+            margin: 0 0 12px;
+            color: #667085;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .decision-card ul,
+        .decision-card ol {
+            margin: 0;
+            padding-left: 18px;
+            color: #475467;
+        }
+
+        .decision-card li {
+            margin: 8px 0;
+            line-height: 1.75;
+        }
+
+        .decision-card strong {
+            color: #0f172a;
+        }
+
+        .decision-highlight {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: #f7f8ff;
+            border: 1px solid #e3e7fa;
+            color: #344054;
+            font-size: 14px;
+            line-height: 1.75;
+        }
+
         .logic-flow {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -437,7 +491,8 @@
 
             .logic-grid,
             .logic-flow,
-            .mapping-summary {
+            .mapping-summary,
+            .decision-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -860,6 +915,39 @@
 
             <div class="logic-note">
                 当前 GenBI 的规则模块并不是各自维护独立 SQL，而是统一复用 dashboard 的取数层。也就是说，规则模块真正决定的是“需要什么类型的数据”，底层再由统一的数据层决定查汇总表还是回退到原始表。
+            </div>
+
+            <div class="decision-grid">
+                <article class="decision-card">
+                    <h3>为什么要分成 3 个模块</h3>
+                    <p>不是因为页面长得不一样，也不是因为意图名称不一样，而是因为当前系统里已经存在 3 种不同的数据处理范式。</p>
+                    <ul>
+                        <li><strong>人群模块：</strong> 核心分析对象是人群，主要依赖 crowd 数据，常看花费、花费占比、订单成本、人群结构。</li>
+                        <li><strong>商品模块：</strong> 核心分析对象是商品，主要依赖 single 数据，常看商品直接ROI、商品直接成交金额、商品订单成本。</li>
+                        <li><strong>报告模块：</strong> 核心分析对象是整体经营结果，通常同时依赖 ads、crowd、single，常看总花费、盈亏平衡ROI、环比和重点对象。</li>
+                    </ul>
+                    <div class="decision-highlight">
+                        也就是说，三个模块代表的不是三组意图名称，而是三条不同的处理路径：<strong>人群分析路径、商品分析路径、综合报告路径</strong>。
+                    </div>
+                </article>
+
+                <article class="decision-card">
+                    <h3>以后新增意图时怎么判断</h3>
+                    <p>判断复用现有模块还是新建模块，不看名字像不像，而看它是不是还落在现有处理范式里。</p>
+                    <ol>
+                        <li><strong>分析对象</strong> 还是人群、商品、综合经营之一吗？</li>
+                        <li><strong>依赖数据</strong> 还是 crowd、single、ads+crowd+single 之一吗？</li>
+                        <li><strong>核心指标</strong> 还是这一类问题常用的那套指标吗？</li>
+                        <li><strong>输出结构</strong> 还是这一类问题常见的表格和结论结构吗？</li>
+                    </ol>
+                    <ul>
+                        <li>如果这 4 件事基本没变，就优先<strong>复用现有模块</strong>。</li>
+                        <li>如果其中有 2 到 3 件已经明显变了，就应该考虑<strong>新建模块</strong>。</li>
+                    </ul>
+                    <div class="decision-highlight">
+                        一句话总结：<strong>现在分成 crowd.ts、product.ts、report.ts，不是因为意图多，而是因为系统里已经存在三种不同的数据处理范式。</strong>
+                    </div>
+                </article>
             </div>
         </section>
 
