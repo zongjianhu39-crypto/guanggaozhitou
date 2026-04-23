@@ -534,6 +534,13 @@
     return '<span class="activity-inherited-tag ' + meta.className + '">' + utils.escapeHtml(meta.label) + '</span> ' + utils.escapeHtml(d.activity || '');
   }
 
+  function rhythmLabelText(seg) {
+    if (seg.key === 'none') return '-';
+    var d = seg.days[0];
+    var meta = utils.getActivityTypeMeta(d.activity_type);
+    return meta.label + ' ' + (d.activity || '');
+  }
+
   function sDiv(n, d) {
     var num = utils.toNumber(n);
     var den = utils.toNumber(d);
@@ -697,6 +704,171 @@
       judgment: '-',
       judgmentClass: 'rhythm-j rhythm-summary-total-blank',
     }) + '</tr>';
+  }
+
+  function buildRhythmExportRow(data, range, label, judgment) {
+    return [
+      range,
+      label,
+      data.days,
+      data.wx,
+      data.ag,
+      data.tp,
+      data.dap,
+      data.pp != null ? utils.formatPercent(data.pp) : '--',
+      data.ac,
+      data.cr != null ? utils.formatPercent(data.cr) : '--',
+      data.daa,
+      data.rwta,
+      data.rwtaShare != null ? utils.formatPercent(data.rwtaShare) : '--',
+      data.ra,
+      data.aa,
+      data.oc,
+      data.doc,
+      data.pc,
+      data.cc,
+      data.rv,
+      data.ro,
+      data.rdo,
+      data.rc,
+      data.rp,
+      data.rt,
+      data.rb,
+      data.asr != null ? utils.formatPercent(data.asr) : '--',
+      data.diff,
+      data.growth != null ? utils.formatPercent(data.growth) : '--',
+      judgment || '-',
+    ];
+  }
+
+  function getRhythmSummaryExportData() {
+    var days = getEffectiveDays();
+    var headers = [
+      '时间范围',
+      '活动节奏',
+      '天数',
+      '万相台计划',
+      '有客代投计划',
+      '总计划金额',
+      '日均计划金额',
+      '计划占比',
+      '实际花费',
+      '花费完成率',
+      '日均实际花费',
+      '25年含代投总花费',
+      '25年含代投花费占比',
+      '25年花费',
+      '25年代投花费',
+      '25年订单成本',
+      '25年直接成交订单成本',
+      '25年预售订单成本',
+      '25年加购成本',
+      '25年观看次数',
+      '25年总成交笔数',
+      '25年直接成交笔数',
+      '25年总购物车数',
+      '25年预售成交笔数',
+      '25年淘宝成交笔数',
+      '25年成交人数',
+      '25年广告成交占比',
+      '差额',
+      '增幅',
+      '节奏判断',
+    ];
+    if (!days.length) return { headers: headers, rows: [] };
+    var segs = buildRhythmSegments(days);
+    var monthTotal = utils.sum(days.map(function(d) { return d.total_plan_amount; }));
+    var referenceTotalWithAgent = summarizeRhythmDays(days, monthTotal).rwta;
+    var rows = segs.map(function(seg) {
+      var ds = seg.days;
+      var d0 = ds[0].date;
+      var d1 = ds[ds.length - 1].date;
+      var range = d0 === d1 ? d0 : d0 + ' ~ ' + d1;
+      var data = summarizeRhythmDays(ds, monthTotal);
+      data.rwtaShare = sDiv(data.rwta, referenceTotalWithAgent);
+      var judgment = rhythmJudgment(data.growth);
+      return buildRhythmExportRow(data, range, rhythmLabelText(seg), judgment);
+    });
+    var totalData = summarizeRhythmDays(days, monthTotal);
+    totalData.rwtaShare = sDiv(totalData.rwta, referenceTotalWithAgent);
+    rows.push(buildRhythmExportRow(totalData, '汇总', '-', '-'));
+    return { headers: headers, rows: rows };
+  }
+
+  function getDouble11ReferenceExportSections() {
+    if (!shouldShowDouble11Reference()) return [];
+    return [
+      {
+        title: '25年双11投放节奏参考-摘要',
+        headers: ['指标', '数值', '说明'],
+        rows: DOUBLE11_REFERENCE_SUMMARY.map(function(item) {
+          return [item.label, item.value, item.helper];
+        }),
+      },
+      {
+        title: '25年双11投放节奏参考-重点提示',
+        headers: ['内容'],
+        rows: [
+          ['第一波预售为主投峰值：6 天花费 730.9 万，占全周期 45.4%。'],
+          ['有客代投集中在预热和两波预售：第一波预售 272.0 万，第二波预售 255.0 万。'],
+          ['618 对照时重点看预热蓄水效率、预售投放峰值和尾款承接成本。'],
+        ],
+      },
+      {
+        title: '25年双11投放节奏参考-阶段明细',
+        headers: [
+          '双11阶段',
+          '日期',
+          '天数',
+          '广告花费',
+          '日均花费',
+          '花费占比',
+          '有客花费',
+          '万相台花费',
+          '观看次数',
+          '成交笔数',
+          '直接成交笔数',
+          '购物车',
+          '预售成交',
+          '观看成本',
+          '订单成本',
+          '直接订单成交成本',
+          '加购成本',
+          '预售订单成本',
+          '观看转化率',
+          '参考解读',
+        ],
+        rows: DOUBLE11_REFERENCE_PHASES.map(function(item) {
+          return [
+            item.phase,
+            item.dateRange,
+            item.days,
+            item.totalSpend,
+            item.dailySpend,
+            item.spendShare,
+            item.agentSpend,
+            item.wanxiangSpend,
+            item.views,
+            item.orders,
+            item.directOrders,
+            item.carts,
+            item.presaleOrders,
+            item.viewCost,
+            item.orderCost,
+            item.directOrderCost,
+            item.cartCost,
+            item.presaleOrderCost,
+            item.viewConversion,
+            item.focus,
+          ];
+        }),
+      },
+      {
+        title: '25年双11投放节奏参考-备注',
+        headers: ['内容'],
+        rows: [['数据来自“25年双11数据参考.xlsx”。日期列中部分单元格被 Excel 自动转为日期格式，已按阶段和天数还原为 10/1-10/14、11/1-11/6、11/7-11/14，需业务确认时可再校对原表。']],
+      },
+    ];
   }
 
   function renderRhythmSummary() {
@@ -1152,5 +1324,16 @@
     renderStatus();
   }
 
-  window.PlanDashboardRender = { renderPage, renderDraftUpdate, renderDrawer, renderCreateModal, renderStatus, renderMonthNote, getEffectiveDay, getEffectiveDays };
+  window.PlanDashboardRender = {
+    renderPage,
+    renderDraftUpdate,
+    renderDrawer,
+    renderCreateModal,
+    renderStatus,
+    renderMonthNote,
+    getEffectiveDay,
+    getEffectiveDays,
+    getRhythmSummaryExportData,
+    getDouble11ReferenceExportSections,
+  };
 })(window);

@@ -39,7 +39,22 @@
     const days = typeof render.getEffectiveDays === 'function'
       ? render.getEffectiveDays()
       : (stateModule.state.summary.days || []);
-    if (!days.length) return;
+    const range = stateModule.state.range;
+    const activities = [...(stateModule.state.summary.activities || [])]
+      .sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''));
+    const csvRows = [];
+
+    function addSection(title, headers, rows) {
+      csvRows.push([title]);
+      if (headers && headers.length) csvRows.push(headers);
+      if (rows && rows.length) {
+        rows.forEach((row) => csvRows.push(row));
+      } else {
+        csvRows.push(['暂无数据']);
+      }
+      csvRows.push([]);
+    }
+
     function csvSafeDivide(numerator, denominator, decimals) {
       const n = utils.toNumber(numerator);
       const d = utils.toNumber(denominator);
@@ -57,6 +72,60 @@
     function csvOptionalAmount(value) {
       return value == null ? '--' : value;
     }
+
+    addSection('页面信息', ['字段', '内容'], [
+      ['导出页面', '计划拆解'],
+      ['日期范围', range.start && range.end ? `${range.start} ~ ${range.end}` : '当前暂无查询范围'],
+      ['数据明细行数', days.length],
+      ['活动数量', activities.length],
+    ]);
+
+    addSection('关键信息说明', ['字段', '内容'], [
+      ['月份', stateModule.state.monthNote.month ? `${stateModule.state.monthNote.month}月` : ''],
+      ['说明内容', stateModule.state.monthNote.content || '暂无说明内容'],
+    ]);
+
+    addSection('活动时间轴', [
+      '日期范围',
+      '活动名称',
+      '平台节奏',
+      '重要场次',
+      '运营动作',
+      '活动说明',
+    ], activities.map((activity) => {
+      const meta = utils.getActivityTypeMeta(activity.activity_type);
+      const startLabel = utils.formatDateTimeLabel(activity.start_date, activity.start_time);
+      const endLabel = utils.formatDateTimeLabel(activity.end_date, activity.end_time);
+      return [
+        startLabel === endLabel ? startLabel : `${startLabel} – ${endLabel}`,
+        activity.activity_name || '',
+        meta.label,
+        activity.key_sessions || '',
+        activity.operations_action || '',
+        activity.description || '',
+      ];
+    }));
+
+    const double11Sections = typeof render.getDouble11ReferenceExportSections === 'function'
+      ? render.getDouble11ReferenceExportSections()
+      : [];
+    double11Sections.forEach((section) => {
+      addSection(section.title, section.headers, section.rows);
+    });
+
+    const rhythmSummary = typeof render.getRhythmSummaryExportData === 'function'
+      ? render.getRhythmSummaryExportData()
+      : { headers: [], rows: [] };
+    addSection('节奏汇总', rhythmSummary.headers, rhythmSummary.rows);
+
+    const totalPlan = utils.sum(days.map((day) => day.total_plan_amount));
+    const totalActual = utils.sum(days.map((day) => utils.toNumber(day.actual_cost)));
+    addSection('数据明细表-汇总', ['指标', '数值'], [
+      ['计划合计', totalPlan],
+      ['实际合计', totalActual],
+      ['完成率', totalPlan > 0 ? utils.formatPercent(totalActual / totalPlan) : '--'],
+    ]);
+
     const headers = [
       '日期',
       '万相台计划',
@@ -109,15 +178,17 @@
         day.reference_financial_brand_fee ?? 0,
       ];
     });
+
+    addSection('数据明细表', headers, rows);
+
     const bom = '\uFEFF';
-    const csv = bom + [headers, ...rows]
+    const csv = bom + csvRows
       .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
       .join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const range = stateModule.state.range;
     a.download = `计划拆解_${range.start}_${range.end}.csv`;
     a.click();
     URL.revokeObjectURL(url);
