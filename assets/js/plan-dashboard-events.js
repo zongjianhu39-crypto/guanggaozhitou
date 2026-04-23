@@ -243,6 +243,21 @@
         return;
       }
 
+      if (target.dataset.action === 'toggle-plan-section') {
+        const section = target.dataset.section || '';
+        const stateKeyBySection = {
+          timeline: 'timelineExpanded',
+          rhythmSummary: 'rhythmSummaryExpanded',
+          monthNote: 'monthNoteExpanded',
+        };
+        const stateKey = stateKeyBySection[section];
+        if (stateKey) {
+          stateModule.state.ui[stateKey] = stateModule.state.ui[stateKey] === false;
+          render.renderPage();
+        }
+        return;
+      }
+
       if (target.id === 'drawer-close-btn') {
         stateModule.state.ui.activeDrawerActivityId = '';
         render.renderDrawer();

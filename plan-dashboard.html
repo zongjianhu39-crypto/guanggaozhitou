@@ -8,7 +8,7 @@
     <meta name="description" content="按日期拆解投放计划、活动节奏与实际执行数据">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="style.css?v=20260412a">
-    <link rel="stylesheet" href="assets/css/plan-dashboard.css?v=20260423b">
+    <link rel="stylesheet" href="assets/css/plan-dashboard.css?v=20260423c">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body class="plan-dashboard-page">
@@ -63,6 +63,7 @@
                     <h2>关键信息说明</h2>
                     <p>记录当月投放策略、节奏调整说明等关键信息，切换月份时自动加载对应内容。</p>
                 </div>
+                <button id="month-note-section-toggle" class="button button-secondary plan-section-toggle" type="button" data-action="toggle-plan-section" data-section="monthNote" aria-expanded="true" aria-controls="month-note-container">收起说明</button>
             </div>
             <div id="month-note-container"></div>
         </section>
@@ -73,6 +74,7 @@
                     <h2>活动时间轴</h2>
                     <p>点击活动列即可编辑日期、平台节奏、重要场次和运营动作；单天活动节奏也可在表格里快速覆盖。</p>
                 </div>
+                <button id="timeline-section-toggle" class="button button-secondary plan-section-toggle" type="button" data-action="toggle-plan-section" data-section="timeline" aria-expanded="true" aria-controls="timeline-container">收起时间轴</button>
             </div>
             <div id="timeline-container"></div>
         </section>
@@ -94,6 +96,7 @@
                     <h2>节奏汇总</h2>
                     <p>按活动节奏自动合并连续日期，汇总各节奏段的关键指标与同比变化。</p>
                 </div>
+                <button id="rhythm-summary-section-toggle" class="button button-secondary plan-section-toggle" type="button" data-action="toggle-plan-section" data-section="rhythmSummary" aria-expanded="true" aria-controls="rhythm-summary-container">收起汇总</button>
             </div>
             <div id="rhythm-summary-container"></div>
         </section>
@@ -115,10 +118,10 @@
     <script src="assets/js/config.js"></script>
     <script src="script.js?v=20260403"></script>
     <script src="assets/js/plan-dashboard-utils.js?v=20260414b"></script>
-    <script src="assets/js/plan-dashboard-state.js?v=20260423a"></script>
+    <script src="assets/js/plan-dashboard-state.js?v=20260423b"></script>
     <script src="assets/js/plan-dashboard-api.js?v=20260412a"></script>
-    <script src="assets/js/plan-dashboard-render.js?v=20260423e"></script>
-    <script src="assets/js/plan-dashboard-events.js?v=20260423a"></script>
+    <script src="assets/js/plan-dashboard-render.js?v=20260423f"></script>
+    <script src="assets/js/plan-dashboard-events.js?v=20260423b"></script>
     <script src="assets/js/plan-dashboard-page.js?v=20260417a"></script>
 </body>
 </html>

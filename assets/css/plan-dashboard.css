@@ -182,6 +182,41 @@ body.plan-dashboard-page {
   line-height: 1.7;
   font-size: 13px;
 }
+.plan-section-toggle {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+}
+.plan-section-collapsed {
+  padding-bottom: 16px;
+}
+.plan-section-collapsed .section-head {
+  margin-bottom: 10px;
+}
+.plan-section-collapsed-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.plan-section-inline-toggle {
+  border: 0;
+  background: transparent;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.plan-section-inline-toggle:hover {
+  color: #3730a3;
+}
 
 /* --- Timeline table --- */
 .timeline-empty {
@@ -830,7 +865,9 @@ body.plan-dashboard-page {
     flex-direction: column;
     align-items: stretch;
   }
+  .plan-section-toggle,
   .double11-ref-toggle { width: 100%; }
+  .plan-section-collapsed-note,
   .double11-ref-collapsed-note {
     align-items: flex-start;
     flex-direction: column;

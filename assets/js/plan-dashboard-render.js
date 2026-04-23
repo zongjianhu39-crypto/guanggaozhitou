@@ -2,6 +2,35 @@
   const utils = window.PlanDashboardUtils;
   const stateModule = window.PlanDashboardState;
   const DOUBLE11_REFERENCE_MONTHS = [5, 6];
+  const COLLAPSIBLE_SECTIONS = {
+    timeline: {
+      stateKey: 'timelineExpanded',
+      containerId: 'timeline-container',
+      toggleId: 'timeline-section-toggle',
+      collapsedLabel: '展开时间轴',
+      expandedLabel: '收起时间轴',
+      collapsedText: '已收起：活动日期、平台节奏、重要场次和运营动作。',
+      inlineLabel: '展开查看时间轴',
+    },
+    rhythmSummary: {
+      stateKey: 'rhythmSummaryExpanded',
+      containerId: 'rhythm-summary-container',
+      toggleId: 'rhythm-summary-section-toggle',
+      collapsedLabel: '展开汇总',
+      expandedLabel: '收起汇总',
+      collapsedText: '已收起：按活动节奏合并后的计划、实际花费、25年参考和增幅指标。',
+      inlineLabel: '展开查看汇总',
+    },
+    monthNote: {
+      stateKey: 'monthNoteExpanded',
+      containerId: 'month-note-container',
+      toggleId: 'month-note-section-toggle',
+      collapsedLabel: '展开说明',
+      expandedLabel: '收起说明',
+      collapsedText: '已收起：当月投放策略、节奏调整说明等关键信息。',
+      inlineLabel: '展开查看说明',
+    },
+  };
   const DOUBLE11_REFERENCE_SUMMARY = [
     { label: '总投放周期', value: '10/1-11/30', helper: '61 天完整双11周期' },
     { label: '广告花费', value: '1,610.6万', helper: '有客代投 + 万相台' },
@@ -166,9 +195,35 @@
     },
   ];
 
+  function syncCollapsibleSection(sectionKey) {
+    const meta = COLLAPSIBLE_SECTIONS[sectionKey];
+    if (!meta) return true;
+    const el = document.getElementById(meta.containerId);
+    const toggle = document.getElementById(meta.toggleId);
+    if (!el) return true;
+    const isExpanded = stateModule.state.ui[meta.stateKey] !== false;
+    const section = el.closest('.plan-section');
+    if (section) {
+      section.classList.toggle('plan-section-collapsed', !isExpanded);
+    }
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', String(isExpanded));
+      toggle.textContent = isExpanded ? meta.expandedLabel : meta.collapsedLabel;
+    }
+    if (!isExpanded) {
+      el.innerHTML = `
+        <div class="plan-section-collapsed-note">
+          <span>${utils.escapeHtml(meta.collapsedText)}</span>
+          <button type="button" class="plan-section-inline-toggle" data-action="toggle-plan-section" data-section="${utils.escapeHtml(sectionKey)}">${utils.escapeHtml(meta.inlineLabel)}</button>
+        </div>`;
+    }
+    return isExpanded;
+  }
+
   function renderTimeline() {
     const el = document.getElementById('timeline-container');
     if (!el) return;
+    if (!syncCollapsibleSection('timeline')) return;
     const activities = stateModule.state.summary.activities || [];
     if (!activities.length) {
       el.innerHTML = '<div class="timeline-empty">当前日期范围内暂无活动节奏，点击"添加活动"即可创建。</div>';
@@ -235,6 +290,7 @@
   function renderTimelineSkeleton() {
     const el = document.getElementById('timeline-container');
     if (!el) return;
+    if (!syncCollapsibleSection('timeline')) return;
     const skeletonCols = Array(3).fill('').map(() => '<td class="tl-cell"><div class="skeleton-line" style="width:80%"></div></td>').join('');
     el.innerHTML = `
       <div class="tl-table-wrapper">
@@ -646,6 +702,7 @@
   function renderRhythmSummary() {
     var el = document.getElementById('rhythm-summary-container');
     if (!el) return;
+    if (!syncCollapsibleSection('rhythmSummary')) return;
     var days = getEffectiveDays();
     if (!days.length) {
       el.innerHTML = '<div class="rhythm-summary-empty">\u5f53\u524d\u65e5\u671f\u8303\u56f4\u5185\u6682\u65e0\u6570\u636e\uff0c\u65e0\u6cd5\u751f\u6210\u8282\u594f\u6c47\u603b\u3002</div>';
@@ -703,6 +760,7 @@
   function renderRhythmSummarySkeleton() {
     var el = document.getElementById('rhythm-summary-container');
     if (!el) return;
+    if (!syncCollapsibleSection('rhythmSummary')) return;
     var skCols = Array(30).fill('').map(function() { return '<td><div class="skeleton-line" style="width:80%"></div></td>'; }).join('');
     el.innerHTML =
       '<div class="table-shell"><div class="table-scroll">'
@@ -727,6 +785,7 @@
   function renderMonthNote() {
     var el = document.getElementById('month-note-container');
     if (!el) return;
+    if (!syncCollapsibleSection('monthNote')) return;
     var ns = stateModule.state.monthNote;
     var badge = ns.month ? '<span class="month-note-badge">' + utils.escapeHtml(ns.month + '\u6708') + '</span>' : '';
 
@@ -766,6 +825,7 @@
   function renderMonthNoteSkeleton() {
     var el = document.getElementById('month-note-container');
     if (!el) return;
+    if (!syncCollapsibleSection('monthNote')) return;
     el.innerHTML = '<div class="month-note-body"><div class="skeleton-line lg" style="width:60%"></div><div class="skeleton-line" style="width:40%;margin-top:8px"></div></div>';
   }
 

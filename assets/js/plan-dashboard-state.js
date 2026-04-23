@@ -28,6 +28,9 @@
       selectedMonths: [],
       monthSelectionAnchor: null,
       double11ReferenceExpanded: false,
+      timelineExpanded: true,
+      rhythmSummaryExpanded: true,
+      monthNoteExpanded: true,
     },
   };
 
