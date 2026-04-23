@@ -14,6 +14,168 @@
     render.renderPage();
   }
 
+  function normalizeImportHeader(value) {
+    return String(value ?? '')
+      .replace(/^\uFEFF/, '')
+      .replace(/\s+/g, '')
+      .replace(/[()（）_\\-]/g, '')
+      .toLowerCase();
+  }
+
+  function parseDelimitedText(text) {
+    const cleanText = String(text || '').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const firstLine = cleanText.split('\n').find((line) => line.trim()) || '';
+    const delimiterCandidates = ['\t', ',', ';'];
+    const delimiter = delimiterCandidates
+      .map((item) => ({ item, count: firstLine.split(item).length - 1 }))
+      .sort((a, b) => b.count - a.count)[0].item;
+    const rows = [];
+    let row = [];
+    let cell = '';
+    let inQuotes = false;
+    for (let i = 0; i < cleanText.length; i += 1) {
+      const ch = cleanText[i];
+      const next = cleanText[i + 1];
+      if (ch === '"') {
+        if (inQuotes && next === '"') {
+          cell += '"';
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === delimiter && !inQuotes) {
+        row.push(cell);
+        cell = '';
+      } else if (ch === '\n' && !inQuotes) {
+        row.push(cell);
+        if (row.some((item) => String(item).trim() !== '')) rows.push(row);
+        row = [];
+        cell = '';
+      } else {
+        cell += ch;
+      }
+    }
+    row.push(cell);
+    if (row.some((item) => String(item).trim() !== '')) rows.push(row);
+    return rows;
+  }
+
+  function findImportColumn(headers, candidates) {
+    const normalized = headers.map(normalizeImportHeader);
+    for (const candidate of candidates) {
+      const target = normalizeImportHeader(candidate);
+      const exactIndex = normalized.findIndex((item) => item === target);
+      if (exactIndex >= 0) return exactIndex;
+    }
+    for (let i = 0; i < normalized.length; i += 1) {
+      if (candidates.some((candidate) => normalized[i].includes(normalizeImportHeader(candidate)))) return i;
+    }
+    return -1;
+  }
+
+  function inferImportYear() {
+    const start = String(stateModule.state.range.start || '');
+    const match = start.match(/^(\d{4})-/);
+    return match ? Number(match[1]) : new Date().getFullYear();
+  }
+
+  function normalizeImportDate(value) {
+    if (value == null || value === '') return '';
+    const raw = String(value).trim().replace(/^\uFEFF/, '');
+    const serial = Number(raw);
+    if (/^\d{5}(\.\d+)?$/.test(raw) && Number.isFinite(serial)) {
+      const date = new Date(Date.UTC(1899, 11, 30 + Math.floor(serial)));
+      return date.toISOString().slice(0, 10);
+    }
+    let match = raw.match(/^(\d{4})[年\/.\-](\d{1,2})[月\/.\-](\d{1,2})日?$/);
+    if (match) {
+      return `${match[1]}-${String(Number(match[2])).padStart(2, '0')}-${String(Number(match[3])).padStart(2, '0')}`;
+    }
+    match = raw.match(/^(\d{1,2})[月\/.\-](\d{1,2})日?$/);
+    if (match) {
+      return `${inferImportYear()}-${String(Number(match[1])).padStart(2, '0')}-${String(Number(match[2])).padStart(2, '0')}`;
+    }
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+    }
+    return '';
+  }
+
+  function parseImportAmount(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return null;
+    const hasWan = /万/.test(raw);
+    const hasYi = /亿/.test(raw);
+    const normalized = raw
+      .replace(/[,，\s￥¥元]/g, '')
+      .replace(/万元|万|亿元|亿/g, '')
+      .replace(/[^\d.\-]/g, '');
+    if (!normalized || normalized === '-' || normalized === '.') return null;
+    const parsed = Number.parseFloat(normalized);
+    if (!Number.isFinite(parsed)) return null;
+    if (hasYi) return parsed * 100000000;
+    if (hasWan) return parsed * 10000;
+    return parsed;
+  }
+
+  function importPlanRows(rows) {
+    if (!rows.length) throw new Error('导入文件为空');
+    const headers = rows[0];
+    const dateIndex = findImportColumn(headers, ['日期', 'date', '时间']);
+    const wanxiangIndex = findImportColumn(headers, ['万相台计划', '万象台计划', '万相台', 'wanxiang']);
+    const agentIndex = findImportColumn(headers, ['有客代投计划', '有客代投', '代投计划', 'agent']);
+    if (dateIndex < 0 || wanxiangIndex < 0 || agentIndex < 0) {
+      throw new Error('未识别到必需字段：日期、万相台计划、有客代投计划');
+    }
+
+    const availableDates = new Set((stateModule.state.summary.days || []).map((day) => day.date));
+    let imported = 0;
+    let skipped = 0;
+    let invalid = 0;
+    rows.slice(1).forEach((row) => {
+      const date = normalizeImportDate(row[dateIndex]);
+      const wanxiang = parseImportAmount(row[wanxiangIndex]);
+      const agent = parseImportAmount(row[agentIndex]);
+      if (!date || wanxiang == null || agent == null) {
+        invalid += 1;
+        return;
+      }
+      if (!availableDates.has(date)) {
+        skipped += 1;
+        return;
+      }
+      stateModule.patchDayDraft(date, {
+        wanxiang_plan: Math.round(wanxiang * 100) / 100,
+        agent_plan: Math.round(agent * 100) / 100,
+      });
+      imported += 1;
+    });
+    if (!imported) {
+      throw new Error(`没有导入任何行：${invalid} 行格式无效，${skipped} 行不在当前日期范围`);
+    }
+    render.renderPage();
+    setMessage(`已导入 ${imported} 行计划，${skipped} 行不在当前日期范围，${invalid} 行格式无效。请确认后点击“保存修改”。`, false);
+  }
+
+  async function importPlanFile(file) {
+    if (!file) return;
+    if (/\.xlsx?$/i.test(file.name)) {
+      setMessage('当前前端导入支持 CSV/TSV/TXT，Excel 文件请先另存为 CSV，或从 Excel 复制三列表格后保存为文本。', true);
+      return;
+    }
+    const buffer = await file.arrayBuffer();
+    let text = new TextDecoder('utf-8').decode(buffer);
+    if (text.includes('\uFFFD')) {
+      try {
+        text = new TextDecoder('gb18030').decode(buffer);
+      } catch (error) {
+        text = await file.text();
+      }
+    }
+    importPlanRows(parseDelimitedText(text));
+  }
+
   async function saveAllDays() {
     const items = Object.entries(stateModule.state.drafts.dayPatches).map(([date, patch]) => ({ date, patch }));
     if (!items.length) {
@@ -265,6 +427,21 @@
   function bind() {
     document.getElementById('save-all-btn')?.addEventListener('click', () => {
       saveAllDays();
+    });
+
+    document.getElementById('import-plan-btn')?.addEventListener('click', () => {
+      document.getElementById('import-plan-file')?.click();
+    });
+
+    document.getElementById('import-plan-file')?.addEventListener('change', async (event) => {
+      const input = event.target;
+      const file = input.files && input.files[0];
+      input.value = '';
+      try {
+        await importPlanFile(file);
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : '导入计划表失败', true);
+      }
     });
 
     document.getElementById('create-activity-btn')?.addEventListener('click', () => {
