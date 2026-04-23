@@ -539,7 +539,7 @@
     var H = 320;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
-    canvas.style.width = W + 'px';
+    canvas.style.width = '100%';
     canvas.style.height = H + 'px';
     var ctx = canvas.getContext('2d');
     if (!ctx) return;
