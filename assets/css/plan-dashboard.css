@@ -607,29 +607,44 @@ body.plan-dashboard-page {
 .rs-date { white-space: nowrap; font-weight: 600; min-width: 160px; }
 .rs-label { min-width: 140px; }
 .rs-label .activity-inherited-tag { vertical-align: middle; }
-.rhythm-summary-table th:nth-child(-n+3),
-.rhythm-summary-table td:nth-child(-n+3) {
+.rhythm-summary-table th:nth-child(-n+8),
+.rhythm-summary-table td:nth-child(-n+8) {
   position: sticky;
   z-index: 3;
 }
-.rhythm-summary-table th:nth-child(-n+3) { z-index: 4; }
+.rhythm-summary-table th:nth-child(-n+8) { z-index: 4; }
 .rhythm-summary-table td:nth-child(1),
 .rhythm-summary-table td:nth-child(2),
-.rhythm-summary-table td:nth-child(3) { background: #fff; }
+.rhythm-summary-table td:nth-child(3),
+.rhythm-summary-table td:nth-child(4),
+.rhythm-summary-table td:nth-child(5),
+.rhythm-summary-table td:nth-child(6),
+.rhythm-summary-table td:nth-child(7),
+.rhythm-summary-table td:nth-child(8) { background: #fff; }
 .rhythm-summary-table th:nth-child(1),
-.rhythm-summary-table td:nth-child(1) { left: 0; }
+.rhythm-summary-table td:nth-child(1) { left: 0; min-width: 160px; }
 .rhythm-summary-table th:nth-child(2),
-.rhythm-summary-table td:nth-child(2) { left: 160px; }
+.rhythm-summary-table td:nth-child(2) { left: 160px; min-width: 140px; }
 .rhythm-summary-table th:nth-child(3),
-.rhythm-summary-table td:nth-child(3) { left: 300px; border-right: 2px solid #e2e8f0; }
+.rhythm-summary-table td:nth-child(3) { left: 300px; min-width: 70px; }
+.rhythm-summary-table th:nth-child(4),
+.rhythm-summary-table td:nth-child(4) { left: 370px; min-width: 110px; }
+.rhythm-summary-table th:nth-child(5),
+.rhythm-summary-table td:nth-child(5) { left: 480px; min-width: 110px; border-right: 0; }
+.rhythm-summary-table th:nth-child(6),
+.rhythm-summary-table td:nth-child(6) { left: 590px; min-width: 110px; }
+.rhythm-summary-table th:nth-child(7),
+.rhythm-summary-table td:nth-child(7) { left: 700px; min-width: 120px; }
+.rhythm-summary-table th:nth-child(8),
+.rhythm-summary-table td:nth-child(8) { left: 820px; min-width: 90px; border-right: 2px solid #e2e8f0; }
 .rhythm-summary-table tr:hover td { background: #fafcff; }
-.rhythm-summary-table tr:hover td:nth-child(-n+3) { background: #fafcff; }
+.rhythm-summary-table tr:hover td:nth-child(-n+8) { background: #fafcff; }
 .rhythm-summary-table tfoot td {
   border-top: 2px solid #d9e2ef;
   background: #f8fafc;
   font-weight: 700;
 }
-.rhythm-summary-table tfoot td:nth-child(-n+3) {
+.rhythm-summary-table tfoot td:nth-child(-n+8) {
   background: #f8fafc;
 }
 .rhythm-summary-total-label {
