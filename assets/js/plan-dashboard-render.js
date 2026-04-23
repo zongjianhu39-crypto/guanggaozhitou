@@ -494,8 +494,8 @@
             </table>
           </div>
         </div>
-        <div class=”double11-ref-note”>
-          数据来自”25年双11数据参考.xlsx”。日期列中部分单元格被 Excel 自动转为日期格式，已按阶段和天数还原为 10/1-10/14、11/1-11/6、11/7-11/14，需业务确认时可再校对原表。
+        <div class="double11-ref-note">
+          数据来自"25年双11数据参考.xlsx"。日期列中部分单元格被 Excel 自动转为日期格式，已按阶段和天数还原为 10/1-10/14、11/1-11/6、11/7-11/14，需业务确认时可再校对原表。
         </div>
       </div>`;
   }
@@ -527,26 +527,44 @@
     var canvas = document.getElementById('six18-ref-chart');
     if (!canvas) return;
     var container = canvas.parentElement;
-    var dpr = window.devicePixelRatio || 1;
     var W = container.clientWidth;
+    
+    // 如果容器宽度为0，延迟绘制
+    if (W === 0) {
+      setTimeout(function() { drawSix18Chart(); }, 100);
+      return;
+    }
+    
+    var dpr = window.devicePixelRatio || 1;
     var H = 320;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
     var ctx = canvas.getContext('2d');
+    if (!ctx) return;
     ctx.scale(dpr, dpr);
 
     var data = SIX18_REFERENCE_DAILY;
+    if (!data || data.length === 0) return;
+    
     var pad = { top: 20, right: 20, bottom: 50, left: 65 };
     var chartW = W - pad.left - pad.right;
     var chartH = H - pad.top - pad.bottom;
 
-    var yMin = 80000000;
-    var yMax = 210000000;
+    // 动态计算Y轴范围
+    var views = data.map(function(d) { return d.views; });
+    var minView = Math.min.apply(null, views);
+    var maxView = Math.max.apply(null, views);
+    var yMin = Math.floor(minView / 10000000) * 10000000 - 10000000;
+    var yMax = Math.ceil(maxView / 10000000) * 10000000 + 10000000;
     var yRange = yMax - yMin;
+    
     var yScale = function(v) { return pad.top + chartH - ((v - yMin) / yRange) * chartH; };
     var xScale = function(i) { return pad.left + (i / (data.length - 1)) * chartW; };
+
+    // 清空画布
+    ctx.clearRect(0, 0, W, H);
 
     // Phase background bands
     var prevPhase = '';
@@ -571,11 +589,20 @@
     ctx.fillStyle = '#94a3b8';
     ctx.font = '11px system-ui, sans-serif';
     ctx.textAlign = 'right';
-    var yTicks = [90000000, 100000000, 120000000, 140000000, 160000000, 180000000, 200000000];
+    
+    // 动态生成Y轴刻度
+    var yTicks = [];
+    var tickInterval = 20000000;
+    for (var v = Math.ceil(yMin / tickInterval) * tickInterval; v <= yMax; v += tickInterval) {
+      yTicks.push(v);
+    }
+    
     yTicks.forEach(function(v) {
       var y = yScale(v);
-      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
-      ctx.fillText(formatWan(v), pad.left - 8, y + 4);
+      if (y >= pad.top && y <= pad.top + chartH) {
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+        ctx.fillText(formatWan(v), pad.left - 8, y + 4);
+      }
     });
 
     // X axis labels (every 5 days)
@@ -651,7 +678,7 @@
       if (idx < 0 || idx >= data.length) { tooltip.style.display = 'none'; return; }
       var d = data[idx];
       var meta = getPhaseMeta(d.phase);
-      tooltip.innerHTML = '<strong>' + d.date + '</strong>  展现指数 <strong>' + formatWan(d.views) + '</strong><br><span style=”color:' + meta.color + '”>' + d.phase + '</span>';
+      tooltip.innerHTML = '<strong>' + d.date + '</strong>  展现指数 <strong>' + formatWan(d.views) + '</strong><br><span style="color:' + meta.color + '">' + d.phase + '</span>';
       tooltip.style.display = 'block';
       var tx = Math.min(Math.max(8, mx - 80), W - 180);
       tooltip.style.left = tx + 'px';
@@ -681,9 +708,9 @@
       toggle.textContent = isExpanded ? '收起参考' : '展开参考';
     }
     if (!isExpanded) {
-      el.innerHTML = '<div class=”six18-ref-collapsed-note”>'
+      el.innerHTML = '<div class="six18-ref-collapsed-note">'
         + '<span>已收起：美妆护肤行业618展现指数趋势图（5/1-6/30，60天数据）。</span>'
-        + '<button type=”button” class=”six18-ref-inline-toggle” data-action=”toggle-six18-reference”>展开查看趋势</button>'
+        + '<button type="button" class="six18-ref-inline-toggle" data-action="toggle-six18-reference">展开查看趋势</button>'
         + '</div>';
       return;
     }
@@ -702,7 +729,7 @@
       { label: '谷值',         value: formatWan(trough.views),  helper: trough.date + ' ' + troughPhase },
       { label: '峰谷倍数',     value: (peak.views / trough.views).toFixed(2) + 'x', helper: '峰值 / 谷值' },
     ].map(function(item) {
-      return '<div class=”six18-ref-metric”>'
+      return '<div class="six18-ref-metric">'
         + '<span>' + utils.escapeHtml(item.label) + '</span>'
         + '<strong>' + utils.escapeHtml(item.value) + '</strong>'
         + '<em>' + utils.escapeHtml(item.helper) + '</em>'
@@ -710,18 +737,18 @@
     }).join('');
 
     var legend = SIX18_REFERENCE_PHASE_META.map(function(m) {
-      return '<span class=”six18-ref-legend-item”><i style=”background:' + m.color + '”></i>' + utils.escapeHtml(m.phase) + '</span>';
+      return '<span class="six18-ref-legend-item"><i style="background:' + m.color + '"></i>' + utils.escapeHtml(m.phase) + '</span>';
     }).join('');
 
-    el.innerHTML = '<div class=”six18-ref-wrap”>'
-      + '<div class=”six18-ref-metrics”>' + summaryCards + '</div>'
-      + '<div class=”six18-ref-legend”>' + legend + '</div>'
-      + '<div class=”six18-ref-chart-wrap”>'
-      +   '<canvas id=”six18-ref-chart” class=”six18-ref-chart”></canvas>'
-      +   '<div id=”six18-ref-tooltip” class=”six18-ref-tooltip” style=”display:none”></div>'
+    el.innerHTML = '<div class="six18-ref-wrap">'
+      + '<div class="six18-ref-metrics">' + summaryCards + '</div>'
+      + '<div class="six18-ref-legend">' + legend + '</div>'
+      + '<div class="six18-ref-chart-wrap">'
+      +   '<canvas id="six18-ref-chart" class="six18-ref-chart"></canvas>'
+      +   '<div id="six18-ref-tooltip" class="six18-ref-tooltip" style="display:none"></div>'
       + '</div>'
-      + '<div class=”six18-ref-note”>'
-      +   '数据来自”美妆护肤618行业流量数据_2025.csv”，为美妆护肤行业大盘展现指数参考，仅用于了解流量走势节奏，不参与计划拆解、保存或任何计算。'
+      + '<div class="six18-ref-note">'
+      +   '数据来自"美妆护肤618行业流量数据_2025.csv"，为美妆护肤行业大盘展现指数参考，仅用于了解流量走势节奏，不参与计划拆解、保存或任何计算。'
       + '</div>'
       + '</div>';
 
@@ -1141,7 +1168,7 @@
       {
         title: '25年双11投放节奏参考-备注',
         headers: ['内容'],
-        rows: [['数据来自“25年双11数据参考.xlsx”。日期列中部分单元格被 Excel 自动转为日期格式，已按阶段和天数还原为 10/1-10/14、11/1-11/6、11/7-11/14，需业务确认时可再校对原表。']],
+        rows: [['数据来自"25年双11数据参考.xlsx"。日期列中部分单元格被 Excel 自动转为日期格式，已按阶段和天数还原为 10/1-10/14、11/1-11/6、11/7-11/14，需业务确认时可再校对原表。']],
       },
     ];
   }
