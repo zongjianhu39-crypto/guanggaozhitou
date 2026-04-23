@@ -1030,18 +1030,20 @@
                 <th>活动节奏</th>
                 <th>备注</th>
                 <th>实际花费</th>
-                <th>25年代投花费</th>
-                <th>25年花费</th>
-                <th>25年观看次数</th>
-                <th>25年总成交笔数</th>
-                <th>25年总购物车数</th>
-                <th>25年预售成交笔数</th>
-                <th>25年成交人数</th>
-                <th>25年淘宝成交笔数</th>
-                <th>25年订单成本</th>
-                <th>25年预售订单成本</th>
-                <th>25年加购成本</th>
-                <th>25年广告成交占比</th>
+	                <th>25年代投花费</th>
+	                <th>25年花费</th>
+	                <th>25年观看次数</th>
+	                <th>25年总成交笔数</th>
+	                <th>25年直接成交笔数</th>
+	                <th>25年总购物车数</th>
+	                <th>25年预售成交笔数</th>
+	                <th>25年成交人数</th>
+	                <th>25年淘宝成交笔数</th>
+	                <th>25年订单成本</th>
+	                <th>25年直接成交订单成本</th>
+	                <th>25年预售订单成本</th>
+	                <th>25年加购成本</th>
+	                <th>25年广告成交占比</th>
                 <th>25年保量佣金</th>
                 <th>25年预估结算机构佣金</th>
                 <th>25年品牌费</th>
@@ -1066,18 +1068,20 @@
         <td>${buildActivityCell(day)}</td>
         <td>${buildEditableCell(day.date, 'remark', day.remark)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(utils.formatCurrency(day.actual_cost))}</td>
-        <td class="plan-text-cell">${renderOptionalCurrency(day.agent_amount)}</td>
-        <td class="plan-text-cell plan-ref-cell">${refAmount > 0 ? utils.escapeHtml(utils.formatCurrency(refAmount)) : '<span class="plan-muted">-</span>'}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_views)}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_orders)}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_cart)}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_pre_orders)}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_buyers)}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_taobao_orders)}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_orders, 2))}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_pre_orders, 2))}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_cart, 2))}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderDerivedPercent(day.reference_orders, day.reference_taobao_orders)}</td>
+	        <td class="plan-text-cell">${renderOptionalCurrency(day.agent_amount)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${refAmount > 0 ? utils.escapeHtml(utils.formatCurrency(refAmount)) : '<span class="plan-muted">-</span>'}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_views)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_orders)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_direct_orders)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_cart)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_pre_orders)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_buyers)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_taobao_orders)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_orders, 2))}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_direct_orders, 2))}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_pre_orders, 2))}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_cart, 2))}</td>
+	        <td class="plan-text-cell plan-ref-cell">${renderDerivedPercent(day.reference_orders, day.reference_taobao_orders)}</td>
         <td class="plan-text-cell plan-ref-cell">${renderRefCurrency(day.reference_financial_guarantee_commission)}</td>
         <td class="plan-text-cell plan-ref-cell">${renderRefCurrency(day.reference_financial_estimated_agency_commission)}</td>
         <td class="plan-text-cell plan-ref-cell">${renderRefCurrency(day.reference_financial_brand_fee)}</td>
@@ -1139,13 +1143,13 @@
     el.innerHTML = `<div class="table-shell"><div class="table-scroll">
       <table class="plan-table"><thead><tr>
         <th>日期</th><th>万相台计划</th><th>有客代投计划</th><th>总计划金额</th><th>活动节奏</th><th>备注</th><th>实际花费</th>
-        <th>25年代投花费</th><th>25年花费</th><th>25年观看次数</th><th>25年总成交笔数</th><th>25年总购物车数</th><th>25年预售成交笔数</th>
-        <th>25年成交人数</th><th>25年淘宝成交笔数</th><th>25年订单成本</th><th>25年预售订单成本</th><th>25年加购成本</th><th>25年广告成交占比</th>
-        <th>25年保量佣金</th><th>25年预估结算机构佣金</th><th>25年品牌费</th>
-      </tr></thead><tbody>
-        ${Array(8).fill('').map(() => `<tr>${Array(22).fill('').map(() => '<td><div class="skeleton-line" style="width:80%"></div></td>').join('')}</tr>`).join('')}
-      </tbody></table>
-    </div></div>`;
+	        <th>25年代投花费</th><th>25年花费</th><th>25年观看次数</th><th>25年总成交笔数</th><th>25年直接成交笔数</th><th>25年总购物车数</th><th>25年预售成交笔数</th>
+	        <th>25年成交人数</th><th>25年淘宝成交笔数</th><th>25年订单成本</th><th>25年直接成交订单成本</th><th>25年预售订单成本</th><th>25年加购成本</th><th>25年广告成交占比</th>
+	        <th>25年保量佣金</th><th>25年预估结算机构佣金</th><th>25年品牌费</th>
+	      </tr></thead><tbody>
+	        ${Array(8).fill('').map(() => `<tr>${Array(24).fill('').map(() => '<td><div class="skeleton-line" style="width:80%"></div></td>').join('')}</tr>`).join('')}
+	      </tbody></table>
+	    </div></div>`;
   }
 
   function renderDrawer() {
