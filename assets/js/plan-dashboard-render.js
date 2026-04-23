@@ -566,6 +566,7 @@
       rt: rt,
       rb: rb,
       rwta: rwta,
+      rwtaShare: null,
       oc: sDiv(ra, ro),
       doc: sDiv(ra, rdo),
       pc: sDiv(ra, rp),
@@ -595,6 +596,7 @@
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRef(data.ra) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRef(data.aa) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRef(data.rwta) + '</td>'
+      + '<td class="plan-text-cell plan-ref-cell">' + fmtP(data.rwtaShare) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.rv) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.ro) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.rdo) + '</td>'
@@ -612,12 +614,13 @@
       + '<td class="' + judgmentClass + '">' + utils.escapeHtml(judgment || '-') + '</td>';
   }
 
-  function buildRhythmRow(seg, monthTotal) {
+  function buildRhythmRow(seg, monthTotal, referenceTotalWithAgent) {
     var ds = seg.days;
     var d0 = ds[0].date;
     var d1 = ds[ds.length - 1].date;
     var range = d0 === d1 ? d0 : d0 + ' ~ ' + d1;
     var data = summarizeRhythmDays(ds, monthTotal);
+    data.rwtaShare = sDiv(data.rwta, referenceTotalWithAgent);
     var jt = rhythmJudgment(data.growth);
     var jc = judgmentCls(jt);
     return '<tr>' + buildRhythmCells(data, {
@@ -628,8 +631,9 @@
     }) + '</tr>';
   }
 
-  function buildRhythmTotalRow(days, monthTotal) {
+  function buildRhythmTotalRow(days, monthTotal, referenceTotalWithAgent) {
     var data = summarizeRhythmDays(days, monthTotal);
+    data.rwtaShare = sDiv(data.rwta, referenceTotalWithAgent);
     return '<tr class="rhythm-summary-total-row">' + buildRhythmCells(data, {
       range: '汇总',
       dateClass: 'rhythm-summary-total-label',
@@ -649,6 +653,7 @@
     }
     var segs = buildRhythmSegments(days);
     var monthTotal = utils.sum(days.map(function(d) { return d.total_plan_amount; }));
+    var referenceTotalWithAgent = summarizeRhythmDays(days, monthTotal).rwta;
 
     el.innerHTML =
       '<div class="table-shell">'
@@ -669,6 +674,7 @@
       + '<th>25\u5e74\u82b1\u8d39</th>'
       + '<th>25\u5e74\u4ee3\u7406\u82b1\u8d39</th>'
       + '<th>25\u5e74\u542b\u4ee3\u6295\u603b\u82b1\u8d39</th>'
+      + '<th>25\u5e74\u542b\u4ee3\u6295\u82b1\u8d39\u5360\u6bd4</th>'
       + '<th>25\u5e74\u89c2\u770b\u6b21\u6570</th>'
       + '<th>25\u5e74\u603b\u6210\u4ea4\u7b14\u6570</th>'
       + '<th>25\u5e74\u76f4\u63a5\u6210\u4ea4\u7b14\u6570</th>'
@@ -686,10 +692,10 @@
       + '<th>\u8282\u594f\u5224\u65ad</th>'
       + '</tr></thead>'
       + '<tbody>'
-      + segs.map(function(s) { return buildRhythmRow(s, monthTotal); }).join('')
+      + segs.map(function(s) { return buildRhythmRow(s, monthTotal, referenceTotalWithAgent); }).join('')
       + '</tbody>'
       + '<tfoot>'
-      + buildRhythmTotalRow(days, monthTotal)
+      + buildRhythmTotalRow(days, monthTotal, referenceTotalWithAgent)
       + '</tfoot>'
       + '</table></div></div>';
   }
@@ -697,7 +703,7 @@
   function renderRhythmSummarySkeleton() {
     var el = document.getElementById('rhythm-summary-container');
     if (!el) return;
-    var skCols = Array(29).fill('').map(function() { return '<td><div class="skeleton-line" style="width:80%"></div></td>'; }).join('');
+    var skCols = Array(30).fill('').map(function() { return '<td><div class="skeleton-line" style="width:80%"></div></td>'; }).join('');
     el.innerHTML =
       '<div class="table-shell"><div class="table-scroll">'
       + '<table class="plan-table rhythm-summary-table"><thead><tr>'
@@ -705,7 +711,7 @@
       + '<th>\u4e07\u76f8\u53f0\u8ba1\u5212</th><th>\u6709\u5ba2\u4ee3\u6295\u8ba1\u5212</th><th>\u603b\u8ba1\u5212\u91d1\u989d</th>'
       + '<th>\u65e5\u5747\u8ba1\u5212\u91d1\u989d</th><th>\u8ba1\u5212\u5360\u6bd4</th><th>\u5b9e\u9645\u82b1\u8d39</th>'
       + '<th>\u82b1\u8d39\u5b8c\u6210\u7387</th><th>\u65e5\u5747\u5b9e\u9645\u82b1\u8d39</th>'
-      + '<th>25\u5e74\u82b1\u8d39</th><th>25\u5e74\u4ee3\u7406\u82b1\u8d39</th><th>25\u5e74\u542b\u4ee3\u6295\u603b\u82b1\u8d39</th><th>25\u5e74\u89c2\u770b\u6b21\u6570</th><th>25\u5e74\u603b\u6210\u4ea4\u7b14\u6570</th><th>25\u5e74\u76f4\u63a5\u6210\u4ea4\u7b14\u6570</th>'
+      + '<th>25\u5e74\u82b1\u8d39</th><th>25\u5e74\u4ee3\u7406\u82b1\u8d39</th><th>25\u5e74\u542b\u4ee3\u6295\u603b\u82b1\u8d39</th><th>25\u5e74\u542b\u4ee3\u6295\u82b1\u8d39\u5360\u6bd4</th><th>25\u5e74\u89c2\u770b\u6b21\u6570</th><th>25\u5e74\u603b\u6210\u4ea4\u7b14\u6570</th><th>25\u5e74\u76f4\u63a5\u6210\u4ea4\u7b14\u6570</th>'
       + '<th>25\u5e74\u603b\u8d2d\u7269\u8f66\u6570</th><th>25\u5e74\u9884\u552e\u6210\u4ea4\u7b14\u6570</th>'
       + '<th>25\u5e74\u6dd8\u5b9d\u6210\u4ea4\u7b14\u6570</th><th>25\u5e74\u6210\u4ea4\u4eba\u6570</th>'
       + '<th>25\u5e74\u8ba2\u5355\u6210\u672c</th><th>25\u5e74\u76f4\u63a5\u6210\u4ea4\u8ba2\u5355\u6210\u672c</th><th>25\u5e74\u9884\u552e\u8ba2\u5355\u6210\u672c</th><th>25\u5e74\u52a0\u8d2d\u6210\u672c</th>'
