@@ -195,6 +195,79 @@
     },
   ];
 
+  const SIX18_REFERENCE_MONTHS = [5, 6];
+  const SIX18_REFERENCE_DAILY = [
+    { date: '5/1',  views: 100000000, phase: '蓄水期' },
+    { date: '5/2',  views: 102000000, phase: '蓄水期' },
+    { date: '5/3',  views: 100000000, phase: '蓄水期' },
+    { date: '5/4',  views: 93166379,  phase: '蓄水期' },
+    { date: '5/5',  views: 100000000, phase: '蓄水期' },
+    { date: '5/6',  views: 100000000, phase: '蓄水期' },
+    { date: '5/7',  views: 102000000, phase: '蓄水期' },
+    { date: '5/8',  views: 102000000, phase: '蓄水期' },
+    { date: '5/9',  views: 102000000, phase: '蓄水期' },
+    { date: '5/10', views: 102000000, phase: '蓄水期' },
+    { date: '5/11', views: 102000000, phase: '蓄水期' },
+    { date: '5/12', views: 105000000, phase: '蓄水期' },
+    { date: '5/13', views: 115000000, phase: '蓄水期' },
+    { date: '5/14', views: 140000000, phase: '蓄水期' },
+    { date: '5/15', views: 175000000, phase: '第一波爆发' },
+    { date: '5/16', views: 175000000, phase: '第一波爆发' },
+    { date: '5/17', views: 160000000, phase: '第一波爆发' },
+    { date: '5/18', views: 165000000, phase: '第一波爆发' },
+    { date: '5/19', views: 155000000, phase: '第一波爆发' },
+    { date: '5/20', views: 155000000, phase: '第一波爆发' },
+    { date: '5/21', views: 155000000, phase: '蓄力期' },
+    { date: '5/22', views: 155000000, phase: '蓄力期' },
+    { date: '5/23', views: 150000000, phase: '蓄力期' },
+    { date: '5/24', views: 152000000, phase: '蓄力期' },
+    { date: '5/25', views: 155000000, phase: '蓄力期' },
+    { date: '5/26', views: 168000000, phase: '蓄力期' },
+    { date: '5/27', views: 168000000, phase: '蓄力期' },
+    { date: '5/28', views: 168000000, phase: '蓄力期' },
+    { date: '5/29', views: 180000000, phase: '第二波爆发' },
+    { date: '5/30', views: 180000000, phase: '第二波爆发' },
+    { date: '5/31', views: 175000000, phase: '第二波爆发' },
+    { date: '6/1',  views: 175000000, phase: '第二波爆发' },
+    { date: '6/2',  views: 194994457, phase: '第二波爆发' },
+    { date: '6/3',  views: 180000000, phase: '第二波爆发' },
+    { date: '6/4',  views: 175000000, phase: '第二波爆发' },
+    { date: '6/5',  views: 175000000, phase: '第二波爆发' },
+    { date: '6/6',  views: 170000000, phase: '回落期' },
+    { date: '6/7',  views: 165000000, phase: '回落期' },
+    { date: '6/8',  views: 155000000, phase: '回落期' },
+    { date: '6/9',  views: 150000000, phase: '回落期' },
+    { date: '6/10', views: 150000000, phase: '回落期' },
+    { date: '6/11', views: 145000000, phase: '回落期' },
+    { date: '6/12', views: 135000000, phase: '回落期' },
+    { date: '6/13', views: 110000000, phase: '回落期' },
+    { date: '6/14', views: 105000000, phase: '回落期' },
+    { date: '6/15', views: 105000000, phase: '回落期' },
+    { date: '6/16', views: 105000000, phase: '回落期' },
+    { date: '6/17', views: 110000000, phase: '回落期' },
+    { date: '6/18', views: 105000000, phase: '回落期' },
+    { date: '6/19', views: 110000000, phase: '回落期' },
+    { date: '6/20', views: 115000000, phase: '回落期' },
+    { date: '6/21', views: 110000000, phase: '返场期' },
+    { date: '6/22', views: 95000000,  phase: '返场期' },
+    { date: '6/23', views: 92000000,  phase: '返场期' },
+    { date: '6/24', views: 92000000,  phase: '返场期' },
+    { date: '6/25', views: 92000000,  phase: '返场期' },
+    { date: '6/26', views: 90000000,  phase: '返场期' },
+    { date: '6/27', views: 90507712,  phase: '返场期' },
+    { date: '6/28', views: 90000000,  phase: '返场期' },
+    { date: '6/29', views: 92000000,  phase: '返场期' },
+    { date: '6/30', views: 95000000,  phase: '返场期' },
+  ];
+  const SIX18_REFERENCE_PHASE_META = [
+    { phase: '蓄水期',     color: '#94a3b8', bgColor: 'rgba(148,163,184,0.12)' },
+    { phase: '第一波爆发', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.12)' },
+    { phase: '蓄力期',     color: '#6366f1', bgColor: 'rgba(99,102,241,0.12)' },
+    { phase: '第二波爆发', color: '#ef4444', bgColor: 'rgba(239,68,68,0.12)' },
+    { phase: '回落期',     color: '#64748b', bgColor: 'rgba(100,116,139,0.08)' },
+    { phase: '返场期',     color: '#0ea5e9', bgColor: 'rgba(14,165,233,0.10)' },
+  ];
+
   function syncCollapsibleSection(sectionKey) {
     const meta = COLLAPSIBLE_SECTIONS[sectionKey];
     if (!meta) return true;
@@ -421,10 +494,246 @@
             </table>
           </div>
         </div>
-        <div class="double11-ref-note">
-          数据来自“25年双11数据参考.xlsx”。日期列中部分单元格被 Excel 自动转为日期格式，已按阶段和天数还原为 10/1-10/14、11/1-11/6、11/7-11/14，需业务确认时可再校对原表。
+        <div class=”double11-ref-note”>
+          数据来自”25年双11数据参考.xlsx”。日期列中部分单元格被 Excel 自动转为日期格式，已按阶段和天数还原为 10/1-10/14、11/1-11/6、11/7-11/14，需业务确认时可再校对原表。
         </div>
       </div>`;
+  }
+
+  /* ---- 618 Beauty Industry Traffic Reference ---- */
+
+  function shouldShowSix18Reference() {
+    var range = stateModule.state.range || {};
+    var startIndex = getYearMonthIndex(range.start);
+    var endIndex = getYearMonthIndex(range.end);
+    if (startIndex == null || endIndex == null || startIndex > endIndex) return false;
+    for (var index = startIndex; index <= endIndex && index <= startIndex + 24; index += 1) {
+      var month = (index % 12) + 1;
+      if (SIX18_REFERENCE_MONTHS.includes(month)) return true;
+    }
+    return false;
+  }
+
+  function formatWan(value) {
+    return utils.formatNumber(Math.round(value / 10000)) + '万';
+  }
+
+  function getPhaseMeta(phaseName) {
+    return SIX18_REFERENCE_PHASE_META.find(function(m) { return m.phase === phaseName; })
+      || SIX18_REFERENCE_PHASE_META[0];
+  }
+
+  function drawSix18Chart() {
+    var canvas = document.getElementById('six18-ref-chart');
+    if (!canvas) return;
+    var container = canvas.parentElement;
+    var dpr = window.devicePixelRatio || 1;
+    var W = container.clientWidth;
+    var H = 320;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    var data = SIX18_REFERENCE_DAILY;
+    var pad = { top: 20, right: 20, bottom: 50, left: 65 };
+    var chartW = W - pad.left - pad.right;
+    var chartH = H - pad.top - pad.bottom;
+
+    var yMin = 80000000;
+    var yMax = 210000000;
+    var yRange = yMax - yMin;
+    var yScale = function(v) { return pad.top + chartH - ((v - yMin) / yRange) * chartH; };
+    var xScale = function(i) { return pad.left + (i / (data.length - 1)) * chartW; };
+
+    // Phase background bands
+    var prevPhase = '';
+    var phaseStart = 0;
+    for (var i = 0; i <= data.length; i++) {
+      var phase = i < data.length ? data[i].phase : '';
+      if (phase !== prevPhase) {
+        if (prevPhase) {
+          var meta = getPhaseMeta(prevPhase);
+          var x0 = xScale(phaseStart);
+          var x1 = xScale(i - 1);
+          ctx.fillStyle = meta.bgColor;
+          ctx.fillRect(x0, pad.top, x1 - x0 + chartW / (data.length - 1), chartH);
+        }
+        if (phase) { phaseStart = i; prevPhase = phase; }
+      }
+    }
+
+    // Y axis grid lines and labels
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 0.5;
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    var yTicks = [90000000, 100000000, 120000000, 140000000, 160000000, 180000000, 200000000];
+    yTicks.forEach(function(v) {
+      var y = yScale(v);
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+      ctx.fillText(formatWan(v), pad.left - 8, y + 4);
+    });
+
+    // X axis labels (every 5 days)
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#94a3b8';
+    data.forEach(function(d, i) {
+      if (i % 5 === 0 || i === data.length - 1) {
+        var x = xScale(i);
+        ctx.fillText(d.date, x, H - pad.bottom + 18);
+      }
+    });
+
+    // Line
+    ctx.beginPath();
+    data.forEach(function(d, i) {
+      var x = xScale(i);
+      var y = yScale(d.views);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Data points colored by phase
+    data.forEach(function(d, i) {
+      var x = xScale(i);
+      var y = yScale(d.views);
+      var m = getPhaseMeta(d.phase);
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = m.color;
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+
+    // Peak and trough annotations
+    var peakItem = data.reduce(function(m, d) { return d.views > m.views ? d : m; });
+    var troughItem = data.reduce(function(m, d) { return d.views < m.views ? d : m; });
+    [
+      { item: peakItem, label: '峰值 ' + formatWan(peakItem.views), color: '#ef4444' },
+      { item: troughItem, label: '谷值 ' + formatWan(troughItem.views), color: '#64748b' },
+    ].forEach(function(ann) {
+      var idx = data.indexOf(ann.item);
+      var x = xScale(idx);
+      var y = yScale(ann.item.views);
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = ann.color;
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = ann.color;
+      ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(ann.label, pad.left + 4, y - 6);
+    });
+  }
+
+  function bindSix18ChartEvents() {
+    var canvas = document.getElementById('six18-ref-chart');
+    var tooltip = document.getElementById('six18-ref-tooltip');
+    if (!canvas || !tooltip) return;
+
+    canvas.addEventListener('mousemove', function(e) {
+      var rect = canvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var W = rect.width;
+      var pad = { left: 65, right: 20 };
+      var chartW = W - pad.left - pad.right;
+      var data = SIX18_REFERENCE_DAILY;
+      var idx = Math.round(((mx - pad.left) / chartW) * (data.length - 1));
+      if (idx < 0 || idx >= data.length) { tooltip.style.display = 'none'; return; }
+      var d = data[idx];
+      var meta = getPhaseMeta(d.phase);
+      tooltip.innerHTML = '<strong>' + d.date + '</strong>  展现指数 <strong>' + formatWan(d.views) + '</strong><br><span style=”color:' + meta.color + '”>' + d.phase + '</span>';
+      tooltip.style.display = 'block';
+      var tx = Math.min(Math.max(8, mx - 80), W - 180);
+      tooltip.style.left = tx + 'px';
+      tooltip.style.top = '8px';
+    });
+    canvas.addEventListener('mouseleave', function() { tooltip.style.display = 'none'; });
+  }
+
+  function renderSix18Reference() {
+    var section = document.getElementById('six18-reference-section');
+    var el = document.getElementById('six18-reference-container');
+    var toggle = document.getElementById('six18-reference-toggle');
+    if (!section || !el) return;
+    if (!shouldShowSix18Reference()) {
+      section.classList.add('hidden');
+      section.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '';
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+      return;
+    }
+    section.classList.remove('hidden');
+    section.setAttribute('aria-hidden', 'false');
+    var isExpanded = Boolean(stateModule.state.ui.six18ReferenceExpanded);
+    section.classList.toggle('six18-ref-collapsed', !isExpanded);
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', String(isExpanded));
+      toggle.textContent = isExpanded ? '收起参考' : '展开参考';
+    }
+    if (!isExpanded) {
+      el.innerHTML = '<div class=”six18-ref-collapsed-note”>'
+        + '<span>已收起：美妆护肤行业618展现指数趋势图（5/1-6/30，60天数据）。</span>'
+        + '<button type=”button” class=”six18-ref-inline-toggle” data-action=”toggle-six18-reference”>展开查看趋势</button>'
+        + '</div>';
+      return;
+    }
+
+    var total = SIX18_REFERENCE_DAILY.reduce(function(s, d) { return s + d.views; }, 0);
+    var avg = total / SIX18_REFERENCE_DAILY.length;
+    var peak = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views > m.views ? d : m; });
+    var trough = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views < m.views ? d : m; });
+    var peakPhase = getPhaseMeta(peak.phase).phase;
+    var troughPhase = getPhaseMeta(trough.phase).phase;
+
+    var summaryCards = [
+      { label: '数据周期',     value: '5/1-6/30',              helper: '60天完整618周期' },
+      { label: '日均展现指数', value: formatWan(avg),           helper: '全周期日均展现强度' },
+      { label: '峰值',         value: formatWan(peak.views),    helper: peak.date + ' ' + peakPhase },
+      { label: '谷值',         value: formatWan(trough.views),  helper: trough.date + ' ' + troughPhase },
+      { label: '峰谷倍数',     value: (peak.views / trough.views).toFixed(2) + 'x', helper: '峰值 / 谷值' },
+    ].map(function(item) {
+      return '<div class=”six18-ref-metric”>'
+        + '<span>' + utils.escapeHtml(item.label) + '</span>'
+        + '<strong>' + utils.escapeHtml(item.value) + '</strong>'
+        + '<em>' + utils.escapeHtml(item.helper) + '</em>'
+        + '</div>';
+    }).join('');
+
+    var legend = SIX18_REFERENCE_PHASE_META.map(function(m) {
+      return '<span class=”six18-ref-legend-item”><i style=”background:' + m.color + '”></i>' + utils.escapeHtml(m.phase) + '</span>';
+    }).join('');
+
+    el.innerHTML = '<div class=”six18-ref-wrap”>'
+      + '<div class=”six18-ref-metrics”>' + summaryCards + '</div>'
+      + '<div class=”six18-ref-legend”>' + legend + '</div>'
+      + '<div class=”six18-ref-chart-wrap”>'
+      +   '<canvas id=”six18-ref-chart” class=”six18-ref-chart”></canvas>'
+      +   '<div id=”six18-ref-tooltip” class=”six18-ref-tooltip” style=”display:none”></div>'
+      + '</div>'
+      + '<div class=”six18-ref-note”>'
+      +   '数据来自”美妆护肤618行业流量数据_2025.csv”，为美妆护肤行业大盘展现指数参考，仅用于了解流量走势节奏，不参与计划拆解、保存或任何计算。'
+      + '</div>'
+      + '</div>';
+
+    drawSix18Chart();
+    bindSix18ChartEvents();
+
+    if (window._six18ResizeObs) window._six18ResizeObs.disconnect();
+    var chartWrap = el.querySelector('.six18-ref-chart-wrap');
+    if (chartWrap) {
+      window._six18ResizeObs = new ResizeObserver(function() { drawSix18Chart(); });
+      window._six18ResizeObs.observe(chartWrap);
+    }
   }
 
   function buildEditableCell(date, field, value) {
@@ -833,6 +1142,39 @@
         title: '25年双11投放节奏参考-备注',
         headers: ['内容'],
         rows: [['数据来自“25年双11数据参考.xlsx”。日期列中部分单元格被 Excel 自动转为日期格式，已按阶段和天数还原为 10/1-10/14、11/1-11/6、11/7-11/14，需业务确认时可再校对原表。']],
+      },
+    ];
+  }
+
+  function getSix18ReferenceExportSections() {
+    if (!shouldShowSix18Reference()) return [];
+    var total = SIX18_REFERENCE_DAILY.reduce(function(s, d) { return s + d.views; }, 0);
+    var avg = total / SIX18_REFERENCE_DAILY.length;
+    var peak = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views > m.views ? d : m; });
+    var trough = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views < m.views ? d : m; });
+    return [
+      {
+        title: '25年618美妆行业流量参考-摘要',
+        headers: ['指标', '数值', '说明'],
+        rows: [
+          ['数据周期', '5/1-6/30', '60天完整618周期'],
+          ['日均展现指数', formatWan(avg), '全周期日均展现强度'],
+          ['峰值', formatWan(peak.views), peak.date + ' ' + getPhaseMeta(peak.phase).phase],
+          ['谷值', formatWan(trough.views), trough.date + ' ' + getPhaseMeta(trough.phase).phase],
+          ['峰谷倍数', (peak.views / trough.views).toFixed(2) + 'x', '峰值 / 谷值'],
+        ],
+      },
+      {
+        title: '25年618美妆行业流量参考-每日明细',
+        headers: ['日期', '展现指数', '阶段'],
+        rows: SIX18_REFERENCE_DAILY.map(function(d) {
+          return [d.date, d.views, d.phase];
+        }),
+      },
+      {
+        title: '25年618美妆行业流量参考-备注',
+        headers: ['内容'],
+        rows: [['数据来自"美妆护肤618行业流量数据_2025.csv"，为美妆护肤行业大盘展现指数参考，仅用于了解流量走势节奏，不参与计划拆解、保存或任何计算。']],
       },
     ];
   }
@@ -1266,6 +1608,7 @@
   function renderLoadingSkeleton() {
     renderTimelineSkeleton();
     renderDouble11Reference();
+    renderSix18Reference();
     renderRhythmSummarySkeleton();
     renderMonthNoteSkeleton();
     renderTableSkeleton();
@@ -1279,6 +1622,7 @@
     }
     renderTimeline();
     renderDouble11Reference();
+    renderSix18Reference();
     renderRhythmSummary();
     renderMonthNote();
     renderTableFull();
@@ -1304,5 +1648,6 @@
     getEffectiveDays,
     getRhythmSummaryExportData,
     getDouble11ReferenceExportSections,
+    getSix18ReferenceExportSections,
   };
 })(window);

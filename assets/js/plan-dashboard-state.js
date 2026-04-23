@@ -28,6 +28,7 @@
       selectedMonths: [],
       monthSelectionAnchor: null,
       double11ReferenceExpanded: false,
+      six18ReferenceExpanded: false,
       timelineExpanded: true,
       rhythmSummaryExpanded: true,
       monthNoteExpanded: true,

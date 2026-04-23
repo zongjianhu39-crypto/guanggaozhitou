@@ -630,6 +630,125 @@ body.plan-dashboard-page {
   line-height: 1.7;
 }
 
+/* --- 618 Beauty Industry Traffic Reference --- */
+.six18-ref-toggle {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+}
+.six18-ref-collapsed {
+  padding-bottom: 16px;
+}
+.six18-ref-collapsed .section-head {
+  margin-bottom: 10px;
+}
+.six18-ref-collapsed-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.six18-ref-inline-toggle {
+  border: 0;
+  background: transparent;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.six18-ref-inline-toggle:hover {
+  color: #3730a3;
+}
+.six18-ref-wrap {
+  display: grid;
+  gap: 14px;
+}
+.six18-ref-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 10px;
+}
+.six18-ref-metric {
+  padding: 12px 14px;
+  border: 1px solid #e6ebf3;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.six18-ref-metric span,
+.six18-ref-metric em {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  font-style: normal;
+}
+.six18-ref-metric strong {
+  display: block;
+  margin: 5px 0 3px;
+  color: #1e293b;
+  font-size: 18px;
+  line-height: 1.25;
+}
+.six18-ref-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 6px 0;
+}
+.six18-ref-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #475569;
+}
+.six18-ref-legend-item i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.six18-ref-chart-wrap {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e6ebf3;
+  border-radius: 8px;
+  padding: 8px;
+}
+.six18-ref-chart {
+  display: block;
+  width: 100%;
+  height: 320px;
+}
+.six18-ref-tooltip {
+  position: absolute;
+  top: 8px;
+  padding: 8px 12px;
+  background: rgba(15,23,42,0.92);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+}
+.six18-ref-note {
+  padding: 9px 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #fbfdff;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 /* --- Rhythm Summary --- */
 .rhythm-summary-empty {
   padding: 24px 20px;
@@ -866,12 +985,16 @@ body.plan-dashboard-page {
     align-items: stretch;
   }
   .plan-section-toggle,
-  .double11-ref-toggle { width: 100%; }
+  .double11-ref-toggle,
+  .six18-ref-toggle { width: 100%; }
   .plan-section-collapsed-note,
-  .double11-ref-collapsed-note {
+  .double11-ref-collapsed-note,
+  .six18-ref-collapsed-note {
     align-items: flex-start;
     flex-direction: column;
   }
   .double11-ref-metrics,
-  .double11-ref-callouts { grid-template-columns: 1fr; }
+  .double11-ref-callouts,
+  .six18-ref-metrics { grid-template-columns: 1fr; }
+  .six18-ref-chart { height: 240px; }
 }

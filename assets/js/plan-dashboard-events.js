@@ -275,6 +275,13 @@
       addSection(section.title, section.headers, section.rows);
     });
 
+    const six18Sections = typeof render.getSix18ReferenceExportSections === 'function'
+      ? render.getSix18ReferenceExportSections()
+      : [];
+    six18Sections.forEach((section) => {
+      addSection(section.title, section.headers, section.rows);
+    });
+
     const rhythmSummary = typeof render.getRhythmSummaryExportData === 'function'
       ? render.getRhythmSummaryExportData()
       : { headers: [], rows: [] };
@@ -491,6 +498,12 @@
 
       if (target.id === 'double11-reference-toggle' || target.dataset.action === 'toggle-double11-reference') {
         stateModule.state.ui.double11ReferenceExpanded = !stateModule.state.ui.double11ReferenceExpanded;
+        render.renderPage();
+        return;
+      }
+
+      if (target.id === 'six18-reference-toggle' || target.dataset.action === 'toggle-six18-reference') {
+        stateModule.state.ui.six18ReferenceExpanded = !stateModule.state.ui.six18ReferenceExpanded;
         render.renderPage();
         return;
       }
