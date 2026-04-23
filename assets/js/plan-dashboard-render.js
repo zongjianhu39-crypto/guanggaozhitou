@@ -715,33 +715,11 @@
       return;
     }
 
-    var total = SIX18_REFERENCE_DAILY.reduce(function(s, d) { return s + d.views; }, 0);
-    var avg = total / SIX18_REFERENCE_DAILY.length;
-    var peak = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views > m.views ? d : m; });
-    var trough = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views < m.views ? d : m; });
-    var peakPhase = getPhaseMeta(peak.phase).phase;
-    var troughPhase = getPhaseMeta(trough.phase).phase;
-
-    var summaryCards = [
-      { label: '数据周期',     value: '5/1-6/30',              helper: '60天完整618周期' },
-      { label: '日均展现指数', value: formatWan(avg),           helper: '全周期日均展现强度' },
-      { label: '峰值',         value: formatWan(peak.views),    helper: peak.date + ' ' + peakPhase },
-      { label: '谷值',         value: formatWan(trough.views),  helper: trough.date + ' ' + troughPhase },
-      { label: '峰谷倍数',     value: (peak.views / trough.views).toFixed(2) + 'x', helper: '峰值 / 谷值' },
-    ].map(function(item) {
-      return '<div class="six18-ref-metric">'
-        + '<span>' + utils.escapeHtml(item.label) + '</span>'
-        + '<strong>' + utils.escapeHtml(item.value) + '</strong>'
-        + '<em>' + utils.escapeHtml(item.helper) + '</em>'
-        + '</div>';
-    }).join('');
-
     var legend = SIX18_REFERENCE_PHASE_META.map(function(m) {
       return '<span class="six18-ref-legend-item"><i style="background:' + m.color + '"></i>' + utils.escapeHtml(m.phase) + '</span>';
     }).join('');
 
     el.innerHTML = '<div class="six18-ref-wrap">'
-      + '<div class="six18-ref-metrics">' + summaryCards + '</div>'
       + '<div class="six18-ref-legend">' + legend + '</div>'
       + '<div class="six18-ref-chart-wrap">'
       +   '<canvas id="six18-ref-chart" class="six18-ref-chart"></canvas>'
