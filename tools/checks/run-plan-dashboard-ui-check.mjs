@@ -56,6 +56,7 @@ async function main() {
       activity_type: 'daily',
       reference_amount: 80,
       reference_orders: 12,
+      reference_direct_orders: 4,
       reference_pre_orders: 5,
       reference_gross_profit: 33,
     },

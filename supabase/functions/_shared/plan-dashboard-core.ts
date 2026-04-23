@@ -18,6 +18,7 @@ export const DATA_SOURCE_CONFIG = {
     amountColumn: '花费',
     viewsColumn: '观看次数',
     ordersColumn: '总成交笔数',
+    directOrdersColumn: '直接成交笔数',
     cartColumn: '总购物车数',
     preOrdersColumn: '总预售成交笔数',
   },
@@ -165,6 +166,7 @@ export function buildPlanDashboardSummary(input: PlanDashboardSummaryInput) {
   const referenceByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.amountColumn);
   const referenceViewsByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.viewsColumn);
   const referenceOrdersByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.ordersColumn);
+  const referenceDirectOrdersByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.directOrdersColumn);
   const referenceCartByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.cartColumn);
   const referencePreOrdersByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.preOrdersColumn);
 
@@ -211,6 +213,7 @@ export function buildPlanDashboardSummary(input: PlanDashboardSummaryInput) {
       reference_amount: referenceAmount,
       reference_views: referenceViewsByDate.get(referenceDate) || 0,
       reference_orders: referenceOrdersByDate.get(referenceDate) || 0,
+      reference_direct_orders: referenceDirectOrdersByDate.get(referenceDate) || 0,
       reference_cart: referenceCartByDate.get(referenceDate) || 0,
       reference_pre_orders: referencePreOrdersByDate.get(referenceDate) || 0,
       reference_buyers: referenceBuyersByDate.get(referenceDate) || 0,

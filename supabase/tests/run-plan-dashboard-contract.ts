@@ -43,8 +43,8 @@ function main() {
       { date: '2026-01-01', 花费: '15' },
     ],
     referenceRows: [
-      { date: '2025-01-01', 花费: '80', 观看次数: '1000', 总成交笔数: '12', 总购物车数: '30', 总预售成交笔数: '3' },
-      { date: '2025-01-02', 花费: '90', 观看次数: '800', 总成交笔数: '8', 总购物车数: '20', 总预售成交笔数: '2' },
+      { date: '2025-01-01', 花费: '80', 观看次数: '1000', 总成交笔数: '12', 直接成交笔数: '4', 总购物车数: '30', 总预售成交笔数: '3' },
+      { date: '2025-01-02', 花费: '90', 观看次数: '800', 总成交笔数: '8', 直接成交笔数: '5', 总购物车数: '20', 总预售成交笔数: '2' },
     ],
     referenceFinancialRows: [
       { 日期: '2025/1/1', 保量佣金: '111', 预估结算机构佣金: '222', 品牌费: '333' },
@@ -89,6 +89,7 @@ function main() {
     'reference_amount',
     'reference_views',
     'reference_orders',
+    'reference_direct_orders',
     'reference_cart',
     'reference_pre_orders',
     'reference_buyers',
@@ -105,6 +106,7 @@ function main() {
   assert.equal(firstDay.reference_amount, 80);
   assert.equal(firstDay.reference_views, 1000);
   assert.equal(firstDay.reference_orders, 12);
+  assert.equal(firstDay.reference_direct_orders, 4);
   assert.equal(firstDay.reference_cart, 30);
   assert.equal(firstDay.reference_pre_orders, 3);
   assert.equal(firstDay.reference_buyers, 9);

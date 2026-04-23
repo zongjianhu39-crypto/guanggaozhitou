@@ -117,6 +117,7 @@ async function fetchSuperLiveRowsForDates(client: ReturnType<typeof createClient
     amountColumn,
     viewsColumn,
     ordersColumn,
+    directOrdersColumn,
     cartColumn,
     preOrdersColumn,
   } = DATA_SOURCE_CONFIG.superLive;
@@ -126,7 +127,7 @@ async function fetchSuperLiveRowsForDates(client: ReturnType<typeof createClient
       return fetchRowsByDateFilters(
         client,
         table,
-        `${dateField},${amountColumn},${viewsColumn},${ordersColumn},${cartColumn},${preOrdersColumn}`,
+        `${dateField},${amountColumn},${viewsColumn},${ordersColumn},${directOrdersColumn},${cartColumn},${preOrdersColumn}`,
         dateField,
         routedDates,
       );

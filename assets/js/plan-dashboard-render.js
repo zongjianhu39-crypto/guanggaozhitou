@@ -538,8 +538,10 @@
     var ac = utils.sum(ds.map(function(d) { return utils.toNumber(d.actual_cost); }));
     var aa = utils.sum(ds.map(function(d) { return utils.toNumber(d.agent_amount); }));
     var ra = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_amount != null ? d.reference_amount : d.reference_2025_amount); }));
+    var rwta = ra + aa;
     var rv = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_views); }));
     var ro = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_orders); }));
+    var rdo = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_direct_orders); }));
     var rc = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_cart); }));
     var rp = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_pre_orders); }));
     var rt = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_taobao_orders); }));
@@ -558,11 +560,14 @@
       ra: ra,
       rv: rv,
       ro: ro,
+      rdo: rdo,
       rc: rc,
       rp: rp,
       rt: rt,
       rb: rb,
+      rwta: rwta,
       oc: sDiv(ra, ro),
+      doc: sDiv(ra, rdo),
       pc: sDiv(ra, rp),
       cc: sDiv(ra, rc),
       asr: sDiv(ro, rt),
@@ -589,13 +594,16 @@
       + '<td class="plan-text-cell">' + fmtC(data.daa) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRef(data.ra) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRef(data.aa) + '</td>'
+      + '<td class="plan-text-cell plan-ref-cell">' + fmtRef(data.rwta) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.rv) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.ro) + '</td>'
+      + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.rdo) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.rc) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.rp) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.rt) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtRefN(data.rb) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtF(data.oc) + '</td>'
+      + '<td class="plan-text-cell plan-ref-cell">' + fmtF(data.doc) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtF(data.pc) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtF(data.cc) + '</td>'
       + '<td class="plan-text-cell plan-ref-cell">' + fmtP(data.asr) + '</td>'
@@ -660,13 +668,16 @@
       + '<th>\u65e5\u5747\u5b9e\u9645\u82b1\u8d39</th>'
       + '<th>25\u5e74\u82b1\u8d39</th>'
       + '<th>25\u5e74\u4ee3\u7406\u82b1\u8d39</th>'
+      + '<th>25\u5e74\u542b\u4ee3\u6295\u603b\u82b1\u8d39</th>'
       + '<th>25\u5e74\u89c2\u770b\u6b21\u6570</th>'
       + '<th>25\u5e74\u603b\u6210\u4ea4\u7b14\u6570</th>'
+      + '<th>25\u5e74\u76f4\u63a5\u6210\u4ea4\u7b14\u6570</th>'
       + '<th>25\u5e74\u603b\u8d2d\u7269\u8f66\u6570</th>'
       + '<th>25\u5e74\u9884\u552e\u6210\u4ea4\u7b14\u6570</th>'
       + '<th>25\u5e74\u6dd8\u5b9d\u6210\u4ea4\u7b14\u6570</th>'
       + '<th>25\u5e74\u6210\u4ea4\u4eba\u6570</th>'
       + '<th>25\u5e74\u8ba2\u5355\u6210\u672c</th>'
+      + '<th>25\u5e74\u76f4\u63a5\u6210\u4ea4\u8ba2\u5355\u6210\u672c</th>'
       + '<th>25\u5e74\u9884\u552e\u8ba2\u5355\u6210\u672c</th>'
       + '<th>25\u5e74\u52a0\u8d2d\u6210\u672c</th>'
       + '<th>25\u5e74\u5e7f\u544a\u6210\u4ea4\u5360\u6bd4</th>'
@@ -686,7 +697,7 @@
   function renderRhythmSummarySkeleton() {
     var el = document.getElementById('rhythm-summary-container');
     if (!el) return;
-    var skCols = Array(26).fill('').map(function() { return '<td><div class="skeleton-line" style="width:80%"></div></td>'; }).join('');
+    var skCols = Array(29).fill('').map(function() { return '<td><div class="skeleton-line" style="width:80%"></div></td>'; }).join('');
     el.innerHTML =
       '<div class="table-shell"><div class="table-scroll">'
       + '<table class="plan-table rhythm-summary-table"><thead><tr>'
@@ -694,10 +705,10 @@
       + '<th>\u4e07\u76f8\u53f0\u8ba1\u5212</th><th>\u6709\u5ba2\u4ee3\u6295\u8ba1\u5212</th><th>\u603b\u8ba1\u5212\u91d1\u989d</th>'
       + '<th>\u65e5\u5747\u8ba1\u5212\u91d1\u989d</th><th>\u8ba1\u5212\u5360\u6bd4</th><th>\u5b9e\u9645\u82b1\u8d39</th>'
       + '<th>\u82b1\u8d39\u5b8c\u6210\u7387</th><th>\u65e5\u5747\u5b9e\u9645\u82b1\u8d39</th>'
-      + '<th>25\u5e74\u82b1\u8d39</th><th>25\u5e74\u4ee3\u7406\u82b1\u8d39</th><th>25\u5e74\u89c2\u770b\u6b21\u6570</th><th>25\u5e74\u603b\u6210\u4ea4\u7b14\u6570</th>'
+      + '<th>25\u5e74\u82b1\u8d39</th><th>25\u5e74\u4ee3\u7406\u82b1\u8d39</th><th>25\u5e74\u542b\u4ee3\u6295\u603b\u82b1\u8d39</th><th>25\u5e74\u89c2\u770b\u6b21\u6570</th><th>25\u5e74\u603b\u6210\u4ea4\u7b14\u6570</th><th>25\u5e74\u76f4\u63a5\u6210\u4ea4\u7b14\u6570</th>'
       + '<th>25\u5e74\u603b\u8d2d\u7269\u8f66\u6570</th><th>25\u5e74\u9884\u552e\u6210\u4ea4\u7b14\u6570</th>'
       + '<th>25\u5e74\u6dd8\u5b9d\u6210\u4ea4\u7b14\u6570</th><th>25\u5e74\u6210\u4ea4\u4eba\u6570</th>'
-      + '<th>25\u5e74\u8ba2\u5355\u6210\u672c</th><th>25\u5e74\u9884\u552e\u8ba2\u5355\u6210\u672c</th><th>25\u5e74\u52a0\u8d2d\u6210\u672c</th>'
+      + '<th>25\u5e74\u8ba2\u5355\u6210\u672c</th><th>25\u5e74\u76f4\u63a5\u6210\u4ea4\u8ba2\u5355\u6210\u672c</th><th>25\u5e74\u9884\u552e\u8ba2\u5355\u6210\u672c</th><th>25\u5e74\u52a0\u8d2d\u6210\u672c</th>'
       + '<th>25\u5e74\u5e7f\u544a\u6210\u4ea4\u5360\u6bd4</th><th>\u5dee\u989d</th><th>\u589e\u5e45</th><th>\u8282\u594f\u5224\u65ad</th>'
       + '</tr></thead><tbody>'
       + Array(4).fill('').map(function() { return '<tr>' + skCols + '</tr>'; }).join('')
