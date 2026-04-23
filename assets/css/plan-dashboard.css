@@ -462,6 +462,41 @@ body.plan-dashboard-page {
 }
 
 /* --- Double 11 Reference --- */
+.double11-ref-toggle {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+}
+.double11-ref-collapsed {
+  padding-bottom: 16px;
+}
+.double11-ref-collapsed .section-head {
+  margin-bottom: 10px;
+}
+.double11-ref-collapsed-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.double11-ref-inline-toggle {
+  border: 0;
+  background: transparent;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.double11-ref-inline-toggle:hover {
+  color: #3730a3;
+}
 .double11-ref-wrap {
   display: grid;
   gap: 14px;
@@ -776,6 +811,15 @@ body.plan-dashboard-page {
 @media (max-width: 720px) {
   .toolbar-row { gap: 8px; }
   .table-summary-bar { gap: 12px; font-size: 12px; }
+  .section-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .double11-ref-toggle { width: 100%; }
+  .double11-ref-collapsed-note {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   .double11-ref-metrics,
   .double11-ref-callouts { grid-template-columns: 1fr; }
 }

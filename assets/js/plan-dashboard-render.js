@@ -267,15 +267,31 @@
   function renderDouble11Reference() {
     const section = document.getElementById('double11-reference-section');
     const el = document.getElementById('double11-reference-container');
+    const toggle = document.getElementById('double11-reference-toggle');
     if (!section || !el) return;
     if (!shouldShowDouble11Reference()) {
       section.classList.add('hidden');
       section.setAttribute('aria-hidden', 'true');
       el.innerHTML = '';
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
       return;
     }
     section.classList.remove('hidden');
     section.setAttribute('aria-hidden', 'false');
+    const isExpanded = Boolean(stateModule.state.ui.double11ReferenceExpanded);
+    section.classList.toggle('double11-ref-collapsed', !isExpanded);
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', String(isExpanded));
+      toggle.textContent = isExpanded ? '收起参考' : '展开参考';
+    }
+    if (!isExpanded) {
+      el.innerHTML = `
+        <div class="double11-ref-collapsed-note">
+          <span>已收起：包含 7 个双11阶段的广告花费、成交、直接成交和成本参考指标。</span>
+          <button type="button" class="double11-ref-inline-toggle" data-action="toggle-double11-reference">展开查看明细</button>
+        </div>`;
+      return;
+    }
 
     const summaryCards = DOUBLE11_REFERENCE_SUMMARY.map((item) => `
       <div class="double11-ref-metric">

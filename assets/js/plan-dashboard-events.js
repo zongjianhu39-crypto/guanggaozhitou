@@ -237,6 +237,12 @@
         return;
       }
 
+      if (target.id === 'double11-reference-toggle' || target.dataset.action === 'toggle-double11-reference') {
+        stateModule.state.ui.double11ReferenceExpanded = !stateModule.state.ui.double11ReferenceExpanded;
+        render.renderPage();
+        return;
+      }
+
       if (target.id === 'drawer-close-btn') {
         stateModule.state.ui.activeDrawerActivityId = '';
         render.renderDrawer();

@@ -27,6 +27,7 @@
       isCreateModalOpen: false,
       selectedMonths: [],
       monthSelectionAnchor: null,
+      double11ReferenceExpanded: false,
     },
   };
 
