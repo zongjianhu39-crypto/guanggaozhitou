@@ -39,10 +39,6 @@
     state.drafts.dayPatches[date] = Object.assign({}, current, patch);
   }
 
-  function clearDayDraft(date) {
-    delete state.drafts.dayPatches[date];
-  }
-
   function clearAllDrafts() {
     state.drafts.dayPatches = {};
   }
@@ -54,7 +50,6 @@
   window.PlanDashboardState = {
     state,
     patchDayDraft,
-    clearDayDraft,
     clearAllDrafts,
     getActivityById,
   };

@@ -471,40 +471,6 @@
     return '<span class="plan-muted">–</span>';
   }
 
-  function renderRefCurrency(value) {
-    const amount = utils.toNumber(value ?? 0);
-    return amount !== 0 ? utils.escapeHtml(utils.formatCurrency(amount)) : '<span class="plan-muted">-</span>';
-  }
-
-  function renderRefNumber(value) {
-    const amount = utils.toNumber(value ?? 0);
-    return amount > 0 ? utils.escapeHtml(utils.formatNumber(amount)) : '<span class="plan-muted">-</span>';
-  }
-
-  function safeDivide(numerator, denominator, decimals) {
-    const n = utils.toNumber(numerator);
-    const d = utils.toNumber(denominator);
-    if (d <= 0 || !Number.isFinite(n)) return null;
-    const result = n / d;
-    return Number.isFinite(result) ? result.toFixed(decimals) : null;
-  }
-
-  function renderDerived(value) {
-    return value != null ? utils.escapeHtml(value) : '<span class="plan-muted">--</span>';
-  }
-
-  function renderOptionalCurrency(value) {
-    return value == null ? '<span class="plan-muted">--</span>' : utils.escapeHtml(utils.formatCurrency(value));
-  }
-
-  function renderDerivedPercent(numerator, denominator) {
-    const n = utils.toNumber(numerator);
-    const d = utils.toNumber(denominator);
-    if (d <= 0 || !Number.isFinite(n)) return '<span class="plan-muted">--</span>';
-    const pct = (n / d) * 100;
-    return Number.isFinite(pct) ? utils.escapeHtml(pct.toFixed(2) + '%') : '<span class="plan-muted">--</span>';
-  }
-
   /* ---- Rhythm Summary helpers ---- */
 
   function rhythmKey(day) {
@@ -1068,23 +1034,23 @@
         <td>${buildActivityCell(day)}</td>
         <td>${buildEditableCell(day.date, 'remark', day.remark)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(utils.formatCurrency(day.actual_cost))}</td>
-	        <td class="plan-text-cell">${renderOptionalCurrency(day.agent_amount)}</td>
+	        <td class="plan-text-cell">${fmtC(day.agent_amount)}</td>
 	        <td class="plan-text-cell plan-ref-cell">${refAmount > 0 ? utils.escapeHtml(utils.formatCurrency(refAmount)) : '<span class="plan-muted">-</span>'}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_views)}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_orders)}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_direct_orders)}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_cart)}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_pre_orders)}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_buyers)}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderRefNumber(day.reference_taobao_orders)}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_orders, 2))}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_direct_orders, 2))}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_pre_orders, 2))}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderDerived(safeDivide(day.reference_amount ?? day.reference_2025_amount, day.reference_cart, 2))}</td>
-	        <td class="plan-text-cell plan-ref-cell">${renderDerivedPercent(day.reference_orders, day.reference_taobao_orders)}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderRefCurrency(day.reference_financial_guarantee_commission)}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderRefCurrency(day.reference_financial_estimated_agency_commission)}</td>
-        <td class="plan-text-cell plan-ref-cell">${renderRefCurrency(day.reference_financial_brand_fee)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtRefN(day.reference_views)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtRefN(day.reference_orders)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtRefN(day.reference_direct_orders)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtRefN(day.reference_cart)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtRefN(day.reference_pre_orders)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtRefN(day.reference_buyers)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtRefN(day.reference_taobao_orders)}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtF(sDiv(day.reference_amount ?? day.reference_2025_amount, day.reference_orders))}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtF(sDiv(day.reference_amount ?? day.reference_2025_amount, day.reference_direct_orders))}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtF(sDiv(day.reference_amount ?? day.reference_2025_amount, day.reference_pre_orders))}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtF(sDiv(day.reference_amount ?? day.reference_2025_amount, day.reference_cart))}</td>
+	        <td class="plan-text-cell plan-ref-cell">${fmtP(sDiv(day.reference_orders, day.reference_taobao_orders))}</td>
+        <td class="plan-text-cell plan-ref-cell">${fmtRef(day.reference_financial_guarantee_commission)}</td>
+        <td class="plan-text-cell plan-ref-cell">${fmtRef(day.reference_financial_estimated_agency_commission)}</td>
+        <td class="plan-text-cell plan-ref-cell">${fmtRef(day.reference_financial_brand_fee)}</td>
       </tr>`;
   }
 
@@ -1335,7 +1301,6 @@
     renderCreateModal,
     renderStatus,
     renderMonthNote,
-    getEffectiveDay,
     getEffectiveDays,
     getRhythmSummaryExportData,
     getDouble11ReferenceExportSections,

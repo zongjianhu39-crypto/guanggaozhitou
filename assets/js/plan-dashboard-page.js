@@ -201,13 +201,6 @@
   window.PlanDashboardPage = {
     init,
     reloadSummary,
-    isMonthDisabled,
-    getInitialMonth,
-    getSelectedMonths,
-    applySelectedMonths,
-    PLAN_BREAKDOWN_START_MONTH,
-    PLAN_BREAKDOWN_AVAILABLE_MONTHS,
-    PLAN_BREAKDOWN_UNAVAILABLE_REASON,
   };
   window.addEventListener('DOMContentLoaded', init);
 })(window);

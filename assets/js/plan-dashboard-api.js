@@ -34,10 +34,6 @@
     return request('GET', undefined, { start, end });
   }
 
-  async function savePlan(date, patch, updatedBy) {
-    return request('POST', { action: 'save_plan', date, patch, updated_by: updatedBy });
-  }
-
   async function savePlans(items, updatedBy) {
     return request('POST', { action: 'save_plans', items, updated_by: updatedBy });
   }
@@ -60,7 +56,6 @@
 
   window.PlanDashboardApi = {
     fetchSummary,
-    savePlan,
     savePlans,
     saveActivity,
     deleteActivity,
