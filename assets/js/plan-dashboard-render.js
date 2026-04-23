@@ -21,10 +21,12 @@
       wanxiangSpend: '63.3万',
       views: '242.0万',
       orders: '20.7万',
+      directOrders: '8.8万',
       carts: '69.4万',
       presaleOrders: '24.1万',
       viewCost: '0.26',
       orderCost: '3.1',
+      directOrderCost: '7.2',
       cartCost: '0.9',
       presaleOrderCost: '2.6',
       viewConversion: '9%',
@@ -41,10 +43,12 @@
       wanxiangSpend: '458.9万',
       views: '1,225.8万',
       orders: '60.9万',
+      directOrders: '39.4万',
       carts: '101.8万',
       presaleOrders: '76.8万',
       viewCost: '0.37',
       orderCost: '7.5',
+      directOrderCost: '11.7',
       cartCost: '4.5',
       presaleOrderCost: '6.0',
       viewConversion: '5%',
@@ -61,10 +65,12 @@
       wanxiangSpend: '88.2万',
       views: '258.5万',
       orders: '8.1万',
+      directOrders: '5.0万',
       carts: '28.4万',
       presaleOrders: '0.3万',
       viewCost: '0.34',
       orderCost: '10.9',
+      directOrderCost: '17.8',
       cartCost: '3.1',
       presaleOrderCost: '-',
       viewConversion: '3%',
@@ -81,10 +87,12 @@
       wanxiangSpend: '19.5万',
       views: '69.4万',
       orders: '4.9万',
+      directOrders: '2.7万',
       carts: '15.1万',
       presaleOrders: '1.6万',
       viewCost: '0.28',
       orderCost: '3.9',
+      directOrderCost: '7.1',
       cartCost: '1.3',
       presaleOrderCost: '-',
       viewConversion: '7%',
@@ -101,10 +109,12 @@
       wanxiangSpend: '43.7万',
       views: '131.7万',
       orders: '5.0万',
+      directOrders: '1.7万',
       carts: '15.8万',
       presaleOrders: '6.0万',
       viewCost: '0.33',
       orderCost: '8.7',
+      directOrderCost: '26.4',
       cartCost: '2.8',
       presaleOrderCost: '7.3',
       viewConversion: '4%',
@@ -121,10 +131,12 @@
       wanxiangSpend: '122.7万',
       views: '311.6万',
       orders: '17.4万',
+      directOrders: '11.0万',
       carts: '32.0万',
       presaleOrders: '18.8万',
       viewCost: '0.39',
       orderCost: '7.0',
+      directOrderCost: '11.2',
       cartCost: '3.8',
       presaleOrderCost: '6.5',
       viewConversion: '6%',
@@ -141,10 +153,12 @@
       wanxiangSpend: '42.3万',
       views: '70.3万',
       orders: '3.3万',
+      directOrders: '2.5万',
       carts: '5.4万',
       presaleOrders: '0.0万',
       viewCost: '0.60',
       orderCost: '12.8',
+      directOrderCost: '17.2',
       cartCost: '7.9',
       presaleOrderCost: '-',
       viewConversion: '5%',
@@ -283,10 +297,12 @@
         <td class="plan-text-cell">${utils.escapeHtml(item.wanxiangSpend)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(item.views)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(item.orders)}</td>
+        <td class="plan-text-cell">${utils.escapeHtml(item.directOrders)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(item.carts)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(item.presaleOrders)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(item.viewCost)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(item.orderCost)}</td>
+        <td class="plan-text-cell">${utils.escapeHtml(item.directOrderCost)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(item.cartCost)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(item.presaleOrderCost)}</td>
         <td class="plan-text-cell">${utils.escapeHtml(item.viewConversion)}</td>
@@ -317,10 +333,12 @@
                   <th>万相台花费</th>
                   <th>观看次数</th>
                   <th>成交笔数</th>
+                  <th>直接成交笔数</th>
                   <th>购物车</th>
                   <th>预售成交</th>
                   <th>观看成本</th>
                   <th>订单成本</th>
+                  <th>直接订单成交成本</th>
                   <th>加购成本</th>
                   <th>预售订单成本</th>
                   <th>观看转化率</th>
