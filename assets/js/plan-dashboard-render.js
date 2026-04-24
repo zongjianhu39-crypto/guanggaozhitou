@@ -196,22 +196,89 @@
   ];
 
   const SIX18_REFERENCE_MONTHS = [5, 6];
-  const SIX18_RHYTHM_MONTHS = [4, 5, 6];
+  const SIX18_RHYTHM_MONTHS = [5, 6];
   const SIX18_RHYTHM_PHASES = [
-    { phase: '蓄水期',     dateRange: '4.23-5.12', days: 20,  wanxiang: '加大拉新预算',   youke: '侧重品宣曝光', gmv: '–' },
-    { phase: '付定金',     dateRange: '5.13-5.16', days: 4,   wanxiang: '拉新预算降低',   youke: '有预算就投',    gmv: '–' },
-    { phase: '第一波爆发', dateRange: '5.16-5.26', days: 11,  wanxiang: '加大收割预算',   youke: '配合爆发',      gmv: '20万' },
-    { phase: '蓄力期',     dateRange: '5.27-6.3',  days: 8,   wanxiang: '拉新预算降低',   youke: '有预算就投',    gmv: '–' },
-    { phase: '第二波爆发', dateRange: '6.4-6.20',  days: 17,  wanxiang: '加大收割预算',   youke: '配合爆发',      gmv: '42万' },
-    { phase: '返场期',     dateRange: '6.21-6.25', days: 5,   wanxiang: '–',              youke: '–',             gmv: '–' },
-  ];
-  const SIX18_RHYTHM_PHASE_COLORS = [
-    { phase: '蓄水期',     color: '#94a3b8' },
-    { phase: '付定金',     color: '#f59e0b' },
-    { phase: '第一波爆发', color: '#ef4444' },
-    { phase: '蓄力期',     color: '#6366f1' },
-    { phase: '第二波爆发', color: '#ef4444' },
-    { phase: '返场期',     color: '#0ea5e9' },
+    { 
+      dateRange: '5月1日 00:00 ~ 5月5日 23:59', 
+      shortDate: '5/1-5/5',
+      platformRhythm: '日常期', 
+      rhythmLabel: '日常',
+      keySession: '–',
+      operation: '发定金红包+100%商品预热',
+      color: '#94a3b8'
+    },
+    { 
+      dateRange: '5月6日 00:00 ~ 5月13日 19:59', 
+      shortDate: '5/6-5/13',
+      platformRhythm: '预售预热期', 
+      rhythmLabel: '第一波预售预热',
+      keySession: '–',
+      operation: '发定金红包+追竞对的领取定金红包人数',
+      color: '#f59e0b'
+    },
+    { 
+      dateRange: '5月13日 20:00 ~ 5月16日 19:59', 
+      shortDate: '5/13-5/16',
+      platformRhythm: '预售付定金期', 
+      rhythmLabel: '第一波预售付定期',
+      keySession: '罗老师场',
+      operation: '催付定金锁单',
+      color: '#ef4444'
+    },
+    { 
+      dateRange: '5月16日 20:00 ~ 5月26日 23:59', 
+      shortDate: '5/16-5/26',
+      platformRhythm: '预售付尾款期', 
+      rhythmLabel: '第一波预售尾款期',
+      keySession: '–',
+      operation: '催付尾款',
+      color: '#6366f1'
+    },
+    { 
+      dateRange: '5月27日 00:00 ~ 6月5日 23:59', 
+      shortDate: '5/27-6/5',
+      platformRhythm: '日常期', 
+      rhythmLabel: '现货期',
+      keySession: '–',
+      operation: '可能会做品牌专场发9折券',
+      color: '#94a3b8'
+    },
+    { 
+      dateRange: '6月6日 00:00 ~ 6月12日 09:59', 
+      shortDate: '6/6-6/12',
+      platformRhythm: '预售预热期', 
+      rhythmLabel: '第二波预售预热期',
+      keySession: '–',
+      operation: '发定金红包+100%商品预热',
+      color: '#f59e0b'
+    },
+    { 
+      dateRange: '6月12日 10:00 ~ 6月14日 23:00', 
+      shortDate: '6/12-6/14',
+      platformRhythm: '预售付定金期', 
+      rhythmLabel: '第二波预售付定',
+      keySession: '罗老师场',
+      operation: '催付定金锁单',
+      color: '#ef4444'
+    },
+    { 
+      dateRange: '6月15日 00:00 ~ 6月20日 23:59', 
+      shortDate: '6/15-6/20',
+      platformRhythm: '预售付尾款期', 
+      rhythmLabel: '第二波预售尾款期',
+      keySession: '–',
+      operation: '催付尾款',
+      color: '#6366f1'
+    },
+    { 
+      dateRange: '6月21日 00:00 ~ 6月30日 23:59', 
+      shortDate: '6/21-6/30',
+      platformRhythm: '日常期', 
+      rhythmLabel: '日常',
+      keySession: '–',
+      operation: '可能会停播',
+      color: '#94a3b8'
+    },
   ];
   const SIX18_REFERENCE_DAILY = [
     { date: '5/1',  views: 100000000, phase: '蓄水期' },
@@ -794,34 +861,51 @@
     }
     if (!isExpanded) {
       el.innerHTML = '<div class="six18-rhythm-collapsed-note">'
-        + '<span>已收起：25年618投放节奏（蓄水期4.23 → 返场期6.25，共75天6个阶段）。</span>'
+        + '<span>已收起：25年618节奏参考（5/1-6/30，9个阶段）。</span>'
         + '<button type="button" class="six18-rhythm-inline-toggle" data-action="toggle-six18-rhythm">展开查看节奏</button>'
         + '</div>';
       return;
     }
 
-    var colorMap = {};
-    SIX18_RHYTHM_PHASE_COLORS.forEach(function(m) { colorMap[m.phase] = m.color; });
+    // 生成横向表格HTML
+    var dateRow = SIX18_RHYTHM_PHASES.map(function(p) {
+      return '<td style="border-top:3px solid ' + p.color + '">'
+        + '<div class="six18-rhythm-date">' + utils.escapeHtml(p.dateRange) + '</div>'
+        + '</td>';
+    }).join('');
 
-    var rows = SIX18_RHYTHM_PHASES.map(function(p) {
-      var c = colorMap[p.phase] || '#94a3b8';
-      return '<tr>'
-        + '<td><span class="six18-rhythm-phase-dot" style="background:' + c + '"></span>' + utils.escapeHtml(p.phase) + '</td>'
-        + '<td>' + utils.escapeHtml(p.dateRange) + '</td>'
-        + '<td>' + p.days + '天</td>'
-        + '<td>' + utils.escapeHtml(p.wanxiang) + '</td>'
-        + '<td>' + utils.escapeHtml(p.youke) + '</td>'
-        + '<td>' + utils.escapeHtml(p.gmv) + '</td>'
-        + '</tr>';
+    var rhythmRow = SIX18_RHYTHM_PHASES.map(function(p) {
+      return '<td>'
+        + '<span class="six18-rhythm-tag" style="background:' + p.color + '20;color:' + p.color + '">' 
+        + utils.escapeHtml(p.platformRhythm) + '</span>'
+        + '<div class="six18-rhythm-label">' + utils.escapeHtml(p.rhythmLabel) + '</div>'
+        + '</td>';
+    }).join('');
+
+    var sessionRow = SIX18_RHYTHM_PHASES.map(function(p) {
+      var hasSession = p.keySession && p.keySession !== '–';
+      return '<td>'
+        + (hasSession 
+          ? '<span class="six18-rhythm-session">' + utils.escapeHtml(p.keySession) + '</span>'
+          : '<span class="six18-rhythm-empty">–</span>')
+        + '</td>';
+    }).join('');
+
+    var operationRow = SIX18_RHYTHM_PHASES.map(function(p) {
+      return '<td>'
+        + '<div class="six18-rhythm-operation">' + utils.escapeHtml(p.operation) + '</div>'
+        + '</td>';
     }).join('');
 
     el.innerHTML = '<div class="six18-rhythm-wrap">'
       + '<div class="six18-rhythm-table-shell">'
-      +   '<table class="six18-rhythm-table">'
-      +     '<thead><tr>'
-      +       '<th>阶段</th><th>日期</th><th>天数</th><th>万相台节奏</th><th>有客节奏</th><th>GMV目标</th>'
-      +     '</tr></thead>'
-      +     '<tbody>' + rows + '</tbody>'
+      +   '<table class="six18-rhythm-horizontal-table">'
+      +     '<tbody>'
+      +       '<tr class="six18-rhythm-row"><th class="six18-rhythm-row-label">日期</th>' + dateRow + '</tr>'
+      +       '<tr class="six18-rhythm-row"><th class="six18-rhythm-row-label">平台节奏</th>' + rhythmRow + '</tr>'
+      +       '<tr class="six18-rhythm-row"><th class="six18-rhythm-row-label">重要场次</th>' + sessionRow + '</tr>'
+      +       '<tr class="six18-rhythm-row"><th class="six18-rhythm-row-label">运营动作</th>' + operationRow + '</tr>'
+      +     '</tbody>'
       +   '</table>'
       + '</div>'
       + '<div class="six18-rhythm-note">'
