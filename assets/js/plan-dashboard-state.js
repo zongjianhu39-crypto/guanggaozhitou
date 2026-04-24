@@ -29,6 +29,7 @@
       monthSelectionAnchor: null,
       double11ReferenceExpanded: false,
       six18ReferenceExpanded: false,
+      six18RhythmExpanded: false,
       timelineExpanded: true,
       rhythmSummaryExpanded: true,
       monthNoteExpanded: true,

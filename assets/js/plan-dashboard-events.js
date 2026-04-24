@@ -508,6 +508,12 @@
         return;
       }
 
+      if (target.id === 'six18-rhythm-toggle' || target.dataset.action === 'toggle-six18-rhythm') {
+        stateModule.state.ui.six18RhythmExpanded = !stateModule.state.ui.six18RhythmExpanded;
+        render.renderPage();
+        return;
+      }
+
       if (target.dataset.action === 'toggle-plan-section') {
         const section = target.dataset.section || '';
         const stateKeyBySection = {

@@ -196,6 +196,23 @@
   ];
 
   const SIX18_REFERENCE_MONTHS = [5, 6];
+  const SIX18_RHYTHM_MONTHS = [4, 5, 6];
+  const SIX18_RHYTHM_PHASES = [
+    { phase: '蓄水期',     dateRange: '4.23-5.12', days: 20,  wanxiang: '加大拉新预算',   youke: '侧重品宣曝光', gmv: '–' },
+    { phase: '付定金',     dateRange: '5.13-5.16', days: 4,   wanxiang: '拉新预算降低',   youke: '有预算就投',    gmv: '–' },
+    { phase: '第一波爆发', dateRange: '5.16-5.26', days: 11,  wanxiang: '加大收割预算',   youke: '配合爆发',      gmv: '20万' },
+    { phase: '蓄力期',     dateRange: '5.27-6.3',  days: 8,   wanxiang: '拉新预算降低',   youke: '有预算就投',    gmv: '–' },
+    { phase: '第二波爆发', dateRange: '6.4-6.20',  days: 17,  wanxiang: '加大收割预算',   youke: '配合爆发',      gmv: '42万' },
+    { phase: '返场期',     dateRange: '6.21-6.25', days: 5,   wanxiang: '–',              youke: '–',             gmv: '–' },
+  ];
+  const SIX18_RHYTHM_PHASE_COLORS = [
+    { phase: '蓄水期',     color: '#94a3b8' },
+    { phase: '付定金',     color: '#f59e0b' },
+    { phase: '第一波爆发', color: '#ef4444' },
+    { phase: '蓄力期',     color: '#6366f1' },
+    { phase: '第二波爆发', color: '#ef4444' },
+    { phase: '返场期',     color: '#0ea5e9' },
+  ];
   const SIX18_REFERENCE_DAILY = [
     { date: '5/1',  views: 100000000, phase: '蓄水期' },
     { date: '5/2',  views: 102000000, phase: '蓄水期' },
@@ -739,6 +756,78 @@
       window._six18ResizeObs = new ResizeObserver(function() { drawSix18Chart(); });
       window._six18ResizeObs.observe(chartWrap);
     }
+  }
+
+  /* ---- 25年618节奏 ---- */
+
+  function shouldShowSix18Rhythm() {
+    var range = stateModule.state.range || {};
+    var startIndex = getYearMonthIndex(range.start);
+    var endIndex = getYearMonthIndex(range.end);
+    if (startIndex == null || endIndex == null || startIndex > endIndex) return false;
+    for (var index = startIndex; index <= endIndex && index <= startIndex + 24; index += 1) {
+      var month = (index % 12) + 1;
+      if (SIX18_RHYTHM_MONTHS.includes(month)) return true;
+    }
+    return false;
+  }
+
+  function renderSix18Rhythm() {
+    var section = document.getElementById('six18-rhythm-section');
+    var el = document.getElementById('six18-rhythm-container');
+    var toggle = document.getElementById('six18-rhythm-toggle');
+    if (!section || !el) return;
+    if (!shouldShowSix18Rhythm()) {
+      section.classList.add('hidden');
+      section.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '';
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+      return;
+    }
+    section.classList.remove('hidden');
+    section.setAttribute('aria-hidden', 'false');
+    var isExpanded = Boolean(stateModule.state.ui.six18RhythmExpanded);
+    section.classList.toggle('six18-rhythm-collapsed', !isExpanded);
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', String(isExpanded));
+      toggle.textContent = isExpanded ? '收起参考' : '展开参考';
+    }
+    if (!isExpanded) {
+      el.innerHTML = '<div class="six18-rhythm-collapsed-note">'
+        + '<span>已收起：25年618投放节奏（蓄水期4.23 → 返场期6.25，共75天6个阶段）。</span>'
+        + '<button type="button" class="six18-rhythm-inline-toggle" data-action="toggle-six18-rhythm">展开查看节奏</button>'
+        + '</div>';
+      return;
+    }
+
+    var colorMap = {};
+    SIX18_RHYTHM_PHASE_COLORS.forEach(function(m) { colorMap[m.phase] = m.color; });
+
+    var rows = SIX18_RHYTHM_PHASES.map(function(p) {
+      var c = colorMap[p.phase] || '#94a3b8';
+      return '<tr>'
+        + '<td><span class="six18-rhythm-phase-dot" style="background:' + c + '"></span>' + utils.escapeHtml(p.phase) + '</td>'
+        + '<td>' + utils.escapeHtml(p.dateRange) + '</td>'
+        + '<td>' + p.days + '天</td>'
+        + '<td>' + utils.escapeHtml(p.wanxiang) + '</td>'
+        + '<td>' + utils.escapeHtml(p.youke) + '</td>'
+        + '<td>' + utils.escapeHtml(p.gmv) + '</td>'
+        + '</tr>';
+    }).join('');
+
+    el.innerHTML = '<div class="six18-rhythm-wrap">'
+      + '<div class="six18-rhythm-table-shell">'
+      +   '<table class="six18-rhythm-table">'
+      +     '<thead><tr>'
+      +       '<th>阶段</th><th>日期</th><th>天数</th><th>万相台节奏</th><th>有客节奏</th><th>GMV目标</th>'
+      +     '</tr></thead>'
+      +     '<tbody>' + rows + '</tbody>'
+      +   '</table>'
+      + '</div>'
+      + '<div class="six18-rhythm-note">'
+      +   '基于25年618投放节奏整理，仅用于阶段对照和预算参考，不参与节奏汇总、保存、导出或任何计算。'
+      + '</div>'
+      + '</div>';
   }
 
   function buildEditableCell(date, field, value) {
@@ -1614,6 +1703,7 @@
     renderTimelineSkeleton();
     renderDouble11Reference();
     renderSix18Reference();
+    renderSix18Rhythm();
     renderRhythmSummarySkeleton();
     renderMonthNoteSkeleton();
     renderTableSkeleton();
@@ -1628,6 +1718,7 @@
     renderTimeline();
     renderDouble11Reference();
     renderSix18Reference();
+    renderSix18Rhythm();
     renderRhythmSummary();
     renderMonthNote();
     renderTableFull();
