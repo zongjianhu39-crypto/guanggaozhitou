@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成交预测 - 广告智投工作台</title>
+    <meta name="description" content="基于机器学习的人群成交概率预测和订单成本预估">
+    <link rel="stylesheet" href="style.css?v=20260406k">
+    <link rel="stylesheet" href="assets/css/conversion-prediction.css?v=20260424a">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+    <script src="assets/js/auth-helpers.js?v=20260412a"></script>
+    <script src="auth.js?v=20260409a"></script>
+    
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-emoji">🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="genbi.html" class="nav-link">GenBI</a></li>
+                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li><a href="conversion-prediction.html" class="nav-link active">成交预测</a></li>
+                <li class="nav-item-dropdown">
+                    <button type="button" class="nav-link" aria-expanded="false">更多 <span class="nav-dropdown-arrow">▾</span></button>
+                    <div class="nav-dropdown" role="menu">
+                        <a href="genbi-workflow.html">GenBI 工作流程</a>
+                        <a href="metric-rules.html">指标规则</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="prediction-page">
+        <div class="container">
+            <!-- 页面标题 -->
+            <header class="prediction-header">
+                <div class="prediction-header-copy">
+                    <span class="prediction-kicker">ML 模型预测</span>
+                    <h1>人群成交概率预测</h1>
+                    <p class="prediction-desc">
+                        基于历史投放数据，使用 LightGBM 模型预测各人群的成交概率和订单成本，
+                        辅助人群筛选和预算分配决策。
+                    </p>
+                </div>
+                <div class="prediction-header-meta">
+                    <div class="model-info-card">
+                        <span class="model-info-label">当前模型</span>
+                        <strong id="model-version">v0.4.0</strong>
+                        <span class="model-info-detail">二阶段模型（分类+回归）</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 筛选控制面板 -->
+            <section class="prediction-controls">
+                <div class="controls-grid">
+                    <!-- 日期选择 -->
+                    <div class="control-group">
+                        <label class="control-label">预测日期范围</label>
+                        <div class="date-range-inputs">
+                            <input type="date" id="start-date" class="input-date" value="2026-04-01">
+                            <span class="date-separator">至</span>
+                            <input type="date" id="end-date" class="input-date" value="2026-04-30">
+                        </div>
+                    </div>
+
+                    <!-- 人群筛选 -->
+                    <div class="control-group">
+                        <label class="control-label">人群名称（可选）</label>
+                        <input type="text" id="crowd-filter" class="input-text" placeholder="输入人群名称筛选...">
+                    </div>
+
+                    <!-- 场景筛选 -->
+                    <div class="control-group">
+                        <label class="control-label">场景（可选）</label>
+                        <select id="scene-filter" class="input-select">
+                            <option value="">全部场景</option>
+                        </select>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="control-group control-actions">
+                        <button id="run-prediction-btn" class="btn btn-primary">
+                            <span class="btn-icon">🔮</span>
+                            运行预测
+                        </button>
+                        <button id="export-csv-btn" class="btn btn-secondary" disabled>
+                            <span class="btn-icon">📥</span>
+                            导出CSV
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 加载状态 -->
+            <div id="prediction-state" class="prediction-state">
+                <div class="state-icon">📊</div>
+                <p>选择日期范围后点击"运行预测"开始分析</p>
+            </div>
+
+            <!-- 统计概览 -->
+            <section id="prediction-summary" class="prediction-summary" style="display: none;">
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <span class="summary-label">预测人群数</span>
+                        <strong id="summary-count">--</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-label">平均成交概率</span>
+                        <strong id="summary-prob">--</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-label">高概率人群(>60%)</span>
+                        <strong id="summary-high">--</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-label">预测总成本</span>
+                        <strong id="summary-cost">--</strong>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 预测结果表格 -->
+            <section id="prediction-results" class="prediction-results" style="display: none;">
+                <div class="results-header">
+                    <h2>预测结果</h2>
+                    <div class="results-actions">
+                        <label class="sort-label">
+                            排序：
+                            <select id="sort-select" class="input-select-small">
+                                <option value="probability_desc">成交概率 ↓</option>
+                                <option value="probability_asc">成交概率 ↑</option>
+                                <option value="cost_desc">预测成本 ↓</option>
+                                <option value="cost_asc">预测成本 ↑</option>
+                                <option value="date_asc">日期 ↑</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="prediction-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-date">日期</th>
+                                <th class="col-scene">场景</th>
+                                <th class="col-crowd">人群名称</th>
+                                <th class="col-prob">成交概率</th>
+                                <th class="col-cost">订单成本</th>
+                                <th class="col-total">预测总成本</th>
+                                <th class="col-range">置信区间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prediction-tbody">
+                            <!-- 动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="table-pagination" class="table-pagination">
+                    <span class="pagination-info">显示 1-50 / 共 <span id="total-count">0</span> 条</span>
+                    <div class="pagination-buttons">
+                        <button id="prev-page-btn" class="btn btn-small" disabled>上一页</button>
+                        <button id="next-page-btn" class="btn btn-small">下一页</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 模型说明 -->
+            <section class="prediction-docs">
+                <details class="docs-details">
+                    <summary class="docs-summary">📖 模型说明和使用指南</summary>
+                    <div class="docs-content">
+                        <h3>模型架构</h3>
+                        <p>采用二阶段 LightGBM 模型：</p>
+                        <ul>
+                            <li><strong>阶段1 - 分类模型</strong>：预测该人群在该日期是否会有成交（AUC=0.917）</li>
+                            <li><strong>阶段2 - 回归模型</strong>：预测有成交时的订单成本（R²=0.154）</li>
+                            <li><strong>最终预测</strong> = 成交概率 × 订单成本</li>
+                        </ul>
+
+                        <h3>特征工程</h3>
+                        <p>模型使用57个特征，包括：</p>
+                        <ul>
+                            <li>时间特征（星期、月份、是否周末）</li>
+                            <li>历史聚合特征（过去7天/30天滚动统计）</li>
+                            <li>Target Encoding（人群历史表现编码）</li>
+                        </ul>
+
+                        <h3>如何使用预测结果</h3>
+                        <ol>
+                            <li><strong>人群筛选</strong>：优先投放成交概率 > 60% 的人群</li>
+                            <li><strong>预算分配</strong>：高概率人群分配更多预算</li>
+                            <li><strong>成本控制</strong>：关注预测成本过高的人群</li>
+                            <li><strong>效果追踪</strong>：定期回填实际成本，评估模型准确性</li>
+                        </ol>
+
+                        <h3>注意事项</h3>
+                        <ul>
+                            <li>模型基于历史数据训练，新人群可能预测不准</li>
+                            <li>置信区间较宽表示预测不确定性高</li>
+                            <li>建议结合实际业务经验综合判断</li>
+                        </ul>
+                    </div>
+                </details>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-shell">
+                <div class="footer-main">
+                    <div>
+                        <div class="footer-brand">
+                            <span class="footer-emoji">🎯</span>
+                            <span>交个朋友·广告智投工作台</span>
+                        </div>
+                        <p class="footer-intro">给投手、运营和管理者共用的一套内部工作台。</p>
+                    </div>
+                    <div class="footer-column">
+                        <span class="footer-title">高频入口</span>
+                        <div class="footer-links footer-links-stack">
+                            <a href="supabase-dashboard.html">数据看板</a>
+                            <a href="insights.html">洞察中心</a>
+                            <a href="conversion-prediction.html">成交预测</a>
+                        </div>
+                    </div>
+                    <div class="footer-column">
+                        <span class="footer-title">使用支持</span>
+                        <div class="footer-links footer-links-stack">
+                            <a href="index.html">首页</a>
+                            <a href="metric-rules.html">指标规则</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <div class="footer-copy">
+                        <p>交个朋友控股 · 广告业务组内部平台</p>
+                    </div>
+                    <div class="footer-badges">
+                        <span class="footer-badge">实时监控</span>
+                        <span class="footer-badge">AI 归因</span>
+                        <span class="footer-badge">ML 预测</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 加载页面脚本 -->
+    <script src="assets/js/config.js"></script>
+    <script src="script.js?v=20260406a"></script>
+    <script src="assets/js/conversion-prediction-api.js?v=20260424a"></script>
+    <script src="assets/js/conversion-prediction-render.js?v=20260424a"></script>
+    <script src="assets/js/conversion-prediction-events.js?v=20260424a"></script>
+    <script src="assets/js/conversion-prediction-page.js?v=20260424a"></script>
+</body>
+</html>
