@@ -2,15 +2,71 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authenticateEdgeRequest } from "../_shared/request-auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
+const PROD_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") ?? "https://www.friends.wang";
+const EXTRA_ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigins = new Set([
+    PROD_ORIGIN,
+    "https://www.friends.wang",
+    "https://friends.wang",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    ...EXTRA_ALLOWED_ORIGINS,
+  ]);
+  const allowed = allowedOrigins.has(origin) ? origin : PROD_ORIGIN;
+
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-prompt-admin-token",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
+function isAllowedOrigin(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigins = new Set([
+    PROD_ORIGIN,
+    "https://www.friends.wang",
+    "https://friends.wang",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    ...EXTRA_ALLOWED_ORIGINS,
+  ]);
+  return allowedOrigins.has(origin);
+}
+
+function hasFrontendAuthHeader(req: Request) {
+  const apikey = req.headers.get("apikey") || "";
+  const authHeader = req.headers.get("authorization") || "";
+  return Boolean(apikey || authHeader.startsWith("Bearer "));
+}
+
+function jsonResponse(data: Record<string, unknown>, status: number, corsHeaders: Record<string, string>) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
+
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     // 1. 认证请求
     const authResult = await authenticateEdgeRequest(req);
-    if (!authResult.authenticated) {
-      return new Response(JSON.stringify({ error: "未授权访问" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+    const hasWorkbenchAccess = isAllowedOrigin(req) && hasFrontendAuthHeader(req);
+    if (!authResult && !hasWorkbenchAccess) {
+      return jsonResponse({ error: "未授权访问" }, 401, corsHeaders);
     }
 
     const url = new URL(req.url);
@@ -18,32 +74,24 @@ serve(async (req: Request) => {
 
     // 处理获取场景列表的请求
     if (action === "list_scenes") {
-      return await handleListScenes();
+      return await handleListScenes(corsHeaders);
     }
 
     // 处理预测请求（POST）
     if (req.method === "POST") {
-      return await handlePrediction(req, authResult);
+      return await handlePrediction(req, authResult, corsHeaders);
     }
 
-    return new Response(
-      JSON.stringify({ error: "不支持的请求方法" }),
-      {
-        status: 405,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({ error: "不支持的请求方法" }, 405, corsHeaders);
   } catch (error) {
     console.error("[成交预测] 服务器错误:", error);
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         error: "服务器内部错误",
         message: error.message,
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+      },
+      500,
+      corsHeaders
     );
   }
 });
@@ -51,23 +99,17 @@ serve(async (req: Request) => {
 /**
  * 处理预测请求
  */
-async function handlePrediction(req: Request, authResult: any) {
+async function handlePrediction(req: Request, authResult: any, corsHeaders: Record<string, string>) {
   // 解析请求体
   const body = await req.json();
   if (body.action === "recommend") {
-    return await handleRecommendation(body);
+    return await handleRecommendation(body, corsHeaders);
   }
 
   const { start_date, end_date, crowd_name, scene_id } = body;
 
   if (!start_date || !end_date) {
-    return new Response(
-      JSON.stringify({ error: "缺少必要参数：start_date 和 end_date" }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({ error: "缺少必要参数：start_date 和 end_date" }, 400, corsHeaders);
   }
 
   console.log(
@@ -88,25 +130,17 @@ async function handlePrediction(req: Request, authResult: any) {
 
   if (dbError) {
     console.error("[成交预测] 数据库查询错误:", dbError);
-    return new Response(
-      JSON.stringify({ error: "数据库查询失败", message: dbError.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({ error: "数据库查询失败", message: dbError.message }, 500, corsHeaders);
   }
 
   if (!rawData || rawData.length === 0) {
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         error: "没有找到数据",
         message: "在指定日期范围内没有找到投放数据",
-      }),
-      {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      }
+      },
+      404,
+      corsHeaders
     );
   }
 
@@ -136,25 +170,27 @@ async function handlePrediction(req: Request, authResult: any) {
     const apiResult = await apiResponse.json();
     
     if (!apiResult.success) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           error: "预测失败",
           message: apiResult.error || "未知错误",
-        }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        },
+        500,
+        corsHeaders
       );
     }
 
     // 存储预测结果到数据库
     await savePredictions(supabase, apiResult.predictions);
 
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         success: true,
         predictions: apiResult.predictions,
         count: apiResult.count,
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      },
+      200,
+      corsHeaders
     );
   } catch (error) {
     console.error("[成交预测] 调用本地API失败:", error);
@@ -164,14 +200,15 @@ async function handlePrediction(req: Request, authResult: any) {
     const predictions = await runPredictionModel(rawData);
     await savePredictions(supabase, predictions);
     
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         success: true,
         predictions,
         count: predictions.length,
         warning: "本地API不可用，使用简化规则引擎",
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      },
+      200,
+      corsHeaders
     );
   }
 }
@@ -179,27 +216,15 @@ async function handlePrediction(req: Request, authResult: any) {
 /**
  * 处理货盘人群推荐请求
  */
-async function handleRecommendation(body: any) {
+async function handleRecommendation(body: any, corsHeaders: Record<string, string>) {
   const { prediction_date, scene_name, top_n, product_items } = body;
 
   if (!prediction_date) {
-    return new Response(
-      JSON.stringify({ error: "缺少必要参数：prediction_date" }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({ error: "缺少必要参数：prediction_date" }, 400, corsHeaders);
   }
 
   if (!Array.isArray(product_items) || product_items.length === 0) {
-    return new Response(
-      JSON.stringify({ error: "缺少当天货盘：product_items" }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({ error: "缺少当天货盘：product_items" }, 400, corsHeaders);
   }
 
   const configuredPredictUrl = Deno.env.get("PREDICTION_API_URL") || "http://host.docker.internal:8000/predict";
@@ -228,27 +253,26 @@ async function handleRecommendation(body: any) {
 
     const apiResult = await apiResponse.json();
     if (!apiResult.success) {
-      return new Response(
-        JSON.stringify({
+      return jsonResponse(
+        {
           error: "推荐失败",
           message: apiResult.error || "未知错误",
-        }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        },
+        500,
+        corsHeaders
       );
     }
 
-    return new Response(
-      JSON.stringify(apiResult),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    return jsonResponse(apiResult, 200, corsHeaders);
   } catch (error) {
     console.error("[货盘推荐] 调用本地API失败:", error);
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         error: "货盘推荐服务不可用",
         message: error.message,
-      }),
-      { status: 502, headers: { "Content-Type": "application/json" } }
+      },
+      502,
+      corsHeaders
     );
   }
 }
@@ -344,7 +368,7 @@ async function savePredictions(supabase: any, predictions: any[]) {
 /**
  * 获取场景列表
  */
-async function handleListScenes() {
+async function handleListScenes(corsHeaders: Record<string, string>) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   const supabase = createClient(supabaseUrl, supabaseKey);
@@ -356,13 +380,7 @@ async function handleListScenes() {
 
   if (error) {
     console.error("[成交预测] 查询场景列表失败:", error);
-    return new Response(
-      JSON.stringify({ error: "查询场景列表失败", message: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({ error: "查询场景列表失败", message: error.message }, 500, corsHeaders);
   }
 
   // 去重
@@ -381,11 +399,5 @@ async function handleListScenes() {
     }
   }
 
-  return new Response(
-    JSON.stringify({ scenes: uniqueScenes }),
-    {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    }
-  );
+  return jsonResponse({ scenes: uniqueScenes }, 200, corsHeaders);
 }

@@ -111,7 +111,7 @@ const ConversionPredictionEvents = (function() {
             }
         } catch (error) {
             console.error('推荐失败:', error);
-            ConversionPredictionRender.showError(`推荐失败：${error.message || '未知错误'}`);
+            ConversionPredictionRender.showError(formatRequestError(error, '推荐失败，请稍后重试'));
         } finally {
             if (runBtn) runBtn.disabled = false;
         }
@@ -162,7 +162,7 @@ const ConversionPredictionEvents = (function() {
             }
         } catch (error) {
             console.error('预测失败:', error);
-            ConversionPredictionRender.showError(`预测失败：${error.message || '未知错误'}`);
+            ConversionPredictionRender.showError(formatRequestError(error, '预测失败，请稍后重试'));
         } finally {
             // 恢复按钮
             if (runBtn) runBtn.disabled = false;
@@ -224,6 +224,14 @@ const ConversionPredictionEvents = (function() {
 
         if (!csvText) return [];
         return parseCsv(csvText);
+    }
+
+    function formatRequestError(error, fallbackSummary) {
+        if (window.authHelpers && window.authHelpers.describeFetchError) {
+            const described = window.authHelpers.describeFetchError(error, fallbackSummary);
+            return described.message || fallbackSummary;
+        }
+        return fallbackSummary || error.message || '请求失败，请稍后重试';
     }
 
     function parseCsv(csvText) {

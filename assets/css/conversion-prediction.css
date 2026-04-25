@@ -96,6 +96,66 @@
     font-weight: 700;
 }
 
+/* 模块说明 */
+.module-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.intro-card {
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.intro-card-primary {
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.06), rgba(255, 255, 255, 0.98));
+    border-color: rgba(99, 102, 241, 0.18);
+}
+
+.intro-step {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.intro-card h2 {
+    margin: 0 0 0.625rem;
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    line-height: 1.45;
+}
+
+.intro-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.75;
+}
+
+.intro-list {
+    margin: 0;
+    padding-left: 1.125rem;
+}
+
+.intro-list li {
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    line-height: 1.75;
+    margin-bottom: 0.375rem;
+}
+
+.intro-list li:last-child {
+    margin-bottom: 0;
+}
+
 /* 筛选控制面板 */
 .prediction-controls {
     background: var(--bg-card);
@@ -628,7 +688,8 @@
     }
 
     .recommendation-grid,
-    .assortment-input-grid {
+    .assortment-input-grid,
+    .module-intro {
         grid-template-columns: 1fr;
     }
 }

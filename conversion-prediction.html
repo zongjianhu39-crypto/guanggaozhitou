@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>成交预测 - 广告智投工作台</title>
-    <meta name="description" content="基于机器学习的人群成交概率预测和订单成本预估">
+    <title>货盘人群推荐 - 广告智投工作台</title>
+    <meta name="description" content="基于每日达人直播间货盘和历史投放表现推荐可测试人群">
     <link rel="stylesheet" href="style.css?v=20260406k">
-    <link rel="stylesheet" href="assets/css/conversion-prediction.css?v=20260424a">
+    <link rel="stylesheet" href="assets/css/conversion-prediction.css?v=20260425a">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
@@ -80,6 +80,30 @@
                     </div>
                 </div>
             </header>
+
+            <section class="module-intro" aria-label="模块说明">
+                <div class="intro-card intro-card-primary">
+                    <span class="intro-step">这个模块解决什么</span>
+                    <h2>每天货盘变化时，先用模型筛出更值得投的人群</h2>
+                    <p>适合达人直播间每日选品后使用：上传当天货盘，系统会把商品结构、价格带、类目、佣金和历史人群表现组合起来，输出 TopN 可测试人群。</p>
+                </div>
+                <div class="intro-card">
+                    <span class="intro-step">推荐怎么来的</span>
+                    <ul class="intro-list">
+                        <li>货盘画像：商品数、类目、价格带、佣金、历史支付表现</li>
+                        <li>人群表现：历史转化、ROI、成交、花费和近期活跃度</li>
+                        <li>稳定校准：低样本降权，竞品/商品关键词不匹配会降权</li>
+                    </ul>
+                </div>
+                <div class="intro-card">
+                    <span class="intro-step">结果怎么看</span>
+                    <ul class="intro-list">
+                        <li>优先看“匹配分”和“置信度”，再看预估 ROI</li>
+                        <li>强推/优先测试可正常预算，小预算测试适合探测</li>
+                        <li>推荐理由用于判断它是稳定人群还是货盘相关新人群</li>
+                    </ul>
+                </div>
+            </section>
 
             <!-- 筛选控制面板 -->
             <section class="prediction-controls">
@@ -342,9 +366,9 @@
     <!-- 加载页面脚本 -->
     <script src="assets/js/config.js"></script>
     <script src="script.js?v=20260406a"></script>
-    <script src="assets/js/conversion-prediction-api.js?v=20260424a"></script>
-    <script src="assets/js/conversion-prediction-render.js?v=20260424a"></script>
-    <script src="assets/js/conversion-prediction-events.js?v=20260424a"></script>
-    <script src="assets/js/conversion-prediction-page.js?v=20260424a"></script>
+    <script src="assets/js/conversion-prediction-api.js?v=20260425a"></script>
+    <script src="assets/js/conversion-prediction-render.js?v=20260425a"></script>
+    <script src="assets/js/conversion-prediction-events.js?v=20260425a"></script>
+    <script src="assets/js/conversion-prediction-page.js?v=20260425a"></script>
 </body>
 </html>
