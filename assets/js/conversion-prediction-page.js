@@ -50,9 +50,11 @@
 
         const startDateInput = document.getElementById('start-date');
         const endDateInput = document.getElementById('end-date');
+        const recommendationDateInput = document.getElementById('recommendation-date');
 
         if (startDateInput) startDateInput.value = startDateStr;
         if (endDateInput) endDateInput.value = endDateStr;
+        if (recommendationDateInput) recommendationDateInput.value = endDateStr;
     }
 
     /**

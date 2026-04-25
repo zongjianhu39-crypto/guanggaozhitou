@@ -76,6 +76,33 @@
     margin-bottom: 2rem;
 }
 
+.prediction-mode-tabs {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+}
+
+.mode-tab {
+    border: 0;
+    border-radius: 6px;
+    padding: 0.5rem 0.875rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mode-tab.is-active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
 .controls-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -133,6 +160,47 @@
 
 .control-actions .btn {
     flex: 1;
+}
+
+.recommendation-grid {
+    grid-template-columns: 180px minmax(220px, 1fr) 140px minmax(220px, 260px);
+}
+
+.assortment-input-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.input-file {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.input-textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 150px;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.input-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
 }
 
 /* 按钮样式增强 */
@@ -307,6 +375,45 @@
     color: #ef4444;
 }
 
+.level-badge {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.level-strong {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+}
+
+.level-priority {
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+}
+
+.level-test {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+
+.level-watch {
+    background: rgba(100, 116, 139, 0.12);
+    color: #64748b;
+}
+
+.col-reasons {
+    min-width: 260px;
+}
+
+.reason-cell {
+    max-width: 420px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
 /* 分页 */
 .table-pagination {
     display: flex;
@@ -402,6 +509,11 @@
 
     .summary-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .recommendation-grid,
+    .assortment-input-grid {
+        grid-template-columns: 1fr;
     }
 }
 

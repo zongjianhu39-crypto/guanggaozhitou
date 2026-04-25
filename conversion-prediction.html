@@ -50,25 +50,78 @@
             <!-- 页面标题 -->
             <header class="prediction-header">
                 <div class="prediction-header-copy">
-                    <span class="prediction-kicker">ML 模型预测</span>
-                    <h1>人群成交概率预测</h1>
+                    <span class="prediction-kicker">货盘人群推荐</span>
+                    <h1>当天货盘匹配人群推荐</h1>
                     <p class="prediction-desc">
-                        基于历史投放数据，使用 LightGBM 模型预测各人群的成交概率和订单成本，
-                        辅助人群筛选和预算分配决策。
+                        导入当天达人直播间货盘，系统会结合商品结构、历史人群表现和近期活跃度，
+                        推荐更适合测试和放量的人群。
                     </p>
                 </div>
                 <div class="prediction-header-meta">
                     <div class="model-info-card">
-                        <span class="model-info-label">当前模型</span>
-                        <strong id="model-version">v0.4.0</strong>
-                        <span class="model-info-detail">二阶段模型（分类+回归）</span>
+                        <span class="model-info-label">当前策略</span>
+                        <strong id="model-version">货盘推荐 v0.5</strong>
+                        <span class="model-info-detail">历史回测 + 货盘关键词匹配</span>
                     </div>
                 </div>
             </header>
 
             <!-- 筛选控制面板 -->
             <section class="prediction-controls">
-                <div class="controls-grid">
+                <div class="prediction-mode-tabs" role="tablist" aria-label="预测模式">
+                    <button id="mode-recommendation-btn" class="mode-tab is-active" type="button" data-mode="recommendation">货盘推荐</button>
+                    <button id="mode-prediction-btn" class="mode-tab" type="button" data-mode="prediction">历史预测</button>
+                </div>
+
+                <div id="recommendation-controls" class="recommendation-controls">
+                    <div class="controls-grid recommendation-grid">
+                        <div class="control-group">
+                            <label class="control-label">推荐日期</label>
+                            <input type="date" id="recommendation-date" class="input-date">
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">直播间/场景</label>
+                            <select id="recommendation-scene-filter" class="input-select">
+                                <option value="">自动选择主场景</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">推荐数量</label>
+                            <select id="recommendation-top-n" class="input-select">
+                                <option value="10">Top 10</option>
+                                <option value="20" selected>Top 20</option>
+                                <option value="30">Top 30</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group control-actions">
+                            <button id="run-recommendation-btn" class="btn btn-primary">
+                                <span class="btn-icon">🔎</span>
+                                生成推荐
+                            </button>
+                            <button id="export-csv-btn" class="btn btn-secondary" disabled>
+                                <span class="btn-icon">📥</span>
+                                导出CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="assortment-input-grid">
+                        <div class="control-group">
+                            <label class="control-label">上传货盘 CSV</label>
+                            <input type="file" id="product-csv-file" class="input-file" accept=".csv,text/csv">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">或粘贴货盘 CSV 内容</label>
+                            <textarea id="product-csv-text" class="input-textarea" rows="7" placeholder="商品id,商品名称,分类,单价,佣金率&#10;sku_001,补水修护面膜,美妆护肤,39.9,0.18"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="legacy-prediction-controls" class="legacy-prediction-controls" style="display: none;">
+                    <div class="controls-grid">
                     <!-- 日期选择 -->
                     <div class="control-group">
                         <label class="control-label">预测日期范围</label>
@@ -99,10 +152,11 @@
                             <span class="btn-icon">🔮</span>
                             运行预测
                         </button>
-                        <button id="export-csv-btn" class="btn btn-secondary" disabled>
+                        <button id="export-csv-btn-legacy" class="btn btn-secondary" disabled>
                             <span class="btn-icon">📥</span>
                             导出CSV
                         </button>
+                    </div>
                     </div>
                 </div>
             </section>
@@ -110,26 +164,26 @@
             <!-- 加载状态 -->
             <div id="prediction-state" class="prediction-state">
                 <div class="state-icon">📊</div>
-                <p>选择日期范围后点击"运行预测"开始分析</p>
+                <p>上传或粘贴当天货盘后点击"生成推荐"</p>
             </div>
 
             <!-- 统计概览 -->
             <section id="prediction-summary" class="prediction-summary" style="display: none;">
                 <div class="summary-grid">
                     <div class="summary-card">
-                        <span class="summary-label">预测人群数</span>
+                        <span id="summary-count-label" class="summary-label">推荐人群数</span>
                         <strong id="summary-count">--</strong>
                     </div>
                     <div class="summary-card">
-                        <span class="summary-label">平均成交概率</span>
+                        <span id="summary-prob-label" class="summary-label">平均匹配分</span>
                         <strong id="summary-prob">--</strong>
                     </div>
                     <div class="summary-card">
-                        <span class="summary-label">高概率人群(>60%)</span>
+                        <span id="summary-high-label" class="summary-label">优先测试以上</span>
                         <strong id="summary-high">--</strong>
                     </div>
                     <div class="summary-card">
-                        <span class="summary-label">预测总成本</span>
+                        <span id="summary-cost-label" class="summary-label">平均预估ROI</span>
                         <strong id="summary-cost">--</strong>
                     </div>
                 </div>
@@ -138,11 +192,14 @@
             <!-- 预测结果表格 -->
             <section id="prediction-results" class="prediction-results" style="display: none;">
                 <div class="results-header">
-                    <h2>预测结果</h2>
+                    <h2 id="results-title">推荐结果</h2>
                     <div class="results-actions">
                         <label class="sort-label">
                             排序：
                             <select id="sort-select" class="input-select-small">
+                                <option value="score_desc">匹配分 ↓</option>
+                                <option value="roi_desc">预估ROI ↓</option>
+                                <option value="confidence_desc">置信度 ↓</option>
                                 <option value="probability_desc">成交概率 ↓</option>
                                 <option value="probability_asc">成交概率 ↑</option>
                                 <option value="cost_desc">预测成本 ↓</option>
@@ -157,13 +214,14 @@
                     <table id="prediction-table" class="data-table">
                         <thead>
                             <tr>
-                                <th class="col-date">日期</th>
-                                <th class="col-scene">场景</th>
+                                <th>排名</th>
                                 <th class="col-crowd">人群名称</th>
-                                <th class="col-prob">成交概率</th>
-                                <th class="col-cost">订单成本</th>
-                                <th class="col-total">预测总成本</th>
-                                <th class="col-range">置信区间</th>
+                                <th>推荐等级</th>
+                                <th>匹配分</th>
+                                <th>预估转化</th>
+                                <th>预估ROI</th>
+                                <th>置信度</th>
+                                <th class="col-reasons">推荐理由</th>
                             </tr>
                         </thead>
                         <tbody id="prediction-tbody">
@@ -184,36 +242,27 @@
             <!-- 模型说明 -->
             <section class="prediction-docs">
                 <details class="docs-details">
-                    <summary class="docs-summary">📖 模型说明和使用指南</summary>
+                    <summary class="docs-summary">📖 推荐逻辑和使用指南</summary>
                     <div class="docs-content">
-                        <h3>模型架构</h3>
-                        <p>采用二阶段 LightGBM 模型：</p>
+                        <h3>推荐逻辑</h3>
+                        <p>系统会把当天货盘压缩成商品画像，再结合历史人群表现、直播间表现、近期活跃度和成本模型做综合排序。</p>
                         <ul>
-                            <li><strong>阶段1 - 分类模型</strong>：预测该人群在该日期是否会有成交（AUC=0.917）</li>
-                            <li><strong>阶段2 - 回归模型</strong>：预测有成交时的订单成本（R²=0.154）</li>
-                            <li><strong>最终预测</strong> = 成交概率 × 订单成本</li>
+                            <li><strong>货盘画像</strong>：商品数、品类、价格带、佣金、退款、爆品集中度</li>
+                            <li><strong>人群表现</strong>：历史转化、ROI、成交、花费和样本量</li>
+                            <li><strong>稳健校准</strong>：低样本平滑、近期活跃度、竞品关键词匹配</li>
                         </ul>
 
-                        <h3>特征工程</h3>
-                        <p>模型使用57个特征，包括：</p>
-                        <ul>
-                            <li>时间特征（星期、月份、是否周末）</li>
-                            <li>历史聚合特征（过去7天/30天滚动统计）</li>
-                            <li>Target Encoding（人群历史表现编码）</li>
-                        </ul>
-
-                        <h3>如何使用预测结果</h3>
+                        <h3>如何使用推荐结果</h3>
                         <ol>
-                            <li><strong>人群筛选</strong>：优先投放成交概率 > 60% 的人群</li>
-                            <li><strong>预算分配</strong>：高概率人群分配更多预算</li>
-                            <li><strong>成本控制</strong>：关注预测成本过高的人群</li>
-                            <li><strong>效果追踪</strong>：定期回填实际成本，评估模型准确性</li>
+                            <li><strong>优先测试</strong>：匹配分高、置信度高的人群可正常预算测试</li>
+                            <li><strong>小预算测试</strong>：低样本但货盘相关的人群适合小预算探测</li>
+                            <li><strong>效果追踪</strong>：每天记录推荐排名、是否投放、实际 ROI 和 CPO</li>
                         </ol>
 
                         <h3>注意事项</h3>
                         <ul>
-                            <li>模型基于历史数据训练，新人群可能预测不准</li>
-                            <li>置信区间较宽表示预测不确定性高</li>
+                            <li>推荐结果用于排序和测试，不代表精确成本承诺</li>
+                            <li>新品货盘建议结合投手判断，小预算逐步放量</li>
                             <li>建议结合实际业务经验综合判断</li>
                         </ul>
                     </div>

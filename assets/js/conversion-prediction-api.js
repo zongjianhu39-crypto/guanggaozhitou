@@ -54,6 +54,46 @@ const ConversionPredictionApi = (function() {
     }
 
     /**
+     * 运行货盘人群推荐
+     * @param {Object} params - 推荐参数
+     * @param {string} params.prediction_date - 推荐日期 YYYY-MM-DD
+     * @param {string} [params.scene_name] - 场景名称
+     * @param {number} [params.top_n] - 返回数量
+     * @param {Array<Object>} params.product_items - 当天货盘商品列表
+     * @returns {Promise<Object>} 推荐结果
+     */
+    async function runRecommendation(params) {
+        if (!window.authHelpers || !window.authHelpers.fetchFunctionJson) {
+            throw new Error('认证模块未加载');
+        }
+
+        const result = await window.authHelpers.fetchFunctionJson('conversion-prediction', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'recommend',
+                prediction_date: params.prediction_date,
+                scene_name: params.scene_name || undefined,
+                top_n: params.top_n || 20,
+                product_items: params.product_items || [],
+            }),
+            parseErrorMessage: '推荐服务返回了无法解析的响应，请稍后重试',
+            onUnauthorized: () => {
+                if (window.authHelpers.handleReauthRequired) {
+                    window.authHelpers.handleReauthRequired({
+                        source: 'conversion-recommendation',
+                        targetUrl: window.location.href,
+                        force: true,
+                        reason: 'recommendation_reauth_required',
+                        delayMs: 1200,
+                    });
+                }
+            },
+        });
+
+        return result.data;
+    }
+
+    /**
      * 获取场景列表（用于筛选器）
      * @returns {Promise<Array>} 场景列表
      */
@@ -75,27 +115,44 @@ const ConversionPredictionApi = (function() {
      * @param {Array} predictions - 预测结果数组
      * @param {string} filename - 文件名
      */
-    function exportToCSV(predictions, filename = '成交预测结果.csv') {
-        if (!predictions || predictions.length === 0) {
-            console.warn('没有可导出的预测数据');
+    function exportToCSV(records, filename = '货盘人群推荐.csv') {
+        if (!records || records.length === 0) {
+            console.warn('没有可导出的数据');
             return;
         }
 
-        // 构建CSV内容
-        const headers = ['日期', '场景', '人群名称', '成交概率', '订单成本', '预测总成本', '置信区间下限', '置信区间上限'];
-        const rows = predictions.map(p => [
-            p.prediction_date || '',
-            p.scene_name || '',
-            p.audience_name || '',
-            (p.conv_probability * 100).toFixed(2) + '%',
-            p.predicted_cost?.toFixed(2) || '',
-            p.final_cost?.toFixed(2) || '',
-            p.lower_bound?.toFixed(2) || '',
-            p.upper_bound?.toFixed(2) || '',
-        ]);
+        let headers;
+        let rows;
+        if (records[0] && Object.prototype.hasOwnProperty.call(records[0], 'match_score')) {
+            headers = ['排名', '人群名称', '场景', '推荐等级', '匹配分', '预估转化率', '预估订单成本', '预估ROI', '置信度', '推荐理由'];
+            rows = records.map(item => [
+                item.rank || '',
+                item.crowd_name || '',
+                item.scene_name || '',
+                item.recommendation_level || '',
+                item.match_score ?? '',
+                item.predicted_conv_rate != null ? `${(item.predicted_conv_rate * 100).toFixed(2)}%` : '',
+                item.predicted_cost_per_order ?? '',
+                item.estimated_roi ?? '',
+                item.confidence != null ? `${(item.confidence * 100).toFixed(1)}%` : '',
+                Array.isArray(item.reasons) ? item.reasons.join('；') : '',
+            ]);
+        } else {
+            headers = ['日期', '场景', '人群名称', '成交概率', '订单成本', '预测总成本', '置信区间下限', '置信区间上限'];
+            rows = records.map(p => [
+                p.prediction_date || '',
+                p.scene_name || '',
+                p.audience_name || '',
+                (p.conv_probability * 100).toFixed(2) + '%',
+                p.predicted_cost?.toFixed(2) || '',
+                p.final_cost?.toFixed(2) || '',
+                p.lower_bound?.toFixed(2) || '',
+                p.upper_bound?.toFixed(2) || '',
+            ]);
+        }
 
         // 添加BOM以支持Excel中文显示
-        const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.join(',')).join('\n');
+        const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.map(escapeCsvCell).join(',')).join('\n');
 
         // 创建下载链接
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -109,6 +166,14 @@ const ConversionPredictionApi = (function() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+    }
+
+    function escapeCsvCell(value) {
+        const text = String(value ?? '');
+        if (/[",\n\r]/.test(text)) {
+            return `"${text.replace(/"/g, '""')}"`;
+        }
+        return text;
     }
 
     /**
@@ -134,6 +199,7 @@ const ConversionPredictionApi = (function() {
 
     return {
         runPrediction,
+        runRecommendation,
         fetchScenes,
         exportToCSV,
         formatProbability,

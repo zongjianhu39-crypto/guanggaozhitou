@@ -54,6 +54,10 @@ serve(async (req: Request) => {
 async function handlePrediction(req: Request, authResult: any) {
   // 解析请求体
   const body = await req.json();
+  if (body.action === "recommend") {
+    return await handleRecommendation(body);
+  }
+
   const { start_date, end_date, crowd_name, scene_id } = body;
 
   if (!start_date || !end_date) {
@@ -168,6 +172,83 @@ async function handlePrediction(req: Request, authResult: any) {
         warning: "本地API不可用，使用简化规则引擎",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
+
+/**
+ * 处理货盘人群推荐请求
+ */
+async function handleRecommendation(body: any) {
+  const { prediction_date, scene_name, top_n, product_items } = body;
+
+  if (!prediction_date) {
+    return new Response(
+      JSON.stringify({ error: "缺少必要参数：prediction_date" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  if (!Array.isArray(product_items) || product_items.length === 0) {
+    return new Response(
+      JSON.stringify({ error: "缺少当天货盘：product_items" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  const configuredPredictUrl = Deno.env.get("PREDICTION_API_URL") || "http://host.docker.internal:8000/predict";
+  const recommendApiUrl =
+    Deno.env.get("PREDICTION_RECOMMEND_API_URL") ||
+    configuredPredictUrl.replace(/\/predict\/?$/, "/recommend");
+
+  console.log(`[货盘推荐] 调用本地API: ${recommendApiUrl}`);
+
+  try {
+    const apiResponse = await fetch(recommendApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prediction_date,
+        scene_name,
+        top_n: Number(top_n || 20),
+        product_items,
+      }),
+    });
+
+    if (!apiResponse.ok) {
+      const message = await apiResponse.text();
+      throw new Error(`本地推荐API返回错误: ${apiResponse.status} ${message}`);
+    }
+
+    const apiResult = await apiResponse.json();
+    if (!apiResult.success) {
+      return new Response(
+        JSON.stringify({
+          error: "推荐失败",
+          message: apiResult.error || "未知错误",
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify(apiResult),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("[货盘推荐] 调用本地API失败:", error);
+    return new Response(
+      JSON.stringify({
+        error: "货盘推荐服务不可用",
+        message: error.message,
+      }),
+      { status: 502, headers: { "Content-Type": "application/json" } }
     );
   }
 }

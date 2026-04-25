@@ -8,6 +8,7 @@ const ConversionPredictionRender = (function() {
 
     // 状态
     let currentPredictions = [];
+    let currentMode = 'recommendation';
     let currentPage = 1;
     const pageSize = 50;
 
@@ -24,7 +25,7 @@ const ConversionPredictionRender = (function() {
             stateEl.className = 'prediction-state is-loading';
             stateEl.innerHTML = `
                 <div class="state-icon">⏳</div>
-                <p>正在运行模型预测，这可能需要几秒钟...</p>
+                <p>${currentMode === 'recommendation' ? '正在生成货盘人群推荐...' : '正在运行模型预测，这可能需要几秒钟...'}</p>
             `;
         }
 
@@ -67,7 +68,7 @@ const ConversionPredictionRender = (function() {
             stateEl.className = 'prediction-state';
             stateEl.innerHTML = `
                 <div class="state-icon">📊</div>
-                <p>选择日期范围后点击"运行预测"开始分析</p>
+                <p>${currentMode === 'recommendation' ? '上传或粘贴当天货盘后点击"生成推荐"' : '选择日期范围后点击"运行预测"开始分析'}</p>
             `;
         }
 
@@ -80,7 +81,9 @@ const ConversionPredictionRender = (function() {
      * @param {Array} predictions - 预测结果数组
      */
     function renderPredictions(predictions) {
+        currentMode = 'prediction';
         currentPredictions = predictions || [];
+        window._currentPredictionRecords = currentPredictions;
         currentPage = 1;
 
         if (currentPredictions.length === 0) {
@@ -105,14 +108,43 @@ const ConversionPredictionRender = (function() {
         if (resultsEl) resultsEl.style.display = 'block';
 
         // 启用导出按钮
-        const exportBtn = document.getElementById('export-csv-btn');
-        if (exportBtn) exportBtn.disabled = false;
+        setExportDisabled(false);
+    }
+
+    /**
+     * 渲染货盘推荐结果
+     * @param {Object} result - 推荐结果
+     */
+    function renderRecommendations(result) {
+        currentMode = 'recommendation';
+        currentPredictions = (result && result.recommendations) || [];
+        window._currentPredictionRecords = currentPredictions;
+        currentPage = 1;
+
+        if (currentPredictions.length === 0) {
+            showError('没有生成推荐结果，请检查货盘内容或筛选条件');
+            return;
+        }
+
+        const stateEl = document.getElementById('prediction-state');
+        if (stateEl) stateEl.style.display = 'none';
+
+        renderRecommendationSummary(result);
+        renderTable();
+
+        const summaryEl = document.getElementById('prediction-summary');
+        const resultsEl = document.getElementById('prediction-results');
+        if (summaryEl) summaryEl.style.display = 'block';
+        if (resultsEl) resultsEl.style.display = 'block';
+
+        setExportDisabled(false);
     }
 
     /**
      * 渲染统计概览
      */
     function renderSummary() {
+        setPredictionHeaders();
         const count = currentPredictions.length;
         const avgProb = currentPredictions.reduce((sum, p) => sum + (p.conv_probability || 0), 0) / count;
         const highProbCount = currentPredictions.filter(p => p.conv_probability >= 0.6).length;
@@ -122,6 +154,29 @@ const ConversionPredictionRender = (function() {
         document.getElementById('summary-prob').textContent = ConversionPredictionApi.formatProbability(avgProb);
         document.getElementById('summary-high').textContent = `${highProbCount} 个 (${((highProbCount / count) * 100).toFixed(1)}%)`;
         document.getElementById('summary-cost').textContent = `¥${totalCost.toFixed(2)}`;
+    }
+
+    function renderRecommendationSummary(result) {
+        setRecommendationHeaders();
+        const count = currentPredictions.length;
+        const avgScore = currentPredictions.reduce((sum, item) => sum + (item.match_score || 0), 0) / count;
+        const priorityCount = currentPredictions.filter(item => ['强推', '优先测试'].includes(item.recommendation_level)).length;
+        const avgRoi = currentPredictions.reduce((sum, item) => sum + (item.estimated_roi || 0), 0) / count;
+
+        document.getElementById('summary-count-label').textContent = '推荐人群数';
+        document.getElementById('summary-prob-label').textContent = '平均匹配分';
+        document.getElementById('summary-high-label').textContent = '优先测试以上';
+        document.getElementById('summary-cost-label').textContent = '平均预估ROI';
+        document.getElementById('summary-count').textContent = count;
+        document.getElementById('summary-prob').textContent = avgScore.toFixed(1);
+        document.getElementById('summary-high').textContent = `${priorityCount} 个`;
+        document.getElementById('summary-cost').textContent = avgRoi.toFixed(2);
+
+        const profile = result && result.assortment_profile;
+        if (profile) {
+            const stateEl = document.getElementById('prediction-state');
+            if (stateEl) stateEl.dataset.profile = JSON.stringify(profile);
+        }
     }
 
     /**
@@ -135,7 +190,25 @@ const ConversionPredictionRender = (function() {
         const endIndex = Math.min(startIndex + pageSize, currentPredictions.length);
         const pageData = currentPredictions.slice(startIndex, endIndex);
 
-        tbody.innerHTML = pageData.map(pred => {
+        if (currentMode === 'recommendation') {
+            tbody.innerHTML = pageData.map(item => {
+                const levelClass = getLevelClass(item.recommendation_level);
+                const reasons = Array.isArray(item.reasons) ? item.reasons.join('；') : '-';
+                return `
+                    <tr>
+                        <td>${item.rank || '-'}</td>
+                        <td>${escapeHtml(item.crowd_name || '-')}</td>
+                        <td><span class="level-badge ${levelClass}">${escapeHtml(item.recommendation_level || '-')}</span></td>
+                        <td><strong>${(item.match_score || 0).toFixed(1)}</strong></td>
+                        <td>${ConversionPredictionApi.formatProbability(item.predicted_conv_rate || 0)}</td>
+                        <td>${(item.estimated_roi || 0).toFixed(2)}</td>
+                        <td>${((item.confidence || 0) * 100).toFixed(0)}%</td>
+                        <td class="reason-cell">${escapeHtml(reasons)}</td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tbody.innerHTML = pageData.map(pred => {
             const probClass = ConversionPredictionApi.getProbabilityClass(pred.conv_probability);
             const probText = ConversionPredictionApi.formatProbability(pred.conv_probability);
 
@@ -150,7 +223,8 @@ const ConversionPredictionRender = (function() {
                     <td>¥${(pred.lower_bound || 0).toFixed(2)} - ¥${(pred.upper_bound || 0).toFixed(2)}</td>
                 </tr>
             `;
-        }).join('');
+            }).join('');
+        }
 
         // 更新分页信息
         document.getElementById('total-count').textContent = currentPredictions.length;
@@ -170,11 +244,20 @@ const ConversionPredictionRender = (function() {
         const sorted = [...currentPredictions];
 
         switch (sortBy) {
+            case 'score_desc':
+                sorted.sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+                break;
+            case 'roi_desc':
+                sorted.sort((a, b) => (b.estimated_roi || 0) - (a.estimated_roi || 0));
+                break;
+            case 'confidence_desc':
+                sorted.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+                break;
             case 'probability_desc':
-                sorted.sort((a, b) => (b.conv_probability || 0) - (a.conv_probability || 0));
+                sorted.sort((a, b) => ((b.conv_probability ?? b.predicted_conv_rate) || 0) - ((a.conv_probability ?? a.predicted_conv_rate) || 0));
                 break;
             case 'probability_asc':
-                sorted.sort((a, b) => (a.conv_probability || 0) - (b.conv_probability || 0));
+                sorted.sort((a, b) => ((a.conv_probability ?? a.predicted_conv_rate) || 0) - ((b.conv_probability ?? b.predicted_conv_rate) || 0));
                 break;
             case 'cost_desc':
                 sorted.sort((a, b) => (b.final_cost || 0) - (a.final_cost || 0));
@@ -188,8 +271,13 @@ const ConversionPredictionRender = (function() {
         }
 
         currentPredictions = sorted;
+        window._currentPredictionRecords = currentPredictions;
         currentPage = 1;
-        renderSummary();
+        if (currentMode === 'recommendation') {
+            renderRecommendationSummary({ recommendations: currentPredictions });
+        } else {
+            renderSummary();
+        }
         renderTable();
     }
 
@@ -220,16 +308,82 @@ const ConversionPredictionRender = (function() {
      */
     function populateSceneFilter(scenes) {
         const select = document.getElementById('scene-filter');
-        if (!select) return;
+        const recommendSelect = document.getElementById('recommendation-scene-filter');
 
-        // 保留"全部场景"选项
-        select.innerHTML = '<option value="">全部场景</option>';
+        if (select) {
+            select.innerHTML = '<option value="">全部场景</option>';
+        }
+        if (recommendSelect) {
+            recommendSelect.innerHTML = '<option value="">自动选择主场景</option>';
+        }
 
         scenes.forEach(scene => {
+            const text = scene.name || scene.scene_name;
             const option = document.createElement('option');
             option.value = scene.id || scene.scene_id;
-            option.textContent = scene.name || scene.scene_name;
-            select.appendChild(option);
+            option.textContent = text;
+            if (select) select.appendChild(option);
+
+            const recommendOption = document.createElement('option');
+            recommendOption.value = text;
+            recommendOption.textContent = text;
+            if (recommendSelect) recommendSelect.appendChild(recommendOption);
+        });
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        window._currentPredictionRecords = [];
+        setExportDisabled(true);
+        showInitialState();
+    }
+
+    function setRecommendationHeaders() {
+        const title = document.getElementById('results-title');
+        const thead = document.querySelector('#prediction-table thead tr');
+        if (title) title.textContent = '推荐结果';
+        if (thead) {
+            thead.innerHTML = `
+                <th>排名</th>
+                <th class="col-crowd">人群名称</th>
+                <th>推荐等级</th>
+                <th>匹配分</th>
+                <th>预估转化</th>
+                <th>预估ROI</th>
+                <th>置信度</th>
+                <th class="col-reasons">推荐理由</th>
+            `;
+        }
+    }
+
+    function setPredictionHeaders() {
+        const title = document.getElementById('results-title');
+        const thead = document.querySelector('#prediction-table thead tr');
+        if (title) title.textContent = '预测结果';
+        if (thead) {
+            thead.innerHTML = `
+                <th class="col-date">日期</th>
+                <th class="col-scene">场景</th>
+                <th class="col-crowd">人群名称</th>
+                <th class="col-prob">成交概率</th>
+                <th class="col-cost">订单成本</th>
+                <th class="col-total">预测总成本</th>
+                <th class="col-range">置信区间</th>
+            `;
+        }
+    }
+
+    function getLevelClass(level) {
+        if (level === '强推') return 'level-strong';
+        if (level === '优先测试') return 'level-priority';
+        if (level === '小预算测试') return 'level-test';
+        return 'level-watch';
+    }
+
+    function setExportDisabled(disabled) {
+        ['export-csv-btn', 'export-csv-btn-legacy'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.disabled = disabled;
         });
     }
 
@@ -266,10 +420,12 @@ const ConversionPredictionRender = (function() {
         showError,
         showInitialState,
         renderPredictions,
+        renderRecommendations,
         sortPredictions,
         prevPage,
         nextPage,
         populateSceneFilter,
+        setMode,
     };
 })();
 
