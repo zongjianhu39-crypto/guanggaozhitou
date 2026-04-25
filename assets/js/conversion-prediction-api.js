@@ -67,32 +67,61 @@ const ConversionPredictionApi = (function() {
             throw new Error('认证模块未加载');
         }
 
-        const result = await window.authHelpers.fetchFunctionJson('conversion-prediction', {
+        const payload = {
+            action: 'recommend',
+            prediction_date: params.prediction_date,
+            scene_name: params.scene_name || undefined,
+            top_n: params.top_n || 20,
+            target_cpo: params.target_cpo,
+            total_budget: params.total_budget,
+            product_items: params.product_items || [],
+        };
+
+        try {
+            const result = await window.authHelpers.fetchFunctionJson('conversion-prediction', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                parseErrorMessage: '推荐服务返回了无法解析的响应，请稍后重试',
+                onUnauthorized: () => {
+                    if (window.authHelpers.handleReauthRequired) {
+                        window.authHelpers.handleReauthRequired({
+                            source: 'conversion-recommendation',
+                            targetUrl: window.location.href,
+                            force: true,
+                            reason: 'recommendation_reauth_required',
+                            delayMs: 1200,
+                        });
+                    }
+                },
+            });
+
+            return result.data;
+        } catch (error) {
+            console.warn('Supabase推荐通道不可用，尝试本机模型服务:', error);
+            return await runLocalRecommendation(payload);
+        }
+    }
+
+    async function runLocalRecommendation(payload) {
+        const localPayload = { ...payload };
+        delete localPayload.action;
+
+        const response = await fetch('http://127.0.0.1:8001/recommend', {
             method: 'POST',
-            body: JSON.stringify({
-                action: 'recommend',
-                prediction_date: params.prediction_date,
-                scene_name: params.scene_name || undefined,
-                top_n: params.top_n || 20,
-                target_cpo: params.target_cpo,
-                total_budget: params.total_budget,
-                product_items: params.product_items || [],
-            }),
-            parseErrorMessage: '推荐服务返回了无法解析的响应，请稍后重试',
-            onUnauthorized: () => {
-                if (window.authHelpers.handleReauthRequired) {
-                    window.authHelpers.handleReauthRequired({
-                        source: 'conversion-recommendation',
-                        targetUrl: window.location.href,
-                        force: true,
-                        reason: 'recommendation_reauth_required',
-                        delayMs: 1200,
-                    });
-                }
-            },
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(localPayload),
         });
 
-        return result.data;
+        if (!response.ok) {
+            const message = await response.text().catch(() => '');
+            throw new Error(`本机模型服务不可用：${response.status} ${message}`);
+        }
+
+        const data = await response.json();
+        if (!data || data.success === false) {
+            throw new Error(data?.message || data?.error || '本机模型服务返回异常');
+        }
+        return data;
     }
 
     /**
