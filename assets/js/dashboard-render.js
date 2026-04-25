@@ -2,14 +2,7 @@
     let dashboardStatusTimer = null;
     let loadingStatusActive = false;
 
-    function escapeHtml(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
+    var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
     function classifyDashboardError(error) {
         const rawMessage = String(error?.message || error || '').trim();

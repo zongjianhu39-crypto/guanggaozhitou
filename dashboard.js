@@ -105,16 +105,6 @@ const {
 } = dashboardLoader;
 const bindDashboardInteractions = dashboardEvents.bindDashboardInteractions || function() { console.warn('DashboardEvents 模块未加载'); };
 
-// 安全访问模块方法
-function safeModuleCall(moduleName, methodName, fallback) {
-    const mod = window[moduleName];
-    if (mod && typeof mod[methodName] === 'function') {
-        return mod[methodName];
-    }
-    console.warn(`${moduleName}.${methodName} 不可用`);
-    return fallback;
-}
-
 function loadDashboardFeatureScript(featureName) {
     const feature = DASHBOARD_FEATURE_SCRIPTS[featureName];
     if (!feature) {
@@ -542,7 +532,6 @@ window.DashboardApp = {
     openReportCenter,
     maybeResumePendingAIAnalysis,
     initDateRanges,
-    safeModuleCall,
     bumpCacheGeneration: dashboardState.bumpCacheGeneration || function() {},
 };
 

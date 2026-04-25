@@ -432,14 +432,7 @@ const ConversionPredictionRender = (function() {
      * @param {string} text - 原始文本
      * @returns {string} 转义后的文本
      */
-    function escapeHtml(text) {
-        return String(text)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
+    var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
     return {
         showLoading,

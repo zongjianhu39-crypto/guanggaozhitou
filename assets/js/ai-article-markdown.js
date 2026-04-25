@@ -6,13 +6,7 @@
 (function initAiArticleMarkdown(global) {
     'use strict';
 
-    function escapeHtml(s) {
-        return String(s ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
+    var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
     function inlineMd(s) {
         let e = escapeHtml(s);

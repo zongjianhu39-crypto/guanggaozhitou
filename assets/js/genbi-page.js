@@ -3,14 +3,7 @@
     let lastResultPayload = null;
     let lastSavedReportSlug = '';
 
-    function escapeHtml(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
+    var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
     function getReferenceLabel(sourceType) {
         if (sourceType === 'rules_doc') return '业务规则';

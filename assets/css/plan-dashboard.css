@@ -77,8 +77,7 @@ body.plan-dashboard-page {
 .drawer-textarea,
 .modal-field,
 .modal-textarea,
-.plan-input,
-.plan-select {
+.plan-input {
   border: 1px solid #d8deeb;
   border-radius: 10px;
   padding: 9px 12px;
@@ -158,7 +157,7 @@ body.plan-dashboard-page {
   color: #667085;
 }
 .plan-status:empty { display: none; }
-.plan-status-info { color: #4253b8; }
+
 .plan-status-success { color: #15803d; }
 .plan-status-warn { color: #b45309; }
 .plan-status-error { color: #dc2626; }
@@ -388,8 +387,7 @@ body.plan-dashboard-page {
 .plan-table tr:hover td { background: #fafcff; }
 .plan-dirty-row td { background: #fffdf5 !important; }
 .plan-date-cell { font-weight: 600; }
-.plan-input,
-.plan-select {
+.plan-input {
   width: 100%;
   min-width: 90px;
 }
@@ -431,13 +429,7 @@ body.plan-dashboard-page {
   font-weight: 700;
   flex-shrink: 0;
 }
-.plan-input-ghost {
-  margin-top: 4px;
-  opacity: 0.5;
-  font-size: 12px;
-  padding: 5px 8px;
-}
-.plan-input-ghost:focus { opacity: 1; }
+
 
 /* --- Month Note --- */
 .month-note-body { padding: 4px 0; }
@@ -670,31 +662,7 @@ body.plan-dashboard-page {
   display: grid;
   gap: 14px;
 }
-.six18-ref-metrics {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(150px, 1fr));
-  gap: 10px;
-}
-.six18-ref-metric {
-  padding: 12px 14px;
-  border: 1px solid #e6ebf3;
-  border-radius: 8px;
-  background: #f8fafc;
-}
-.six18-ref-metric span,
-.six18-ref-metric em {
-  display: block;
-  font-size: 12px;
-  color: #64748b;
-  font-style: normal;
-}
-.six18-ref-metric strong {
-  display: block;
-  margin: 5px 0 3px;
-  color: #1e293b;
-  font-size: 18px;
-  line-height: 1.25;
-}
+
 .six18-ref-legend {
   display: flex;
   flex-wrap: wrap;
@@ -823,14 +791,7 @@ body.plan-dashboard-page {
 .six18-rhythm-table tbody tr:hover {
   background: #f8fafc;
 }
-.six18-rhythm-phase-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 6px;
-  vertical-align: middle;
-}
+
 .six18-rhythm-note {
   padding: 8px 12px;
   border-radius: 8px;
@@ -1200,7 +1161,6 @@ body.plan-dashboard-page {
     flex-direction: column;
   }
   .double11-ref-metrics,
-  .double11-ref-callouts,
-  .six18-ref-metrics { grid-template-columns: 1fr; }
+  .double11-ref-callouts { grid-template-columns: 1fr; }
   .six18-ref-chart { height: 240px; }
 }

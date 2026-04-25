@@ -5,13 +5,6 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  function formatCurrency(value) {
-    return new Intl.NumberFormat('zh-CN', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(toNumber(value));
-  }
-
   function formatPercent(value) {
     if (value == null || value === '') return '-';
     const num = Number(value);
@@ -26,14 +19,7 @@
     }).format(toNumber(value));
   }
 
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
+  var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
   function sum(values) {
     return values.reduce((acc, item) => acc + toNumber(item), 0);
@@ -80,7 +66,6 @@
 
   window.PlanDashboardUtils = {
     toNumber,
-    formatCurrency,
     formatPercent,
     formatNumber,
     escapeHtml,

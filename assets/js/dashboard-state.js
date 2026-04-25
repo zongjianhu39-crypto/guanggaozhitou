@@ -433,7 +433,6 @@
     window.DashboardState = {
         setButtonBusy,
         resetButtonState,
-        getButtonDefaultLabel,
         getCurrentDateRangeValue,
         savePendingAIAnalysisRequest,
         getPendingAIAnalysisRequest,
