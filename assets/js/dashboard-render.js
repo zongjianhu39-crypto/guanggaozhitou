@@ -350,6 +350,51 @@
         </tr>`).join('');
     }
 
+    function buildCrowdSummaryRow(groups) {
+        var totalCost = 0, totalAmount = 0, totalOrders = 0;
+        var totalDirectAmount = 0, totalCart = 0, totalShows = 0, totalPreOrders = 0;
+
+        groups.forEach(function (g) {
+            var s = g.summary || {};
+            totalCost += Number(s.cost) || 0;
+            totalAmount += Number(s.amount) || 0;
+            totalOrders += Number(s.orders) || 0;
+            totalDirectAmount += Number(s.directAmount) || 0;
+            totalCart += Number(s.cart) || 0;
+            totalShows += Number(s.shows) || 0;
+            totalPreOrders += Number(s.preOrders) || 0;
+        });
+
+        var roi = totalCost > 0 ? totalAmount / totalCost : 0;
+        var directRoi = totalCost > 0 ? totalDirectAmount / totalCost : 0;
+        var viewCost = totalCost; // 观看成本需要 views，但 crowd summary 没有 views 字段，暂用总花费占位
+        var orderCost = totalOrders > 0 ? totalCost / totalOrders : 0;
+        var cartCost = totalCart > 0 ? totalCost / totalCart : 0;
+        var preOrderCost = totalPreOrders > 0 ? totalCost / totalPreOrders : 0;
+        var cpm = totalShows > 0 ? (totalCost / totalShows) * 1000 : 0;
+
+        return '<tr class="crowd-summary-row">'
+            + '<td><strong>汇总</strong></td>'
+            + '<td><strong>¥' + formatMoney(totalCost) + '</strong></td>'
+            + '<td><strong>¥' + formatMoney(totalAmount) + '</strong></td>'
+            + '<td><strong>' + formatNum(totalOrders) + '</strong></td>'
+            + '<td><strong>' + (roi > 0 ? roi.toFixed(2) : '-') + '</strong></td>'
+            + '<td><strong>' + (directRoi > 0 ? directRoi.toFixed(2) : '-') + '</strong></td>'
+            + '<td>' + '-' + '</td>'
+            + '<td><strong>' + (orderCost > 0 ? '¥' + orderCost.toFixed(2) : '-') + '</strong></td>'
+            + '<td><strong>' + (cartCost > 0 ? '¥' + cartCost.toFixed(2) : '-') + '</strong></td>'
+            + '<td><strong>' + formatNum(totalPreOrders) + '</strong></td>'
+            + '<td><strong>' + (preOrderCost > 0 ? '¥' + preOrderCost.toFixed(2) : '-') + '</strong></td>'
+            + '<td>' + '-' + '</td>'
+            + '<td>' + '-' + '</td>'
+            + '<td>' + '-' + '</td>'
+            + '<td><strong>' + (cpm > 0 ? '¥' + cpm.toFixed(2) : '-') + '</strong></td>'
+            + '<td><strong>¥' + formatMoney(totalDirectAmount) + '</strong></td>'
+            + '<td><strong>' + formatNum(totalCart) + '</strong></td>'
+            + '<td><strong>' + formatNum(totalShows) + '</strong></td>'
+            + '</tr>';
+    }
+
     function toggleCrowdRow(row) {
         row.classList.toggle('expanded');
         row.setAttribute('aria-expanded', row.classList.contains('expanded') ? 'true' : 'false');
@@ -448,9 +493,11 @@
             renderTableBodyState('#crowd-summary-table', '所选时间范围暂无人群数据');
             return;
         }
-        document.querySelector('#crowd-summary-table tbody').innerHTML = rows.map(group => {
+        var bodyHtml = rows.map(function(group) {
             return buildCrowdMainRow(group.crowd, group.summary) + buildCrowdSubRows(group.subRows || []);
         }).join('');
+        bodyHtml += buildCrowdSummaryRow(rows);
+        document.querySelector('#crowd-summary-table tbody').innerHTML = bodyHtml;
     }
 
     function singleToNum(v) {
@@ -563,6 +610,7 @@
         buildTableRow,
         buildCrowdMainRow,
         buildCrowdSubRows,
+        buildCrowdSummaryRow,
         toggleCrowdRow,
         renderAdsFromResponse,
         renderCrowdFromResponse,
