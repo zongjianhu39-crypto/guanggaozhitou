@@ -58,22 +58,58 @@
                     </p>
                 </div>
                 <div class="prediction-header-meta">
-                    <div class="model-info-card">
-                        <span class="model-info-label">当前策略</span>
-                        <strong id="model-version">货盘推荐 v0.5</strong>
-                        <span class="model-info-detail">历史回测 + 货盘关键词匹配</span>
+                    <div class="strategy-summary">
+                        <div class="strategy-title">
+                            <span class="model-info-label">当前策略</span>
+                            <strong id="model-version">货盘推荐 v0.5</strong>
+                        </div>
+                        <div class="strategy-metrics" aria-label="历史回测表现">
+                            <div>
+                                <span>ROI提升</span>
+                                <strong>+78%</strong>
+                            </div>
+                            <div>
+                                <span>转化提升</span>
+                                <strong>+22.6%</strong>
+                            </div>
+                            <div>
+                                <span>回测天数</span>
+                                <strong>45天</strong>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <!-- 筛选控制面板 -->
             <section class="prediction-controls">
-                <div class="prediction-mode-tabs" role="tablist" aria-label="预测模式">
-                    <button id="mode-recommendation-btn" class="mode-tab is-active" type="button" data-mode="recommendation">货盘推荐</button>
-                    <button id="mode-prediction-btn" class="mode-tab" type="button" data-mode="prediction">历史预测</button>
+                <div class="toolbar-head">
+                    <div>
+                        <span class="toolbar-eyebrow">每日推荐流程</span>
+                        <h2>导入货盘，生成可投人群清单</h2>
+                    </div>
+                    <div class="prediction-mode-tabs" role="tablist" aria-label="预测模式">
+                        <button id="mode-recommendation-btn" class="mode-tab is-active" type="button" data-mode="recommendation">货盘推荐</button>
+                        <button id="mode-prediction-btn" class="mode-tab" type="button" data-mode="prediction">历史预测</button>
+                    </div>
                 </div>
 
                 <div id="recommendation-controls" class="recommendation-controls">
+                    <div class="assortment-input-grid">
+                        <div class="control-group upload-panel">
+                            <span class="control-label">上传货盘 CSV</span>
+                            <label for="product-csv-file" class="upload-dropzone">
+                                <strong>选择货盘文件</strong>
+                                <span>支持 CSV，建议包含商品id、商品名称、分类、单价、佣金率</span>
+                            </label>
+                            <input type="file" id="product-csv-file" class="input-file" accept=".csv,text/csv">
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">或粘贴货盘 CSV 内容</label>
+                            <textarea id="product-csv-text" class="input-textarea" rows="7" placeholder="商品id,商品名称,分类,单价,佣金率&#10;sku_001,补水修护面膜,美妆护肤,39.9,0.18"></textarea>
+                        </div>
+                    </div>
+
                     <div class="controls-grid recommendation-grid">
                         <div class="control-group">
                             <label class="control-label">推荐日期</label>
@@ -87,36 +123,26 @@
                             </select>
                         </div>
 
-                        <div class="control-group">
-                            <label class="control-label">推荐数量</label>
-                            <select id="recommendation-top-n" class="input-select">
-                                <option value="10">Top 10</option>
-                                <option value="20" selected>Top 20</option>
-                                <option value="30">Top 30</option>
-                            </select>
-                        </div>
-
                         <div class="control-group control-actions">
+                            <div class="control-group compact-select">
+                                <label class="control-label">推荐数量</label>
+                                <select id="recommendation-top-n" class="input-select">
+                                    <option value="10">Top 10</option>
+                                    <option value="20" selected>Top 20</option>
+                                    <option value="30">Top 30</option>
+                                </select>
+                            </div>
                             <button id="run-recommendation-btn" class="btn btn-primary">
-                                <span class="btn-icon">🔎</span>
                                 生成推荐
                             </button>
                             <button id="export-csv-btn" class="btn btn-secondary" disabled>
-                                <span class="btn-icon">📥</span>
                                 导出CSV
                             </button>
                         </div>
                     </div>
-
-                    <div class="assortment-input-grid">
-                        <div class="control-group">
-                            <label class="control-label">上传货盘 CSV</label>
-                            <input type="file" id="product-csv-file" class="input-file" accept=".csv,text/csv">
-                        </div>
-                        <div class="control-group">
-                            <label class="control-label">或粘贴货盘 CSV 内容</label>
-                            <textarea id="product-csv-text" class="input-textarea" rows="7" placeholder="商品id,商品名称,分类,单价,佣金率&#10;sku_001,补水修护面膜,美妆护肤,39.9,0.18"></textarea>
-                        </div>
+                    <div class="field-hints">
+                        <span>字段别名兼容：类目/品类、价格/售价、GMV/成交金额、订单数/成交订单数</span>
+                        <span>推荐结果会按匹配分、预估ROI、置信度和近期活跃度排序</span>
                     </div>
                 </div>
 

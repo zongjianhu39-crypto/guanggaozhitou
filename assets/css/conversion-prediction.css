@@ -1,17 +1,18 @@
 /* 成交预测页面样式 */
 
 .prediction-page {
-    padding: 2rem 0 4rem;
+    padding: 1.5rem 0 4rem;
     min-height: calc(100vh - 200px);
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.96) 0%, rgba(255, 255, 255, 1) 58%);
 }
 
 /* 页面标题 */
 .prediction-header {
     display: grid;
-    grid-template-columns: 1fr 280px;
+    grid-template-columns: minmax(0, 1fr) 420px;
     gap: 2rem;
-    margin-bottom: 2.5rem;
-    align-items: start;
+    margin-bottom: 1.5rem;
+    align-items: end;
 }
 
 .prediction-kicker {
@@ -25,28 +26,36 @@
 }
 
 .prediction-header-copy h1 {
-    font-size: 1.875rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 0.75rem;
+    margin: 0 0 0.625rem;
     line-height: 1.3;
 }
 
 .prediction-desc {
     font-size: 0.9375rem;
     color: var(--text-secondary);
-    line-height: 1.6;
+    line-height: 1.75;
     margin: 0;
+    max-width: 760px;
 }
 
-.model-info-card {
+.strategy-summary {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1.25rem;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.strategy-title {
     display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .model-info-label {
@@ -56,34 +65,80 @@
     letter-spacing: 0.05em;
 }
 
-.model-info-card strong {
-    font-size: 1.25rem;
+.strategy-title strong {
+    font-size: 1rem;
     color: var(--text-primary);
     font-weight: 700;
+    white-space: nowrap;
 }
 
-.model-info-detail {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
+.strategy-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    padding-top: 0.875rem;
+}
+
+.strategy-metrics div {
+    min-width: 0;
+}
+
+.strategy-metrics span {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.strategy-metrics strong {
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    font-weight: 700;
 }
 
 /* 筛选控制面板 */
 .prediction-controls {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
+}
+
+.toolbar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.25rem;
+}
+
+.toolbar-eyebrow {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.toolbar-head h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    line-height: 1.35;
 }
 
 .prediction-mode-tabs {
     display: inline-flex;
     gap: 0.25rem;
     padding: 0.25rem;
-    margin-bottom: 1.25rem;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background: var(--bg-secondary);
+    flex: 0 0 auto;
 }
 
 .mode-tab {
@@ -106,7 +161,7 @@
 .controls-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.25rem;
+    gap: 1rem;
     align-items: end;
 }
 
@@ -131,6 +186,7 @@
 .input-date,
 .input-text,
 .input-select {
+    min-height: 44px;
     padding: 0.625rem 0.875rem;
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -156,6 +212,7 @@
 .control-actions {
     flex-direction: row;
     gap: 0.75rem;
+    align-items: end;
 }
 
 .control-actions .btn {
@@ -163,26 +220,57 @@
 }
 
 .recommendation-grid {
-    grid-template-columns: 180px minmax(220px, 1fr) 140px minmax(220px, 260px);
+    grid-template-columns: 180px minmax(240px, 1fr) minmax(360px, 460px);
+    margin-top: 1rem;
 }
 
 .assortment-input-grid {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 1.25rem;
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--border-color);
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    gap: 1rem;
 }
 
 .input-file {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.upload-panel {
+    min-height: 100%;
+}
+
+.upload-dropzone {
+    display: flex;
+    min-height: 168px;
     width: 100%;
-    padding: 0.625rem 0.75rem;
-    border: 1px dashed var(--border-color);
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 1px dashed rgba(99, 102, 241, 0.38);
     border-radius: 8px;
-    background: var(--bg-input);
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.05), rgba(255, 255, 255, 0.98));
     color: var(--text-secondary);
-    font-size: 0.875rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.upload-dropzone:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.07);
+}
+
+.upload-dropzone strong {
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.upload-dropzone span {
+    font-size: 0.8125rem;
+    line-height: 1.6;
 }
 
 .input-textarea {
@@ -196,6 +284,7 @@
     color: var(--text-primary);
     font-size: 0.875rem;
     line-height: 1.6;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
 .input-textarea:focus {
@@ -209,15 +298,41 @@
 }
 
 .btn:disabled {
-    opacity: 0.5;
+    opacity: 0.42;
     cursor: not-allowed;
+}
+
+.compact-select {
+    min-width: 120px;
+}
+
+.field-hints {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.875rem;
+}
+
+.field-hints span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    font-size: 0.75rem;
 }
 
 /* 加载状态 */
 .prediction-state {
     text-align: center;
-    padding: 4rem 2rem;
+    padding: 2.75rem 2rem;
     color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
 }
 
 .state-icon {
@@ -505,6 +620,7 @@
 @media (max-width: 1024px) {
     .prediction-header {
         grid-template-columns: 1fr;
+        align-items: start;
     }
 
     .summary-grid {
@@ -518,6 +634,27 @@
 }
 
 @media (max-width: 768px) {
+    .prediction-page {
+        padding-top: 1rem;
+    }
+
+    .toolbar-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .prediction-mode-tabs {
+        width: 100%;
+    }
+
+    .mode-tab {
+        flex: 1;
+    }
+
+    .strategy-metrics {
+        grid-template-columns: 1fr;
+    }
+
     .controls-grid {
         grid-template-columns: 1fr;
     }
