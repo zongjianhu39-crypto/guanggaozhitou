@@ -150,10 +150,16 @@ const ConversionPredictionRender = (function() {
         const highProbCount = currentPredictions.filter(p => p.conv_probability >= 0.6).length;
         const totalCost = currentPredictions.reduce((sum, p) => sum + (p.final_cost || 0), 0);
 
-        document.getElementById('summary-count').textContent = count;
-        document.getElementById('summary-prob').textContent = ConversionPredictionApi.formatProbability(avgProb);
-        document.getElementById('summary-high').textContent = `${highProbCount} 个 (${((highProbCount / count) * 100).toFixed(1)}%)`;
-        document.getElementById('summary-cost').textContent = `¥${totalCost.toFixed(2)}`;
+        const vals = {
+            'summary-count': count,
+            'summary-prob': ConversionPredictionApi.formatProbability(avgProb),
+            'summary-high': `${highProbCount} 个 (${((highProbCount / count) * 100).toFixed(1)}%)`,
+            'summary-cost': `¥${totalCost.toFixed(2)}`,
+        };
+        Object.entries(vals).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        });
     }
 
     function renderRecommendationSummary(result) {
@@ -164,14 +170,26 @@ const ConversionPredictionRender = (function() {
         const priorityCount = currentPredictions.filter(item => ['主投承接', '正常投放'].includes(item.recommendation_level)).length;
         const avgConfidence = currentPredictions.reduce((sum, item) => sum + (item.confidence || 0), 0) / count;
 
-        document.getElementById('summary-count-label').textContent = '分配人群数';
-        document.getElementById('summary-prob-label').textContent = '已分配预算';
-        document.getElementById('summary-high-label').textContent = '主投/正常';
-        document.getElementById('summary-cost-label').textContent = '平均置信度';
-        document.getElementById('summary-count').textContent = count;
-        document.getElementById('summary-prob').textContent = `¥${allocatedBudget.toFixed(0)}`;
-        document.getElementById('summary-high').textContent = `${priorityCount} 个`;
-        document.getElementById('summary-cost').textContent = `${(avgConfidence * 100).toFixed(0)}% / CPO ${avgCpo.toFixed(1)}`;
+        const labelVals = {
+            'summary-count-label': '分配人群数',
+            'summary-prob-label': '已分配预算',
+            'summary-high-label': '主投/正常',
+            'summary-cost-label': '平均置信度',
+        };
+        const dataVals = {
+            'summary-count': count,
+            'summary-prob': `¥${allocatedBudget.toFixed(0)}`,
+            'summary-high': `${priorityCount} 个`,
+            'summary-cost': `${(avgConfidence * 100).toFixed(0)}% / CPO ${avgCpo.toFixed(1)}`,
+        };
+        Object.entries(labelVals).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        });
+        Object.entries(dataVals).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        });
 
         const profile = result && result.assortment_profile;
         if (profile) {
@@ -231,13 +249,19 @@ const ConversionPredictionRender = (function() {
         }
 
         // 更新分页信息
-        document.getElementById('total-count').textContent = currentPredictions.length;
-        document.querySelector('.pagination-info').innerHTML = 
-            `显示 ${startIndex + 1}-${endIndex} / 共 ${currentPredictions.length} 条`;
+        const totalCountEl = document.getElementById('total-count');
+        const paginationInfoEl = document.querySelector('.pagination-info');
+        if (paginationInfoEl) {
+            paginationInfoEl.textContent = `显示 ${startIndex + 1}-${endIndex} / 共 ${currentPredictions.length} 条`;
+        } else if (totalCountEl) {
+            totalCountEl.textContent = currentPredictions.length;
+        }
 
         // 更新按钮状态
-        document.getElementById('prev-page-btn').disabled = currentPage === 1;
-        document.getElementById('next-page-btn').disabled = endIndex >= currentPredictions.length;
+        const prevBtn = document.getElementById('prev-page-btn');
+        const nextBtn = document.getElementById('next-page-btn');
+        if (prevBtn) prevBtn.disabled = currentPage === 1;
+        if (nextBtn) nextBtn.disabled = endIndex >= currentPredictions.length;
     }
 
     /**

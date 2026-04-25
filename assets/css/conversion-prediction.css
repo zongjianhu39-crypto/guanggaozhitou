@@ -747,6 +747,19 @@
     margin-bottom: 0.375rem;
 }
 
+.docs-divider {
+    border: none;
+    border-top: 1px dashed var(--border-color);
+    margin: 1.5rem 0;
+}
+
+.docs-content p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin: 0.25rem 0 0.75rem;
+}
+
 /* 响应式布局 */
 @media (max-width: 1200px) {
     .recommendation-grid {
