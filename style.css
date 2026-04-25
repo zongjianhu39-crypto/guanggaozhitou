@@ -204,6 +204,127 @@ a:hover { color: var(--primary-dark); }
    Hero 区域
    ================================ */
 
+.hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.9);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.hero-title-accent {
+    background: linear-gradient(135deg, #a88bff, #e8a0f0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-cta {
+    display: flex;
+    gap: 14px;
+    margin-top: 28px;
+}
+
+.hero-proof-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 28px;
+}
+
+.hero-proof-card {
+    text-align: center;
+    padding: 18px 12px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+.hero-proof-card strong {
+    display: block;
+    font-size: 2rem;
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.hero-proof-card span {
+    display: block;
+    color: rgba(255,255,255,0.78);
+    font-size: 13px;
+}
+
+.hero-stage-summary {
+    padding: 24px;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.94);
+    border: 1px solid rgba(233,224,255,0.88);
+    margin-bottom: 20px;
+}
+
+.hero-stage-visual {
+    position: relative;
+    background: rgba(255,255,255,0.06);
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 20px;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.hero-stage-visual img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 14px;
+}
+
+.hero-stage-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.hero-stage-metric {
+    position: absolute;
+    bottom: 90px;
+    right: 28px;
+    text-align: right;
+    padding: 12px 16px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.hero-stage-metric strong {
+    font-size: 1.8rem;
+    color: #1e1830;
+}
+
+.hero-stage-note {
+    position: absolute;
+    bottom: 24px;
+    left: 28px;
+    right: 28px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.16);
+    color: rgba(255,255,255,0.86);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.hero-blobs {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
 
 
 @keyframes float {
@@ -1425,8 +1546,8 @@ a:hover { color: var(--primary-dark); }
 .home-entry-grid {
     grid-template-columns: 1.18fr 0.82fr;
     grid-template-areas:
+        "dashboard predictions"
         "dashboard insights"
-        "dashboard guide"
         "prompt prompt";
     align-items: stretch;
 }
@@ -2213,8 +2334,8 @@ a:hover { color: var(--primary-dark); }
     .home-entry-grid {
         grid-template-areas:
             "dashboard"
+            "predictions"
             "insights"
-            "guide"
             "prompt";
     }
 
