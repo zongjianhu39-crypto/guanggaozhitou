@@ -7,7 +7,7 @@
     <title>货盘人群推荐 - 广告智投工作台</title>
     <meta name="description" content="基于每日达人直播间货盘和历史投放表现推荐可测试人群">
     <link rel="stylesheet" href="style.css?v=20260406k">
-    <link rel="stylesheet" href="assets/css/conversion-prediction.css?v=20260425a">
+    <link rel="stylesheet" href="assets/css/conversion-prediction.css?v=20260425c">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
@@ -61,16 +61,16 @@
                     <div class="strategy-summary">
                         <div class="strategy-title">
                             <span class="model-info-label">当前策略</span>
-                            <strong id="model-version">货盘推荐 v0.5</strong>
+                            <strong id="model-version">货盘推荐 v0.6</strong>
                         </div>
                         <div class="strategy-metrics" aria-label="历史回测表现">
                             <div>
                                 <span>ROI提升</span>
-                                <strong>+78%</strong>
+                                <strong>+26.3%</strong>
                             </div>
                             <div>
                                 <span>转化提升</span>
-                                <strong>+22.6%</strong>
+                                <strong>+17.0%</strong>
                             </div>
                             <div>
                                 <span>回测天数</span>
@@ -92,16 +92,31 @@
                     <ul class="intro-list">
                         <li>货盘画像：商品数、类目、价格带、佣金、历史支付表现</li>
                         <li>人群表现：历史转化、ROI、成交、花费和近期活跃度</li>
-                        <li>稳定校准：低样本降权，竞品/商品关键词不匹配会降权</li>
+                        <li>训练样本：只学习计划名称含“规则”的直播间整体投放计划</li>
                     </ul>
                 </div>
                 <div class="intro-card">
                     <span class="intro-step">结果怎么看</span>
                     <ul class="intro-list">
-                        <li>优先看“匹配分”和“置信度”，再看预估 ROI</li>
+                        <li>优先看“推荐等级”“匹配分”和“置信度”</li>
                         <li>强推/优先测试可正常预算，小预算测试适合探测</li>
                         <li>推荐理由用于判断它是稳定人群还是货盘相关新人群</li>
                     </ul>
+                </div>
+            </section>
+
+            <section class="sample-scope" aria-label="训练样本口径">
+                <div>
+                    <span class="sample-scope-label">训练样本口径</span>
+                    <strong>只纳入直播间整体投放计划</strong>
+                </div>
+                <p>
+                    当前模型训练时仅保留计划名称包含“规则”的记录；其他单品投放计划不参与训练，避免单品投放效果干扰达人直播间货盘与人群匹配。
+                </p>
+                <div class="sample-scope-stats">
+                    <span>样本 26,092 条</span>
+                    <span>计划 561 个</span>
+                    <span>回测 45 天</span>
                 </div>
             </section>
 
@@ -114,7 +129,7 @@
                     </div>
                     <div class="prediction-mode-tabs" role="tablist" aria-label="预测模式">
                         <button id="mode-recommendation-btn" class="mode-tab is-active" type="button" data-mode="recommendation">货盘推荐</button>
-                        <button id="mode-prediction-btn" class="mode-tab" type="button" data-mode="prediction">历史预测</button>
+                        <button id="mode-prediction-btn" class="mode-tab" type="button" data-mode="prediction" hidden>历史预测</button>
                     </div>
                 </div>
 
@@ -166,7 +181,7 @@
                     </div>
                     <div class="field-hints">
                         <span>字段别名兼容：类目/品类、价格/售价、GMV/成交金额、订单数/成交订单数</span>
-                        <span>推荐结果会按匹配分、预估ROI、置信度和近期活跃度排序</span>
+                        <span>推荐结果会按匹配分、置信度、历史稳定性和近期活跃度排序</span>
                     </div>
                 </div>
 
@@ -233,7 +248,7 @@
                         <strong id="summary-high">--</strong>
                     </div>
                     <div class="summary-card">
-                        <span id="summary-cost-label" class="summary-label">平均预估ROI</span>
+                        <span id="summary-cost-label" class="summary-label">平均置信度</span>
                         <strong id="summary-cost">--</strong>
                     </div>
                 </div>
@@ -248,13 +263,8 @@
                             排序：
                             <select id="sort-select" class="input-select-small">
                                 <option value="score_desc">匹配分 ↓</option>
-                                <option value="roi_desc">预估ROI ↓</option>
                                 <option value="confidence_desc">置信度 ↓</option>
-                                <option value="probability_desc">成交概率 ↓</option>
-                                <option value="probability_asc">成交概率 ↑</option>
-                                <option value="cost_desc">预测成本 ↓</option>
-                                <option value="cost_asc">预测成本 ↑</option>
-                                <option value="date_asc">日期 ↑</option>
+                                <option value="rank_asc">推荐排名 ↑</option>
                             </select>
                         </label>
                     </div>
@@ -268,9 +278,8 @@
                                 <th class="col-crowd">人群名称</th>
                                 <th>推荐等级</th>
                                 <th>匹配分</th>
-                                <th>预估转化</th>
-                                <th>预估ROI</th>
                                 <th>置信度</th>
+                                <th>建议动作</th>
                                 <th class="col-reasons">推荐理由</th>
                             </tr>
                         </thead>
@@ -299,6 +308,7 @@
                         <ul>
                             <li><strong>货盘画像</strong>：商品数、品类、价格带、佣金、退款、爆品集中度</li>
                             <li><strong>人群表现</strong>：历史转化、ROI、成交、花费和样本量</li>
+                            <li><strong>训练口径</strong>：只使用计划名称包含“规则”的直播间整体投放计划，不包含单品投放计划</li>
                             <li><strong>稳健校准</strong>：低样本平滑、近期活跃度、竞品关键词匹配</li>
                         </ul>
 
@@ -311,8 +321,10 @@
 
                         <h3>注意事项</h3>
                         <ul>
+                            <li>转化率、订单成本和 ROI 仅作为后台排序权重，不作为前台承诺值展示</li>
                             <li>推荐结果用于排序和测试，不代表精确成本承诺</li>
                             <li>新品货盘建议结合投手判断，小预算逐步放量</li>
+                            <li>如果后续计划命名规则变化，需要同步更新训练样本过滤规则</li>
                             <li>建议结合实际业务经验综合判断</li>
                         </ul>
                     </div>
@@ -366,8 +378,8 @@
     <!-- 加载页面脚本 -->
     <script src="assets/js/config.js"></script>
     <script src="script.js?v=20260406a"></script>
-    <script src="assets/js/conversion-prediction-api.js?v=20260425a"></script>
-    <script src="assets/js/conversion-prediction-render.js?v=20260425a"></script>
+    <script src="assets/js/conversion-prediction-api.js?v=20260425c"></script>
+    <script src="assets/js/conversion-prediction-render.js?v=20260425c"></script>
     <script src="assets/js/conversion-prediction-events.js?v=20260425a"></script>
     <script src="assets/js/conversion-prediction-page.js?v=20260425a"></script>
 </body>

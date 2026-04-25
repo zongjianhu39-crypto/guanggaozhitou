@@ -124,17 +124,15 @@ const ConversionPredictionApi = (function() {
         let headers;
         let rows;
         if (records[0] && Object.prototype.hasOwnProperty.call(records[0], 'match_score')) {
-            headers = ['排名', '人群名称', '场景', '推荐等级', '匹配分', '预估转化率', '预估订单成本', '预估ROI', '置信度', '推荐理由'];
+            headers = ['排名', '人群名称', '场景', '推荐等级', '匹配分', '置信度', '建议动作', '推荐理由'];
             rows = records.map(item => [
                 item.rank || '',
                 item.crowd_name || '',
                 item.scene_name || '',
                 item.recommendation_level || '',
                 item.match_score ?? '',
-                item.predicted_conv_rate != null ? `${(item.predicted_conv_rate * 100).toFixed(2)}%` : '',
-                item.predicted_cost_per_order ?? '',
-                item.estimated_roi ?? '',
                 item.confidence != null ? `${(item.confidence * 100).toFixed(1)}%` : '',
+                item.suggested_action || recommendationAction(item.recommendation_level),
                 Array.isArray(item.reasons) ? item.reasons.join('；') : '',
             ]);
         } else {
@@ -174,6 +172,13 @@ const ConversionPredictionApi = (function() {
             return `"${text.replace(/"/g, '""')}"`;
         }
         return text;
+    }
+
+    function recommendationAction(level) {
+        if (level === '强推') return '优先放入首轮测试';
+        if (level === '优先测试') return '正常预算测试';
+        if (level === '小预算测试') return '小预算探测';
+        return '观察备用';
     }
 
     /**

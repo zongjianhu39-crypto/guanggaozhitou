@@ -156,6 +156,58 @@
     margin-bottom: 0;
 }
 
+.sample-scope {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    margin: -0.25rem 0 1.5rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    border-radius: 8px;
+    background: rgba(236, 253, 245, 0.72);
+}
+
+.sample-scope-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #047857;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.sample-scope strong {
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+}
+
+.sample-scope p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.7;
+}
+
+.sample-scope-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.sample-scope-stats span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.78);
+    color: #047857;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 /* 筛选控制面板 */
 .prediction-controls {
     background: var(--bg-card);
@@ -691,6 +743,15 @@
     .assortment-input-grid,
     .module-intro {
         grid-template-columns: 1fr;
+    }
+
+    .sample-scope {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .sample-scope-stats {
+        justify-content: flex-start;
     }
 }
 

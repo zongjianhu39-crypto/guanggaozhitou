@@ -161,16 +161,16 @@ const ConversionPredictionRender = (function() {
         const count = currentPredictions.length;
         const avgScore = currentPredictions.reduce((sum, item) => sum + (item.match_score || 0), 0) / count;
         const priorityCount = currentPredictions.filter(item => ['强推', '优先测试'].includes(item.recommendation_level)).length;
-        const avgRoi = currentPredictions.reduce((sum, item) => sum + (item.estimated_roi || 0), 0) / count;
+        const avgConfidence = currentPredictions.reduce((sum, item) => sum + (item.confidence || 0), 0) / count;
 
         document.getElementById('summary-count-label').textContent = '推荐人群数';
         document.getElementById('summary-prob-label').textContent = '平均匹配分';
         document.getElementById('summary-high-label').textContent = '优先测试以上';
-        document.getElementById('summary-cost-label').textContent = '平均预估ROI';
+        document.getElementById('summary-cost-label').textContent = '平均置信度';
         document.getElementById('summary-count').textContent = count;
         document.getElementById('summary-prob').textContent = avgScore.toFixed(1);
         document.getElementById('summary-high').textContent = `${priorityCount} 个`;
-        document.getElementById('summary-cost').textContent = avgRoi.toFixed(2);
+        document.getElementById('summary-cost').textContent = `${(avgConfidence * 100).toFixed(0)}%`;
 
         const profile = result && result.assortment_profile;
         if (profile) {
@@ -200,9 +200,8 @@ const ConversionPredictionRender = (function() {
                         <td>${escapeHtml(item.crowd_name || '-')}</td>
                         <td><span class="level-badge ${levelClass}">${escapeHtml(item.recommendation_level || '-')}</span></td>
                         <td><strong>${(item.match_score || 0).toFixed(1)}</strong></td>
-                        <td>${ConversionPredictionApi.formatProbability(item.predicted_conv_rate || 0)}</td>
-                        <td>${(item.estimated_roi || 0).toFixed(2)}</td>
                         <td>${((item.confidence || 0) * 100).toFixed(0)}%</td>
+                        <td>${escapeHtml(item.suggested_action || getActionText(item.recommendation_level))}</td>
                         <td class="reason-cell">${escapeHtml(reasons)}</td>
                     </tr>
                 `;
@@ -246,6 +245,9 @@ const ConversionPredictionRender = (function() {
         switch (sortBy) {
             case 'score_desc':
                 sorted.sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+                break;
+            case 'rank_asc':
+                sorted.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
                 break;
             case 'roi_desc':
                 sorted.sort((a, b) => (b.estimated_roi || 0) - (a.estimated_roi || 0));
@@ -341,6 +343,7 @@ const ConversionPredictionRender = (function() {
     function setRecommendationHeaders() {
         const title = document.getElementById('results-title');
         const thead = document.querySelector('#prediction-table thead tr');
+        const sortSelect = document.getElementById('sort-select');
         if (title) title.textContent = '推荐结果';
         if (thead) {
             thead.innerHTML = `
@@ -348,10 +351,16 @@ const ConversionPredictionRender = (function() {
                 <th class="col-crowd">人群名称</th>
                 <th>推荐等级</th>
                 <th>匹配分</th>
-                <th>预估转化</th>
-                <th>预估ROI</th>
                 <th>置信度</th>
+                <th>建议动作</th>
                 <th class="col-reasons">推荐理由</th>
+            `;
+        }
+        if (sortSelect) {
+            sortSelect.innerHTML = `
+                <option value="score_desc">匹配分 ↓</option>
+                <option value="confidence_desc">置信度 ↓</option>
+                <option value="rank_asc">推荐排名 ↑</option>
             `;
         }
     }
@@ -359,6 +368,7 @@ const ConversionPredictionRender = (function() {
     function setPredictionHeaders() {
         const title = document.getElementById('results-title');
         const thead = document.querySelector('#prediction-table thead tr');
+        const sortSelect = document.getElementById('sort-select');
         if (title) title.textContent = '预测结果';
         if (thead) {
             thead.innerHTML = `
@@ -371,6 +381,15 @@ const ConversionPredictionRender = (function() {
                 <th class="col-range">置信区间</th>
             `;
         }
+        if (sortSelect) {
+            sortSelect.innerHTML = `
+                <option value="probability_desc">成交概率 ↓</option>
+                <option value="probability_asc">成交概率 ↑</option>
+                <option value="cost_desc">预测成本 ↓</option>
+                <option value="cost_asc">预测成本 ↑</option>
+                <option value="date_asc">日期 ↑</option>
+            `;
+        }
     }
 
     function getLevelClass(level) {
@@ -378,6 +397,13 @@ const ConversionPredictionRender = (function() {
         if (level === '优先测试') return 'level-priority';
         if (level === '小预算测试') return 'level-test';
         return 'level-watch';
+    }
+
+    function getActionText(level) {
+        if (level === '强推') return '优先放入首轮测试';
+        if (level === '优先测试') return '正常预算测试';
+        if (level === '小预算测试') return '小预算探测';
+        return '观察备用';
     }
 
     function setExportDisabled(disabled) {
