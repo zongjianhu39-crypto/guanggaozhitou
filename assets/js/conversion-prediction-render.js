@@ -25,7 +25,7 @@ const ConversionPredictionRender = (function() {
             stateEl.className = 'prediction-state is-loading';
             stateEl.innerHTML = `
                 <div class="state-icon">⏳</div>
-                <p>${currentMode === 'recommendation' ? '正在生成货盘人群推荐...' : '正在运行模型预测，这可能需要几秒钟...'}</p>
+                <p>${currentMode === 'recommendation' ? '正在测算各人群预算档位和CPO...' : '正在运行模型预测，这可能需要几秒钟...'}</p>
             `;
         }
 
@@ -68,7 +68,7 @@ const ConversionPredictionRender = (function() {
             stateEl.className = 'prediction-state';
             stateEl.innerHTML = `
                 <div class="state-icon">📊</div>
-                <p>${currentMode === 'recommendation' ? '上传或粘贴当天货盘后点击"生成推荐"' : '选择日期范围后点击"运行预测"开始分析'}</p>
+                <p>${currentMode === 'recommendation' ? '上传或粘贴当天货盘，填写目标CPO和总预算后点击"生成预算"' : '选择日期范围后点击"运行预测"开始分析'}</p>
             `;
         }
 
@@ -159,18 +159,19 @@ const ConversionPredictionRender = (function() {
     function renderRecommendationSummary(result) {
         setRecommendationHeaders();
         const count = currentPredictions.length;
-        const avgScore = currentPredictions.reduce((sum, item) => sum + (item.match_score || 0), 0) / count;
-        const priorityCount = currentPredictions.filter(item => ['强推', '优先测试'].includes(item.recommendation_level)).length;
+        const allocatedBudget = currentPredictions.reduce((sum, item) => sum + (item.recommended_budget || 0), 0);
+        const avgCpo = currentPredictions.reduce((sum, item) => sum + (item.estimated_cpo || 0), 0) / count;
+        const priorityCount = currentPredictions.filter(item => ['主投承接', '正常投放'].includes(item.recommendation_level)).length;
         const avgConfidence = currentPredictions.reduce((sum, item) => sum + (item.confidence || 0), 0) / count;
 
-        document.getElementById('summary-count-label').textContent = '推荐人群数';
-        document.getElementById('summary-prob-label').textContent = '平均匹配分';
-        document.getElementById('summary-high-label').textContent = '优先测试以上';
+        document.getElementById('summary-count-label').textContent = '分配人群数';
+        document.getElementById('summary-prob-label').textContent = '已分配预算';
+        document.getElementById('summary-high-label').textContent = '主投/正常';
         document.getElementById('summary-cost-label').textContent = '平均置信度';
         document.getElementById('summary-count').textContent = count;
-        document.getElementById('summary-prob').textContent = avgScore.toFixed(1);
+        document.getElementById('summary-prob').textContent = `¥${allocatedBudget.toFixed(0)}`;
         document.getElementById('summary-high').textContent = `${priorityCount} 个`;
-        document.getElementById('summary-cost').textContent = `${(avgConfidence * 100).toFixed(0)}%`;
+        document.getElementById('summary-cost').textContent = `${(avgConfidence * 100).toFixed(0)}% / CPO ${avgCpo.toFixed(1)}`;
 
         const profile = result && result.assortment_profile;
         if (profile) {
@@ -194,15 +195,19 @@ const ConversionPredictionRender = (function() {
             tbody.innerHTML = pageData.map(item => {
                 const levelClass = getLevelClass(item.recommendation_level);
                 const reasons = Array.isArray(item.reasons) ? item.reasons.join('；') : '-';
-                return `
-                    <tr>
-                        <td>${item.rank || '-'}</td>
-                        <td>${escapeHtml(item.crowd_name || '-')}</td>
-                        <td><span class="level-badge ${levelClass}">${escapeHtml(item.recommendation_level || '-')}</span></td>
-                        <td><strong>${(item.match_score || 0).toFixed(1)}</strong></td>
-                        <td>${((item.confidence || 0) * 100).toFixed(0)}%</td>
-                        <td>${escapeHtml(item.suggested_action || getActionText(item.recommendation_level))}</td>
-                        <td class="reason-cell">${escapeHtml(reasons)}</td>
+	                return `
+	                    <tr>
+	                        <td>${item.rank || '-'}</td>
+	                        <td>${escapeHtml(item.crowd_name || '-')}</td>
+	                        <td><span class="level-badge ${levelClass}">${escapeHtml(item.recommendation_level || '-')}</span></td>
+	                        <td><strong>¥${(item.recommended_budget || 0).toFixed(0)}</strong></td>
+	                        <td>¥${(item.budget_capacity || 0).toFixed(0)}</td>
+	                        <td>¥${(item.estimated_cpo || 0).toFixed(2)}</td>
+	                        <td>¥${(item.marginal_cpo || 0).toFixed(2)}</td>
+	                        <td>¥${(item.cpo_low || 0).toFixed(2)} - ¥${(item.cpo_high || 0).toFixed(2)}</td>
+	                        <td>${((item.confidence || 0) * 100).toFixed(0)}%</td>
+	                        <td>${escapeHtml(item.suggested_action || getActionText(item.recommendation_level))}</td>
+	                        <td class="reason-cell">${escapeHtml(reasons)}</td>
                     </tr>
                 `;
             }).join('');
@@ -244,13 +249,19 @@ const ConversionPredictionRender = (function() {
 
         switch (sortBy) {
             case 'score_desc':
-                sorted.sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+                sorted.sort((a, b) => (b.recommended_budget || b.match_score || 0) - (a.recommended_budget || a.match_score || 0));
+                break;
+            case 'budget_desc':
+                sorted.sort((a, b) => (b.recommended_budget || 0) - (a.recommended_budget || 0));
+                break;
+            case 'capacity_desc':
+                sorted.sort((a, b) => (b.budget_capacity || 0) - (a.budget_capacity || 0));
+                break;
+            case 'cpo_asc':
+                sorted.sort((a, b) => (a.estimated_cpo || 999999) - (b.estimated_cpo || 999999));
                 break;
             case 'rank_asc':
                 sorted.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
-                break;
-            case 'roi_desc':
-                sorted.sort((a, b) => (b.estimated_roi || 0) - (a.estimated_roi || 0));
                 break;
             case 'confidence_desc':
                 sorted.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
@@ -344,23 +355,29 @@ const ConversionPredictionRender = (function() {
         const title = document.getElementById('results-title');
         const thead = document.querySelector('#prediction-table thead tr');
         const sortSelect = document.getElementById('sort-select');
-        if (title) title.textContent = '推荐结果';
+        if (title) title.textContent = '预算分配结果';
         if (thead) {
             thead.innerHTML = `
-                <th>排名</th>
-                <th class="col-crowd">人群名称</th>
-                <th>推荐等级</th>
-                <th>匹配分</th>
-                <th>置信度</th>
-                <th>建议动作</th>
-                <th class="col-reasons">推荐理由</th>
+	                <th>排名</th>
+	                <th class="col-crowd">人群名称</th>
+	                <th>推荐等级</th>
+	                <th>建议预算</th>
+	                <th>可承接预算</th>
+	                <th>测算CPO</th>
+	                <th>边际CPO</th>
+	                <th>CPO区间</th>
+	                <th>置信度</th>
+	                <th>建议动作</th>
+	                <th class="col-reasons">推荐理由</th>
             `;
         }
         if (sortSelect) {
             sortSelect.innerHTML = `
-                <option value="score_desc">匹配分 ↓</option>
-                <option value="confidence_desc">置信度 ↓</option>
-                <option value="rank_asc">推荐排名 ↑</option>
+	                <option value="budget_desc">建议预算 ↓</option>
+	                <option value="capacity_desc">可承接预算 ↓</option>
+	                <option value="cpo_asc">测算CPO ↑</option>
+	                <option value="confidence_desc">置信度 ↓</option>
+	                <option value="rank_asc">推荐排名 ↑</option>
             `;
         }
     }
@@ -393,17 +410,20 @@ const ConversionPredictionRender = (function() {
     }
 
     function getLevelClass(level) {
-        if (level === '强推') return 'level-strong';
-        if (level === '优先测试') return 'level-priority';
-        if (level === '小预算测试') return 'level-test';
+        if (level === '主投承接' || level === '强推') return 'level-strong';
+        if (level === '正常投放' || level === '优先测试') return 'level-priority';
+        if (level === '小预算测试' || level === '备用承接') return 'level-test';
         return 'level-watch';
     }
 
     function getActionText(level) {
+        if (level === '主投承接') return '可作为主投人群分配预算';
+        if (level === '正常投放') return '按建议预算投放并观察CPO';
         if (level === '强推') return '优先放入首轮测试';
         if (level === '优先测试') return '正常预算测试';
         if (level === '小预算测试') return '小预算探测';
-        return '观察备用';
+        if (level === '备用承接') return '总预算不足时备用，或加预算后启用';
+        return '目标CPO内暂不分配预算';
     }
 
     function setExportDisabled(disabled) {

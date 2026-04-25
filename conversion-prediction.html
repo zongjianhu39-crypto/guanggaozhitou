@@ -7,7 +7,7 @@
     <title>货盘人群推荐 - 广告智投工作台</title>
     <meta name="description" content="基于每日达人直播间货盘和历史投放表现推荐可测试人群">
     <link rel="stylesheet" href="style.css?v=20260406k">
-    <link rel="stylesheet" href="assets/css/conversion-prediction.css?v=20260425c">
+    <link rel="stylesheet" href="assets/css/conversion-prediction.css?v=20260426a">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
@@ -50,27 +50,27 @@
             <!-- 页面标题 -->
             <header class="prediction-header">
                 <div class="prediction-header-copy">
-                    <span class="prediction-kicker">货盘人群推荐</span>
-                    <h1>当天货盘匹配人群推荐</h1>
+                    <span class="prediction-kicker">目标 CPO 预算分配</span>
+                    <h1>当天货盘人群预算分配</h1>
                     <p class="prediction-desc">
-                        导入当天达人直播间货盘，系统会结合商品结构、历史人群表现和近期活跃度，
-                        推荐更适合测试和放量的人群。
+                        导入当天达人直播间货盘，填写总预算和目标 CPO，系统会测算各人群在不同预算档位下的 CPO，
+                        输出更适合主投、放量和小额测试的人群预算。
                     </p>
                 </div>
                 <div class="prediction-header-meta">
                     <div class="strategy-summary">
                         <div class="strategy-title">
                             <span class="model-info-label">当前策略</span>
-                            <strong>货盘推荐 v0.6</strong>
+                            <strong>预算分配 v1.0</strong>
                         </div>
                         <div class="strategy-metrics" aria-label="历史回测表现">
                             <div>
-                                <span>ROI提升</span>
-                                <strong>+26.3%</strong>
+                                <span>主目标</span>
+                                <strong>CPO</strong>
                             </div>
                             <div>
-                                <span>转化提升</span>
-                                <strong>+17.0%</strong>
+                                <span>预算曲线</span>
+                                <strong>多档位</strong>
                             </div>
                             <div>
                                 <span>回测天数</span>
@@ -84,23 +84,23 @@
             <section class="module-intro" aria-label="模块说明">
                 <div class="intro-card intro-card-primary">
                     <span class="intro-step">这个模块解决什么</span>
-                    <h2>每天货盘变化时，先用模型筛出更值得投的人群</h2>
-                    <p>适合达人直播间每日选品后使用：上传当天货盘，系统会把商品结构、价格带、类目、佣金和历史人群表现组合起来，输出 TopN 可测试人群。</p>
+                    <h2>每天货盘变化时，先判断每个人群能承接多少预算</h2>
+                    <p>适合达人直播间每日选品后使用：上传当天货盘，设置目标 CPO 和总预算，系统会输出各人群的建议花费和风险等级。</p>
                 </div>
                 <div class="intro-card">
                     <span class="intro-step">推荐怎么来的</span>
                     <ul class="intro-list">
                         <li>货盘画像：商品数、类目、价格带、佣金、历史支付表现</li>
-                        <li>人群表现：历史转化、ROI、成交、花费和近期活跃度</li>
+                        <li>人群表现：历史 CPO、成交、花费、可承接预算和近期活跃度</li>
                         <li>训练样本：只学习计划名称含“规则”的直播间整体投放计划</li>
                     </ul>
                 </div>
                 <div class="intro-card">
                     <span class="intro-step">结果怎么看</span>
                     <ul class="intro-list">
-                        <li>优先看“推荐等级”“匹配分”和“置信度”</li>
-                        <li>强推/优先测试可正常预算，小预算测试适合探测</li>
-                        <li>推荐理由用于判断它是稳定人群还是货盘相关新人群</li>
+                        <li>优先看“建议预算”“CPO区间”和“置信度”</li>
+                        <li>主投承接/正常投放可进入预算分配，小预算测试适合探测</li>
+                        <li>暂不建议的人群代表当前目标 CPO 内不适合花钱</li>
                     </ul>
                 </div>
             </section>
@@ -125,10 +125,10 @@
                 <div class="toolbar-head">
                     <div>
                         <span class="toolbar-eyebrow">每日推荐流程</span>
-                        <h2>导入货盘，生成可投人群清单</h2>
+                        <h2>导入货盘，生成预算分配建议</h2>
                     </div>
                     <div class="prediction-mode-tabs" role="tablist" aria-label="预测模式">
-                        <button id="mode-recommendation-btn" class="mode-tab is-active" type="button" data-mode="recommendation">货盘推荐</button>
+                        <button id="mode-recommendation-btn" class="mode-tab is-active" type="button" data-mode="recommendation">预算分配</button>
                         <button id="mode-prediction-btn" class="mode-tab" type="button" data-mode="prediction" hidden>历史预测</button>
                     </div>
                 </div>
@@ -162,9 +162,19 @@
                             </select>
                         </div>
 
+                        <div class="control-group">
+                            <label class="control-label">总预算</label>
+                            <input type="number" id="total-budget" class="input-text" min="0" step="100" value="50000" placeholder="例如 50000">
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">目标 CPO</label>
+                            <input type="number" id="target-cpo" class="input-text" min="1" step="0.1" value="10" placeholder="例如 10">
+                        </div>
+
                         <div class="control-group control-actions">
                             <div class="control-group compact-select">
-                                <label class="control-label">推荐数量</label>
+                                <label class="control-label">返回数量</label>
                                 <select id="recommendation-top-n" class="input-select">
                                     <option value="10">Top 10</option>
                                     <option value="20" selected>Top 20</option>
@@ -172,7 +182,7 @@
                                 </select>
                             </div>
                             <button id="run-recommendation-btn" class="btn btn-primary">
-                                生成推荐
+                                生成预算
                             </button>
                             <button id="export-csv-btn" class="btn btn-secondary" disabled>
                                 导出CSV
@@ -181,7 +191,7 @@
                     </div>
                     <div class="field-hints">
                         <span>字段别名兼容：类目/品类、价格/售价、GMV/成交金额、订单数/成交订单数</span>
-                        <span>推荐结果会按匹配分、置信度、历史稳定性和近期活跃度排序</span>
+                        <span>结果会按目标 CPO 内可承接预算、预测 CPO 和置信度排序</span>
                     </div>
                 </div>
 
@@ -229,7 +239,7 @@
             <!-- 加载状态 -->
             <div id="prediction-state" class="prediction-state">
                 <div class="state-icon">📊</div>
-                <p>上传或粘贴当天货盘后点击"生成推荐"</p>
+                <p>上传或粘贴当天货盘，填写目标 CPO 和总预算后点击"生成预算"</p>
             </div>
 
             <!-- 统计概览 -->
@@ -240,11 +250,11 @@
                         <strong id="summary-count">--</strong>
                     </div>
                     <div class="summary-card">
-                        <span id="summary-prob-label" class="summary-label">平均匹配分</span>
+	                        <span id="summary-prob-label" class="summary-label">已分配预算</span>
                         <strong id="summary-prob">--</strong>
                     </div>
                     <div class="summary-card">
-                        <span id="summary-high-label" class="summary-label">优先测试以上</span>
+	                        <span id="summary-high-label" class="summary-label">主投/正常</span>
                         <strong id="summary-high">--</strong>
                     </div>
                     <div class="summary-card">
@@ -257,13 +267,15 @@
             <!-- 预测结果表格 -->
             <section id="prediction-results" class="prediction-results" style="display: none;">
                 <div class="results-header">
-                    <h2 id="results-title">推荐结果</h2>
+	                    <h2 id="results-title">预算分配结果</h2>
                     <div class="results-actions">
                         <label class="sort-label">
                             排序：
                             <select id="sort-select" class="input-select-small">
-                                <option value="score_desc">匹配分 ↓</option>
-                                <option value="confidence_desc">置信度 ↓</option>
+	                                <option value="budget_desc">建议预算 ↓</option>
+	                                <option value="capacity_desc">可承接预算 ↓</option>
+	                                <option value="cpo_asc">测算CPO ↑</option>
+	                                <option value="confidence_desc">置信度 ↓</option>
                                 <option value="rank_asc">推荐排名 ↑</option>
                             </select>
                         </label>
@@ -277,7 +289,11 @@
                                 <th>排名</th>
                                 <th class="col-crowd">人群名称</th>
                                 <th>推荐等级</th>
-                                <th>匹配分</th>
+	                                <th>建议预算</th>
+	                                <th>可承接预算</th>
+	                                <th>测算CPO</th>
+	                                <th>边际CPO</th>
+	                                <th>CPO区间</th>
                                 <th>置信度</th>
                                 <th>建议动作</th>
                                 <th class="col-reasons">推荐理由</th>
@@ -304,25 +320,25 @@
                     <summary class="docs-summary">📖 推荐逻辑和使用指南</summary>
                     <div class="docs-content">
                         <h3>推荐逻辑</h3>
-                        <p>系统会把当天货盘压缩成商品画像，再结合历史人群表现、直播间表现、近期活跃度和成本模型做综合排序。</p>
+	                        <p>系统会把当天货盘压缩成商品画像，再结合历史人群表现、直播间表现、近期活跃度和成本模型，测算每个人群在不同预算档位下的 CPO。</p>
                         <ul>
                             <li><strong>货盘画像</strong>：商品数、品类、价格带、佣金、退款、爆品集中度</li>
-                            <li><strong>人群表现</strong>：历史转化、ROI、成交、花费和样本量</li>
+	                            <li><strong>人群表现</strong>：历史 CPO、成交、花费、可承接预算和样本量</li>
                             <li><strong>训练口径</strong>：只使用计划名称包含“规则”的直播间整体投放计划，不包含单品投放计划</li>
-                            <li><strong>稳健校准</strong>：低样本平滑、近期活跃度、竞品关键词匹配</li>
+	                            <li><strong>预算分配</strong>：在目标 CPO 内，优先把预算分给更能承接的人群</li>
                         </ul>
 
                         <h3>如何使用推荐结果</h3>
                         <ol>
-                            <li><strong>优先测试</strong>：匹配分高、置信度高的人群可正常预算测试</li>
-                            <li><strong>小预算测试</strong>：低样本但货盘相关的人群适合小预算探测</li>
-                            <li><strong>效果追踪</strong>：每天记录推荐排名、是否投放、实际 ROI 和 CPO</li>
+	                            <li><strong>主投承接</strong>：目标 CPO 内可承接较多预算的人群</li>
+	                            <li><strong>小预算测试</strong>：低样本或衰减较快的人群先小额探测</li>
+	                            <li><strong>效果追踪</strong>：每天记录建议预算、实际花费、实际 CPO 和残差</li>
                         </ol>
 
                         <h3>注意事项</h3>
                         <ul>
-                            <li>转化率、订单成本和 ROI 仅作为后台排序权重，不作为前台承诺值展示</li>
-                            <li>推荐结果用于排序和测试，不代表精确成本承诺</li>
+	                            <li>ROI 不参与推荐权重，核心目标是目标 CPO 内的预算承接能力</li>
+	                            <li>CPO区间是模型测算值，用于预算决策和回测校准，不是成本承诺</li>
                             <li>新品货盘建议结合投手判断，小预算逐步放量</li>
                             <li>如果后续计划命名规则变化，需要同步更新训练样本过滤规则</li>
                             <li>建议结合实际业务经验综合判断</li>
@@ -379,9 +395,9 @@
     <script src="assets/js/config.js"></script>
     <script src="assets/js/shared-utils.js"></script>
     <script src="script.js?v=20260406a"></script>
-    <script src="assets/js/conversion-prediction-api.js?v=20260425c"></script>
-    <script src="assets/js/conversion-prediction-render.js?v=20260425c"></script>
-    <script src="assets/js/conversion-prediction-events.js?v=20260425a"></script>
-    <script src="assets/js/conversion-prediction-page.js?v=20260425a"></script>
+    <script src="assets/js/conversion-prediction-api.js?v=20260426a"></script>
+    <script src="assets/js/conversion-prediction-render.js?v=20260426a"></script>
+    <script src="assets/js/conversion-prediction-events.js?v=20260426a"></script>
+    <script src="assets/js/conversion-prediction-page.js?v=20260426a"></script>
 </body>
 </html>

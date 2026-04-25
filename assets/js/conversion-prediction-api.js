@@ -74,6 +74,8 @@ const ConversionPredictionApi = (function() {
                 prediction_date: params.prediction_date,
                 scene_name: params.scene_name || undefined,
                 top_n: params.top_n || 20,
+                target_cpo: params.target_cpo,
+                total_budget: params.total_budget,
                 product_items: params.product_items || [],
             }),
             parseErrorMessage: '推荐服务返回了无法解析的响应，请稍后重试',
@@ -123,7 +125,23 @@ const ConversionPredictionApi = (function() {
 
         let headers;
         let rows;
-        if (records[0] && Object.prototype.hasOwnProperty.call(records[0], 'match_score')) {
+        if (records[0] && Object.prototype.hasOwnProperty.call(records[0], 'recommended_budget')) {
+            headers = ['排名', '人群名称', '场景', '推荐等级', '建议预算', '可承接预算', '测算CPO', '边际CPO', 'CPO区间', '置信度', '建议动作', '推荐理由'];
+            rows = records.map(item => [
+                item.rank || '',
+                item.crowd_name || '',
+                item.scene_name || '',
+                item.recommendation_level || '',
+                item.recommended_budget ?? '',
+                item.budget_capacity ?? '',
+                item.estimated_cpo ?? '',
+                item.marginal_cpo ?? '',
+                `${item.cpo_low ?? ''}-${item.cpo_high ?? ''}`,
+                item.confidence != null ? `${(item.confidence * 100).toFixed(1)}%` : '',
+                item.suggested_action || recommendationAction(item.recommendation_level),
+                Array.isArray(item.reasons) ? item.reasons.join('；') : '',
+            ]);
+        } else if (records[0] && Object.prototype.hasOwnProperty.call(records[0], 'match_score')) {
             headers = ['排名', '人群名称', '场景', '推荐等级', '匹配分', '置信度', '建议动作', '推荐理由'];
             rows = records.map(item => [
                 item.rank || '',

@@ -62,7 +62,7 @@ const ConversionPredictionEvents = (function() {
         if (predictionTab) predictionTab.classList.toggle('is-active', !isRecommendation);
 
         const sortSelect = document.getElementById('sort-select');
-        if (sortSelect) sortSelect.value = isRecommendation ? 'score_desc' : 'probability_desc';
+        if (sortSelect) sortSelect.value = isRecommendation ? 'budget_desc' : 'probability_desc';
 
         ConversionPredictionRender.setMode(mode);
     }
@@ -72,9 +72,15 @@ const ConversionPredictionEvents = (function() {
         const sceneSelect = document.getElementById('recommendation-scene-filter');
         const sceneName = sceneSelect ? sceneSelect.value : '';
         const topN = Number(document.getElementById('recommendation-top-n').value || 20);
+        const totalBudget = Number(document.getElementById('total-budget')?.value || 0);
+        const targetCpo = Number(document.getElementById('target-cpo')?.value || 0);
 
         if (!predictionDate) {
             ConversionPredictionRender.showError('请选择推荐日期');
+            return;
+        }
+        if (!targetCpo || targetCpo <= 0) {
+            ConversionPredictionRender.showError('请填写大于 0 的目标 CPO');
             return;
         }
 
@@ -101,6 +107,8 @@ const ConversionPredictionEvents = (function() {
                 prediction_date: predictionDate,
                 scene_name: sceneName || undefined,
                 top_n: topN,
+                total_budget: totalBudget,
+                target_cpo: targetCpo,
                 product_items: productItems,
             });
 

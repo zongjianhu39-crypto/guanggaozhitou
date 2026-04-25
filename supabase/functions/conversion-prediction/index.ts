@@ -217,7 +217,7 @@ async function handlePrediction(req: Request, authResult: any, corsHeaders: Reco
  * 处理货盘人群推荐请求
  */
 async function handleRecommendation(body: any, corsHeaders: Record<string, string>) {
-  const { prediction_date, scene_name, top_n, product_items } = body;
+  const { prediction_date, scene_name, top_n, target_cpo, total_budget, budget_tiers, product_items } = body;
 
   if (!prediction_date) {
     return jsonResponse({ error: "缺少必要参数：prediction_date" }, 400, corsHeaders);
@@ -242,6 +242,9 @@ async function handleRecommendation(body: any, corsHeaders: Record<string, strin
         prediction_date,
         scene_name,
         top_n: Number(top_n || 20),
+        target_cpo: target_cpo == null ? undefined : Number(target_cpo),
+        total_budget: total_budget == null ? undefined : Number(total_budget),
+        budget_tiers,
         product_items,
       }),
     });
