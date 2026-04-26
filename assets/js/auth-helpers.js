@@ -218,7 +218,8 @@ function buildFunctionUrl(name, query = {}) {
 }
 
 function requiresBackendSession(pathname) {
-  return pathname === '/prompt-admin.html';
+  return pathname === '/prompt-admin.html'
+    || pathname === '/plan-dashboard.html';
 }
 
 function clearUserSession() {
