@@ -74,6 +74,7 @@ const ConversionPredictionEvents = (function() {
         const topN = Number(document.getElementById('recommendation-top-n').value || 20);
         const totalBudget = Number(document.getElementById('total-budget')?.value || 0);
         const targetCpo = Number(document.getElementById('target-cpo')?.value || 0);
+        const strategy = document.getElementById('allocation-strategy')?.value || 'greedy';
 
         if (!predictionDate) {
             ConversionPredictionRender.showError('请选择推荐日期');
@@ -110,6 +111,7 @@ const ConversionPredictionEvents = (function() {
                 total_budget: totalBudget,
                 target_cpo: targetCpo,
                 product_items: productItems,
+                strategy: strategy,
             });
 
             if (result && result.recommendations) {

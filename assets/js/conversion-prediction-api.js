@@ -75,6 +75,7 @@ const ConversionPredictionApi = (function() {
             target_cpo: params.target_cpo,
             total_budget: params.total_budget,
             product_items: params.product_items || [],
+            strategy: params.strategy || 'greedy',
         };
 
         try {
