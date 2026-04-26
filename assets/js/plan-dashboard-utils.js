@@ -19,6 +19,14 @@
     }).format(toNumber(value));
   }
 
+  function formatCurrency(value) {
+    const num = toNumber(value);
+    return `¥${new Intl.NumberFormat('zh-CN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num)}`;
+  }
+
   var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
   function sum(values) {
@@ -68,6 +76,7 @@
     toNumber,
     formatPercent,
     formatNumber,
+    formatCurrency,
     escapeHtml,
     sum,
     getActivityTypeMeta,
