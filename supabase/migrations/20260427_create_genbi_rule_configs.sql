@@ -21,7 +21,8 @@ execute function public.set_updated_at_timestamp();
 
 alter table public.genbi_rule_configs enable row level security;
 
-create policy if not exists allow_select_genbi_rule_configs_authenticated
+drop policy if exists allow_select_genbi_rule_configs_authenticated on public.genbi_rule_configs;
+create policy allow_select_genbi_rule_configs_authenticated
   on public.genbi_rule_configs
   for select
   using (auth.role() = 'authenticated');
