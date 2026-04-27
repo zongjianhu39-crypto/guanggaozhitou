@@ -26,15 +26,29 @@ function getCorsHeaders(req: Request) {
 
 // ============ AI 输出清理 ============
 
-function sanitizeAiOutput(text: string): string {
-  return String(text || '')
-    .replace(/\r\n/g, '\n')
+function sanitizeAiOutput(text: string): { answer: string; thinking: string } {
+  const raw = String(text || '')
+    .replace(/\r\n/g, '\n');
+
+  // 提取 MiniMax <think> 标签内的思考过程
+  const thinkMatch = raw.match(/<think>([\s\S]*?)<\/think>/i);
+  const thinking = thinkMatch
+    ? thinkMatch[1]
+        .replace(/^\s*\n+/, '')
+        .replace(/\n+\s*$/, '')
+        .trim()
+    : '';
+
+  // 移除所有 think 标签和内容
+  let clean = raw
     .replace(/<think>[\s\S]*?<\/think>/gi, '')
     .replace(/<\/?think>/gi, '')
     .replace(/```thinking[\s\S]*?```/gi, '')
     .replace(/^(好的，我|好的，|首先，我|根据提供的|让我|下面我|我将|我需要).*/gm, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+
+  return { answer: clean, thinking };
 }
 
 // ============ 数据上下文构建 ============
@@ -168,10 +182,13 @@ async function handleIntent(question: string) {
 
   // 5. 调用 MiniMax AI
   let aiAnswer = '';
+  let aiThinking = '';
   try {
     const rawAiResponse = await callMiniMax(dataContext, systemPrompt, { maxTokens: 2048 });
-    aiAnswer = sanitizeAiOutput(rawAiResponse);
-    console.log(`[genbi-query] AI response received, length=${aiAnswer.length}`);
+    const sanitized = sanitizeAiOutput(rawAiResponse);
+    aiAnswer = sanitized.answer;
+    aiThinking = sanitized.thinking;
+    console.log(`[genbi-query] AI response received, answer=${aiAnswer.length}, thinking=${aiThinking.length}`);
   } catch (aiError) {
     console.warn('[genbi-query] AI 调用失败，回退到规则引擎回答:', aiError instanceof Error ? aiError.message : String(aiError));
     aiAnswer = String(ruleResult.answer || '');
@@ -184,6 +201,7 @@ async function handleIntent(question: string) {
   return {
     ...ruleResult,
     answer: aiAnswer || String(ruleResult.answer || ''),
+    thinking: aiThinking || null,
     ai_enhanced: true,
     references: ragContext.references,
     notes: [
@@ -291,11 +309,12 @@ Deno.serve(async (req: Request) => {
       try {
         const aiAnswer = await callMiniMax(assortmentPrompt, systemPrompt, { maxTokens: 2048 });
         const sanitized = sanitizeAiOutput(aiAnswer);
-        console.log(`[genbi-query] assortment AI response length=${sanitized.length}`);
+        console.log(`[genbi-query] assortment AI response answer=${sanitized.answer.length}, thinking=${sanitized.thinking.length}`);
         return new Response(JSON.stringify({
           success: true,
           title: '🎯 货盘人群推荐',
-          answer: sanitized,
+          answer: sanitized.answer,
+          thinking: sanitized.thinking || null,
           ai_enhanced: true,
           assortment_mode: true,
           product_count: productItems.length,

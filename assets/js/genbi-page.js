@@ -164,6 +164,27 @@
         document.getElementById('genbi-result-range').textContent = safePayload.range?.start
             ? `分析范围：${safePayload.range.start} 至 ${safePayload.range.end || safePayload.range.start}${isAiEnhanced ? ' · AI 增强分析' : ''}`
             : (isAssortment ? `分析 ${safePayload.product_count || 0} 个商品 · AI 增强分析` : '分析范围：未提供');
+        // 思考过程（可折叠）
+        var thinkingEl = document.getElementById('genbi-result-thinking');
+        if (thinkingEl) {
+            var thinkingText = typeof safePayload.thinking === 'string' && safePayload.thinking.trim()
+                ? safePayload.thinking
+                : '';
+            if (thinkingText) {
+                thinkingEl.style.display = 'block';
+                // 用 markdown 渲染思考过程
+                var render = window.AiArticleMarkdown && typeof window.AiArticleMarkdown.renderArticleMarkdown === 'function'
+                    ? window.AiArticleMarkdown.renderArticleMarkdown
+                    : null;
+                var thinkingContent = document.getElementById('genbi-thinking-content');
+                if (thinkingContent) {
+                    thinkingContent.innerHTML = render ? render(thinkingText) : '<p>' + escapeHtml(thinkingText) + '</p>';
+                }
+            } else {
+                thinkingEl.style.display = 'none';
+            }
+        }
+
         renderAnswerContent(typeof safePayload.answer === 'string' ? safePayload.answer : '');
         var highlights = Array.isArray(safePayload.highlights) ? safePayload.highlights.filter(function(item) { return typeof item === 'string' && item.trim(); }) : [];
         var notes = Array.isArray(safePayload.notes) ? safePayload.notes.map(function(item) { return typeof item === 'string' ? item : JSON.stringify(item); }).filter(Boolean) : [];
