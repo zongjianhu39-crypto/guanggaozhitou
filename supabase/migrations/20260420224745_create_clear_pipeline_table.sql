@@ -78,4 +78,4 @@ $$;
 -- Only service_role should be able to call this function
 revoke execute on function public.clear_pipeline_table(text, date, date) from anon, authenticated;
 
-comment on function public.clear_pipeline_table is 'Pipeline table clearing function. Only whitelisted CSV data tables can be cleared. Called from the CSV upload pipeline via supabase-py rpc().';
+comment on function public.clear_pipeline_table is 'Pipeline table clearing function. Only whitelisted CSV data tables can be cleared. Called from the CSV upload pipeline via supabase-py rpc().';;
