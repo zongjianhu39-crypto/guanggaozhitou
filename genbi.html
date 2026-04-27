@@ -58,6 +58,12 @@
         .example-list::-webkit-scrollbar-thumb:hover { background:linear-gradient(180deg,#bcc7e9,#aeb9df); }
         .example-btn { border:1px solid #dde3f0; background:#fff; border-radius:14px; padding:12px 14px; min-height:54px; text-align:left; cursor:pointer; font:inherit; color:#1f2937; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
         .example-btn:hover { border-color:#9fb0ff; background:#f8faff; }
+        .example-btn-row { position:relative; }
+        .example-btn-del { position:absolute; top:6px; right:6px; width:22px; height:22px; border:none; border-radius:50%; background:rgba(0,0,0,0.08); color:#999; font-size:12px; cursor:pointer; display:none; align-items:center; justify-content:center; line-height:1; }
+        .example-btn-row:hover .example-btn-del { display:flex; }
+        .example-btn-del:hover { background:#fecaca; color:#c0362c; }
+        .example-add-btn { border:1px dashed #bcc4e0; border-radius:14px; background:#fafbff; color:#5b6476; padding:12px 14px; min-height:44px; text-align:center; cursor:pointer; font:inherit; width:100%; margin-top:8px; }
+        .example-add-btn:hover { border-color:#7c6fd1; color:#4f46e5; background:#f5f4ff; }
         .result-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:16px; }
         .result-title { margin:0; font-size:22px; }
         .result-range { font-size:13px; color:#667085; }
@@ -239,18 +245,8 @@
             <aside class="genbi-card genbi-card--examples">
                 <h2>示例问题</h2>
                 <p class="meta">先从这些已验证的问题开始。第一版更强调准确率，不追求什么都能答。</p>
-                <div class="example-list" id="genbi-example-list">
-                    <button class="example-btn" type="button">哪些具体人群效果好需要增加预算，哪些人群差需要降低预算</button>
-                    <button class="example-btn" type="button">单品广告里哪些商品花费高但回报差</button>
-                    <button class="example-btn" type="button">老客和新客的占比情况如何，是否合理</button>
-                    <button class="example-btn" type="button">哪些商品适合冲销售额</button>
-                    <button class="example-btn" type="button">帮我整理一下上周的周报需要有近期周环比</button>
-                    <button class="example-btn" type="button">帮我整理一下上月的月报需要有近期月环比</button>
-                    <button class="example-btn" type="button">为什么昨日的花费下降了，在人群上有什么变化</button>
-                    <button class="example-btn" type="button">为什么上周的花费盈亏ROI低于 1 是亏钱的，亏在了哪里</button>
-                    <button class="example-btn" type="button">📦 帮我根据货盘推荐合适的超级直播投放人群</button>
-                    <button class="example-btn" type="button">📦 这个货盘适合哪些人群投放，预算怎么分配</button>
-                </div>
+                <div class="example-list" id="genbi-example-list"></div>
+                    <button class="example-add-btn" id="genbi-add-example" type="button">+ 添加示例问题</button>
             </aside>
         </section>
        </section>

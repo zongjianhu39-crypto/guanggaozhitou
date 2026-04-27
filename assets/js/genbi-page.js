@@ -5,6 +5,37 @@
 
     var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
+    var EXAMPLE_LS_KEY = 'genbi_example_questions';
+    var DEFAULT_EXAMPLES = [
+        '哪些具体人群效果好需要增加预算，哪些人群差需要降低预算',
+        '单品广告里哪些商品花费高但回报差',
+        '老客和新客的占比情况如何，是否合理',
+        '哪些商品适合冲销售额',
+        '帮我整理一下上周的周报需要有近期周环比',
+        '帮我整理一下上月的月报需要有近期月环比',
+        '为什么昨日的花费下降了，在人群上有什么变化',
+        '为什么上周的花费盈亏ROI低于 1 是亏钱的，亏在了哪里',
+        '帮我根据货盘推荐合适的超级直播投放人群',
+        '这个货盘适合哪些人群投放，预算怎么分配',
+    ];
+
+    function getExamples() {
+        try {
+            var raw = localStorage.getItem(EXAMPLE_LS_KEY);
+            if (raw) {
+                var parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+        } catch (e) {}
+        return DEFAULT_EXAMPLES.slice();
+    }
+
+    function saveExamples(list) {
+        try {
+            localStorage.setItem(EXAMPLE_LS_KEY, JSON.stringify(list));
+        } catch (e) {}
+    }
+
     function getReferenceLabel(sourceType) {
         if (sourceType === 'rules_doc') return '业务规则';
         if (sourceType === 'prompt_template') return 'Prompt 模板';
@@ -424,16 +455,65 @@
 
     // ============ 事件绑定 ============
 
+    function renderExampleList() {
+        var container = document.getElementById('genbi-example-list');
+        if (!container) return;
+        var examples = getExamples();
+        var html = '';
+        examples.forEach(function(text, index) {
+            var escaped = escapeHtml ? escapeHtml(text) : text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html += '<div class="example-btn-row">'
+                + '<button class="example-btn" type="button" data-index="' + index + '">' + escaped + '</button>'
+                + '<button class="example-btn-del" type="button" data-index="' + index + '" title="删除此示例">×</button>'
+                + '</div>';
+        });
+        container.innerHTML = html;
+    }
+
     function bindExamples() {
-        document.querySelectorAll('#genbi-example-list .example-btn').forEach(function(button) {
-            button.addEventListener('click', function() {
-                var textarea = document.getElementById('genbi-question');
-                if (textarea) {
-                    textarea.value = button.textContent || '';
-                    textarea.focus();
+        renderExampleList();
+
+        var listEl = document.getElementById('genbi-example-list');
+        if (listEl) {
+            listEl.addEventListener('click', function(e) {
+                var target = e.target;
+                // 点击删除按钮
+                if (target.classList.contains('example-btn-del')) {
+                    e.stopPropagation();
+                    var idx = parseInt(target.getAttribute('data-index'), 10);
+                    if (isNaN(idx)) return;
+                    var examples = getExamples();
+                    if (idx >= 0 && idx < examples.length) {
+                        examples.splice(idx, 1);
+                        saveExamples(examples);
+                        renderExampleList();
+                    }
+                    return;
+                }
+                // 点击问题按钮
+                var btn = target.closest('.example-btn');
+                if (btn) {
+                    var textarea = document.getElementById('genbi-question');
+                    if (textarea) {
+                        textarea.value = btn.textContent || '';
+                        textarea.focus();
+                    }
                 }
             });
-        });
+        }
+
+        // 添加按钮
+        var addBtn = document.getElementById('genbi-add-example');
+        if (addBtn) {
+            addBtn.addEventListener('click', function() {
+                var newText = window.prompt('请输入新的示例问题：');
+                if (!newText || !newText.trim()) return;
+                var examples = getExamples();
+                examples.push(newText.trim());
+                saveExamples(examples);
+                renderExampleList();
+            });
+        }
     }
 
     function bindFileUpload() {
