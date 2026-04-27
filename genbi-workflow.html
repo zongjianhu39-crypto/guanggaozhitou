@@ -2,18 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Po
-                <article class="logic-card">
-                    <h3>7. 示例问题如何管理</h3>
-                    <p>GenBI 页面右侧的示例问题列表支持自助管理，无需修改代码。</p>
-                    <ul>
-                        <li><strong>删除问题：</strong> 鼠标悬停在任意示例问题上，右侧出现红色 × 按钮，点击即可删除。</li>
-                        <li><strong>新增问题：</strong> 点击列表底部的“+ 添加示例问题”按钮，在弹出的输入框中填写新问题。</li>
-                        <li><strong>持久化存储：</strong> 增删操作自动保存到浏览器 localStorage，刷新页面不会丢失。</li>
-                        <li><strong>恢复默认：</strong> 清除浏览器数据后，列表自动恢复为预设的 10 个默认示例问题。</li>
-                    </ul>
-                    <div class="logic-note">示例问题管理完全在前端完成，不涉及后端，删除或新增不会影响 GenBI 的分析逻辑。</div>
-                </article>licy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GenBI 工作流程 - 交个朋友·广告智投工作台</title>
     <meta name="description" content="用易懂的方式说明 GenBI 从提问到生成报告，再到保存进洞察中心的完整路径。">
@@ -708,6 +697,7 @@
                         <li><strong>保存时再清洗：</strong> 如果保存到洞察中心，还会再做一次纯文本摘要提取和结构化落库。</li>
                     </ul>
                     <div class="logic-note">这就是为什么 GenBI 页面能同时看到整洁的分析正文和完整的 AI 推理过程。</div>
+                </article>
 
                 <article class="logic-card">
                     <h3>6. 保存到洞察中心后发生了什么</h3>
@@ -718,6 +708,18 @@
                         <li><strong>后续可复用：</strong> 保存后的历史报告还可以在后续 GenBI 分析里作为受控参考来源。</li>
                     </ul>
                     <div class="logic-note">所以“保存”不是前端本地收藏，而是正式进入洞察中心的报告链路。</div>
+                </article>
+
+                <article class="logic-card">
+                    <h3>7. 示例问题如何管理</h3>
+                    <p>GenBI 页面右侧的示例问题列表支持自助管理，无需修改代码。</p>
+                    <ul>
+                        <li><strong>删除问题：</strong> 鼠标悬停在任意示例问题上，右侧出现红色 × 按钮，点击即可删除。</li>
+                        <li><strong>新增问题：</strong> 点击列表底部的“+ 添加示例问题”按钮，在弹出的输入框中填写新问题。</li>
+                        <li><strong>持久化存储：</strong> 增删操作自动保存到浏览器 localStorage，刷新页面不会丢失。</li>
+                        <li><strong>恢复默认：</strong> 清除浏览器数据后，列表自动恢复为预设的 10 个默认示例问题。</li>
+                    </ul>
+                    <div class="logic-note">示例问题管理完全在前端完成，不涉及后端，删除或新增不会影响 GenBI 的分析逻辑。</div>
                 </article>
             </div>
         </section>
