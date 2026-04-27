@@ -140,6 +140,7 @@
         const ruleKey = 'rule_' + Date.now();
         const config = {
             label: label.trim(),
+            intentKey: '',
             dataScope: [],
             strategy: { metrics: [] },
             output: {},
@@ -282,6 +283,7 @@
         document.getElementById('rule-title').textContent = rule.label || rule.rule_key;
         document.getElementById('rule-desc').textContent = `对应意图：${intentText}。来源：${rule.source === 'database' ? '已自定义规则' : '默认规则'}。`;
         document.getElementById('rule-label').value = String(currentConfig.label || rule.label || '');
+        document.getElementById('rule-intent').value = String(currentConfig.intentKey || '');
         document.getElementById('rule-form').style.display = '';
 
         const deleteButton = document.getElementById('delete-btn');
@@ -353,6 +355,12 @@
         const labelEl = document.getElementById('rule-label');
         labelEl.addEventListener('input', () => {
             currentConfig.label = labelEl.value.trim();
+            syncJsonTextarea();
+        });
+
+        const intentEl = document.getElementById('rule-intent');
+        intentEl.addEventListener('input', () => {
+            currentConfig.intentKey = intentEl.value.trim();
             syncJsonTextarea();
         });
 

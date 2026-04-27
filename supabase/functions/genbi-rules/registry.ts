@@ -5,7 +5,9 @@ import { buildUnsupportedResponse } from '../_shared/genbi-format.ts';
 import { answerCrowdBudget, answerCrowdMix, answerDailyDropReason } from './crowd.ts';
 import { answerWeakProducts, answerProductPotential, answerProductSales } from './product.ts';
 import { answerPeriodicReport, answerLossReason } from './report.ts';
+import { answerDynamicRule } from './dynamic.ts';
 import { applyRuleOutputConfig } from '../_shared/genbi-rule-resolver.ts';
+import { getGenbiSemanticConfig } from '../_shared/genbi-semantic.ts';
 
 type GenbiHandlerContext = {
   question: string;
@@ -94,16 +96,36 @@ export function getSupportedIntentDefinitions() {
     }));
 }
 
-export async function dispatchGenbiIntent(intent: GenbiIntent, context: GenbiHandlerContext) {
-  const definition = INTENT_HANDLERS[intent];
+export async function dispatchGenbiIntent(intent: GenbiIntent | string, context: GenbiHandlerContext) {
+  // 1. 先检查是否有硬编码的 handler
+  const definition = INTENT_HANDLERS[intent as GenbiIntent];
   if (definition?.handler) {
     const result = await definition.handler(context);
-    return await applyRuleOutputConfig(intent, result);
+    return await applyRuleOutputConfig(intent as GenbiIntent, result);
   }
+  
+  // 2. 检查是否是预定义的不支持意图
   if (definition?.unsupportedReason) {
     return buildUnsupportedResponse(definition.unsupportedReason, context.semanticVersion);
   }
 
+  // 3. 动态规则引擎：检查是否有自定义规则配置
+  try {
+    const semantic = await getGenbiSemanticConfig();
+    const intentRules = semantic.intentRules || {};
+    const rules = semantic.rules || {};
+    
+    const ruleKey = String(intentRules[intent] || '').trim();
+    if (ruleKey && rules[ruleKey]) {
+      console.log(`[registry] using dynamic rule engine for intent: ${intent}, ruleKey: ${ruleKey}`);
+      const result = await answerDynamicRule(intent, context);
+      return await applyRuleOutputConfig(intent as GenbiIntent, result);
+    }
+  } catch (error) {
+    console.warn('[registry] dynamic rule engine failed:', error);
+  }
+
+  // 4. 都没有命中，返回不支持
   return buildUnsupportedResponse(
     `这个问题当前没有命中第一版受控问题集。我只会基于真实数据回答广告投放相关问题；当前稳定支持的方向是：${buildSupportedIntentHint()}。`,
     context.semanticVersion,

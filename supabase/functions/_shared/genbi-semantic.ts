@@ -232,10 +232,25 @@ async function loadSemanticConfig(): Promise<GenbiSemanticConfig> {
   try {
     const records = await listGenbiRuleConfigRecords();
     if (!records.length) return fileConfig;
-    return {
+    
+    const mergedConfig = {
       ...fileConfig,
       rules: mergeGenbiRulesWithRecords(fileConfig.rules ?? {}, records),
     };
+
+    // 动态构建 intentRules 映射：从数据库规则的 config.intentKey 读取
+    const dynamicIntentRules = { ...(fileConfig.intentRules ?? {}) };
+    records.forEach((record) => {
+      const config = record.config || {};
+      const intentKey = String(config.intentKey || '').trim();
+      if (intentKey) {
+        dynamicIntentRules[intentKey] = record.rule_key;
+        console.log(`[genbi-semantic] dynamic intent mapping: ${intentKey} -> ${record.rule_key}`);
+      }
+    });
+    mergedConfig.intentRules = dynamicIntentRules;
+
+    return mergedConfig;
   } catch (error) {
     console.warn('[genbi-semantic] failed to load database rule configs:', error instanceof Error ? error.message : String(error));
     return fileConfig;

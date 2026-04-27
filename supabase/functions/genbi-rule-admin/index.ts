@@ -121,6 +121,13 @@ Deno.serve(async (req: Request) => {
       });
       clearGenbiSemanticConfigCache();
 
+      // 如果配置了 intentKey，需要在语义配置中注册
+      const config = body.config || {};
+      const intentKey = String(config.intentKey || '').trim();
+      if (intentKey) {
+        console.log(`[genbi-rule-admin] rule ${body.rule_key} mapped to intent: ${intentKey}`);
+      }
+
       return new Response(JSON.stringify({
         success: true,
         action,

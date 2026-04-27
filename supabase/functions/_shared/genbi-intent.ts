@@ -119,7 +119,7 @@ ${intentList}
 
 // ============ AI 语义分类 ============
 
-export async function detectIntentByAI(question: string): Promise<{ intent: GenbiIntent; source: 'ai' | 'regex' }> {
+export async function detectIntentByAI(question: string): Promise<{ intent: GenbiIntent | string; source: 'ai' | 'regex' }> {
   try {
     const prompt = buildIntentDetectionPrompt(question);
     const result = await callMiniMax(prompt, undefined, { maxTokens: 20 });
@@ -127,7 +127,7 @@ export async function detectIntentByAI(question: string): Promise<{ intent: Genb
     // 清理 AI 返回结果：去空白、去标点、取最后一行
     const cleaned = result.trim().split('\n').pop()?.trim().toLowerCase() ?? '';
 
-    // 尝试直接匹配
+    // 尝试直接匹配预定义意图
     if (VALID_INTENTS.has(cleaned)) {
       console.log(`[genbi-intent] AI 识别成功: "${question.slice(0, 40)}" → ${cleaned}`);
       return { intent: cleaned as GenbiIntent, source: 'ai' };
@@ -138,6 +138,13 @@ export async function detectIntentByAI(question: string): Promise<{ intent: Genb
     if (VALID_INTENTS.has(extracted)) {
       console.log(`[genbi-intent] AI 识别成功(提取): "${question.slice(0, 40)}" → ${extracted}`);
       return { intent: extracted as GenbiIntent, source: 'ai' };
+    }
+
+    // 如果 AI 返回了不在预定义列表中的意图，可能是自定义意图
+    // 保留原始返回值，让下游的动态规则引擎处理
+    if (extracted && /^[a-z][a-z0-9_]{1,63}$/.test(extracted)) {
+      console.log(`[genbi-intent] AI 识别到自定义意图: "${question.slice(0, 40)}" → ${extracted}`);
+      return { intent: extracted, source: 'ai' };
     }
 
     // AI 返回了无效意图，回退到正则
