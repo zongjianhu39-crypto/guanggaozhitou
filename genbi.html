@@ -229,6 +229,55 @@
             </aside>
         </section>
 
+        <!-- 货盘人群推荐 -->
+        <section class="genbi-layout" id="genbi-assortment-layout" style="margin-top:24px">
+            <div class="genbi-card genbi-card--question">
+                <h2>🧠 AI 货盘人群推荐</h2>
+                <p class="meta">上传当天货盘 CSV，MiniMax 2.7 会分析商品特征，推荐适合投放的人群类型和策略。</p>
+                <div class="genbi-form">
+                    <div style="margin-bottom:12px">
+                        <label for="assortment-csv-file" class="upload-dropzone" style="display:flex;align-items:center;justify-content:center;height:48px;border:2px dashed #d4d8e8;border-radius:14px;cursor:pointer;font-size:14px;color:#667085;background:#fcfdff;transition:border-color 0.2s">
+                            <span id="assortment-file-label">📁 选择货盘 CSV 文件</span>
+                        </label>
+                        <input type="file" id="assortment-csv-file" class="input-file" accept=".csv,text/csv" style="display:none">
+                        <div id="assortment-file-name" style="margin-top:6px;font-size:12px;color:#667085"></div>
+                    </div>
+                    <textarea id="assortment-csv-text" class="input-textarea" rows="6" placeholder="或直接粘贴 CSV 内容：&#10;商品id,商品名称,分类,单价,佣金率&#10;sku_001,补水修护面膜,美妆护肤,39.9,0.18&#10;sku_002,高光粉底液,美妆彩妆,129,0.2"></textarea>
+                    <div class="genbi-actions">
+                        <button id="assortment-submit" class="genbi-submit" type="button">AI 分析推荐</button>
+                    </div>
+                    <div id="assortment-status" class="genbi-status">支持 .csv 文件上传或粘贴内容。MiniMax 会从品类、价格、佣金率等维度分析，推荐适合的超级直播投放人群。</div>
+                </div>
+            </div>
+            <aside class="genbi-card genbi-card--examples">
+                <h2>分析维度</h2>
+                <p class="meta">MiniMax 2.7 会从以下角度分析你的货盘</p>
+                <div class="genbi-help">
+                    <h3>AI 推理内容</h3>
+                    <div class="genbi-help-grid">
+                        <div class="genbi-help-card">
+                            <h4>人群匹配</h4>
+                            <p>商品品类 → 目标人群画像匹配。例：美妆护肤 → 女性 25-35 岁、高消费力、美妆兴趣人群。</p>
+                        </div>
+                        <div class="genbi-help-card">
+                            <h4>投放策略</h4>
+                            <p>按价格带、佣金率、品类组合给出预算分配优先级和投放人群类型建议。</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <!-- 货盘推荐结果 -->
+        <section id="assortment-result-section" class="genbi-card result-card" style="margin-top:24px">
+            <div id="assortment-result" style="display:none">
+                <div class="result-header">
+                    <h2 class="result-title">🎯 AI 人群推荐结果</h2>
+                </div>
+                <div id="assortment-result-answer" class="result-answer report-article-prose"></div>
+            </div>
+        </section>
+
         <section id="genbi-result-section" class="genbi-card result-card">
             <div id="genbi-result" style="display:none;">
                 <div class="result-header">

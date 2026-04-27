@@ -326,5 +326,152 @@
         document.getElementById('genbi-submit')?.addEventListener('click', submitQuestion);
         document.getElementById('genbi-save-btn')?.addEventListener('click', saveToInsights);
         document.getElementById('genbi-open-insights-btn')?.addEventListener('click', openSavedInsight);
+
+        // ---- 货盘人群推荐 ----
+        bindAssortmentEvents();
     });
+
+    // ============ 货盘人群推荐 ============
+
+    function setAssortmentStatus(message, type) {
+        var el = document.getElementById('assortment-status');
+        if (!el) return;
+        el.className = 'genbi-status' + (type ? ' ' + type : '');
+        el.textContent = message;
+    }
+
+    function parseAssortmentCsv(csvText) {
+        var rows = [];
+        var row = [];
+        var cell = '';
+        var inQuotes = false;
+        for (var i = 0; i < csvText.length; i++) {
+            var ch = csvText[i];
+            var next = csvText[i + 1];
+            if (ch === '"' && inQuotes && next === '"') { cell += '"'; i++; }
+            else if (ch === '"') { inQuotes = !inQuotes; }
+            else if (ch === ',' && !inQuotes) { row.push(cell); cell = ''; }
+            else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+                if (ch === '\r' && next === '\n') i++;
+                row.push(cell);
+                if (row.some(function(v) { return v.trim() !== ''; })) rows.push(row);
+                row = [];
+                cell = '';
+            } else { cell += ch; }
+        }
+        row.push(cell);
+        if (row.some(function(v) { return v.trim() !== ''; })) rows.push(row);
+        if (rows.length < 2) throw new Error('CSV 至少需要表头和一行数据');
+        var headers = rows[0].map(function(h) { return h.replace(/^\uFEFF/, '').trim(); });
+        return rows.slice(1).map(function(values) {
+            var item = {};
+            headers.forEach(function(header, index) { item[header] = (values[index] || '').trim(); });
+            return item;
+        }).filter(function(item) { return Object.values(item).some(function(v) { return v !== ''; }); });
+    }
+
+    async function readAssortmentItems() {
+        var fileInput = document.getElementById('assortment-csv-file');
+        var textInput = document.getElementById('assortment-csv-text');
+        var csvText = '';
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            csvText = await fileInput.files[0].text();
+        } else if (textInput && textInput.value.trim()) {
+            csvText = textInput.value.trim();
+        }
+        if (!csvText) return [];
+        return parseAssortmentCsv(csvText);
+    }
+
+    async function submitAssortment() {
+        var button = document.getElementById('assortment-submit');
+        var productItems;
+        try {
+            productItems = await readAssortmentItems();
+        } catch (e) {
+            setAssortmentStatus('货盘解析失败：' + (e.message || '请检查 CSV 格式'), 'error');
+            return;
+        }
+        if (!productItems || productItems.length === 0) {
+            setAssortmentStatus('请先上传货盘 CSV 文件或粘贴 CSV 内容', 'error');
+            return;
+        }
+
+        button.disabled = true;
+        button.textContent = 'AI 分析中...';
+        setAssortmentStatus('正在调用 MiniMax 2.7 分析 ' + productItems.length + ' 个商品，预计 10-30 秒...', '');
+
+        try {
+            var result = await authHelpers.fetchFunctionJson('genbi-query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: { product_items: productItems },
+                useSessionToken: true,
+                includePromptAdminToken: true,
+                parseErrorMessage: 'AI 推荐接口返回异常，请稍后重试',
+                unauthorizedPattern: /未登录|invalid token|Missing Authorization/i,
+                onUnauthorized: function() {
+                    if (typeof authHelpers.handleReauthRequired === 'function') {
+                        authHelpers.handleReauthRequired({ source: 'genbi-assortment', targetUrl: window.location.href, force: true, delayMs: 800 });
+                    } else if (authHelpers.redirectToLogin) {
+                        authHelpers.redirectToLogin({ targetUrl: window.location.href, force: true, delayMs: 800 });
+                    } else {
+                        window.location.href = 'auth/index.html?force=1';
+                    }
+                },
+            });
+            renderAssortmentResult(result);
+            setAssortmentStatus('AI 推荐完成', 'success');
+        } catch (error) {
+            setAssortmentStatus('AI 推荐失败：' + (error.message || '请稍后重试'), 'error');
+        } finally {
+            button.disabled = false;
+            button.textContent = 'AI 分析推荐';
+        }
+    }
+
+    function renderAssortmentResult(payload) {
+        var section = document.getElementById('assortment-result-section');
+        var resultDiv = document.getElementById('assortment-result');
+        var answerEl = document.getElementById('assortment-result-answer');
+        if (!section || !resultDiv || !answerEl) return;
+        section.style.display = 'block';
+        resultDiv.style.display = 'block';
+        var answer = typeof payload.answer === 'string' ? payload.answer : (typeof payload.data === 'object' && payload.data && typeof payload.data.answer === 'string' ? payload.data.answer : '');
+        if (typeof window.renderAiArticleMarkdown === 'function') {
+            answerEl.innerHTML = window.renderAiArticleMarkdown(answer || 'AI 未返回有效推荐内容');
+        } else {
+            answerEl.innerHTML = '<p>' + (escapeHtml(answer) || 'AI 未返回有效推荐内容') + '</p>';
+        }
+    }
+
+    function bindAssortmentEvents() {
+        var fileInput = document.getElementById('assortment-csv-file');
+        var dropzone = document.querySelector('#genbi-assortment-layout .upload-dropzone');
+        var fileLabel = document.getElementById('assortment-file-label');
+        var fileName = document.getElementById('assortment-file-name');
+
+        if (dropzone && fileInput) {
+            dropzone.addEventListener('click', function() { fileInput.click(); });
+            dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.style.borderColor = '#6e7ff5'; });
+            dropzone.addEventListener('dragleave', function() { dropzone.style.borderColor = '#d4d8e8'; });
+            dropzone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropzone.style.borderColor = '#d4d8e8';
+                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    fileInput.files = e.dataTransfer.files;
+                    if (fileLabel) fileLabel.textContent = '📄 ' + e.dataTransfer.files[0].name;
+                    if (fileName) fileName.textContent = '已选择：' + e.dataTransfer.files[0].name;
+                }
+            });
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files && fileInput.files[0]) {
+                    if (fileLabel) fileLabel.textContent = '📄 ' + fileInput.files[0].name;
+                    if (fileName) fileName.textContent = '已选择：' + fileInput.files[0].name;
+                }
+            });
+        }
+
+        document.getElementById('assortment-submit')?.addEventListener('click', submitAssortment);
+    }
 })(window);

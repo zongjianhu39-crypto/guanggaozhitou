@@ -227,6 +227,92 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json();
     const question = String(body?.question || '').trim();
+    const productItems = Array.isArray(body?.product_items) ? body.product_items : null;
+
+    // ---- 货盘人群推荐模式 ----
+    if (productItems && productItems.length > 0) {
+      // 输入验证
+      const promptValidation = validatePromptInput(JSON.stringify(productItems));
+      if (!promptValidation.valid) {
+        return new Response(JSON.stringify({ success: false, error: `输入无效: ${promptValidation.errors.join('，')}` }), {
+          status: 400,
+          headers: CORS_HEADERS,
+        });
+      }
+
+      // 限流
+      const rateLimitKey = authResult.type === 'prompt_admin'
+        ? `genbi-assortment:admin:${authResult.payload?.sub ?? 'unknown'}`
+        : authResult.type === 'supabase_user'
+          ? `genbi-assortment:user:${authResult.user?.id ?? authResult.user?.email ?? 'unknown'}`
+          : 'genbi-assortment:anonymous';
+      const rateLimitResult = checkRateLimit(rateLimitKey, {
+        maxRequests: authResult.type === 'prompt_admin' ? 20 : 6,
+        windowMs: 60000,
+      });
+      if (!rateLimitResult.allowed) {
+        return createRateLimitResponse(rateLimitResult);
+      }
+
+      // 构建货盘推荐 prompt
+      const headers = Object.keys(productItems[0] || {});
+      const tableRows = productItems.map((item: Record<string, unknown>) =>
+        '| ' + headers.map((h) => String(item[h] ?? '-')).join(' | ') + ' |'
+      ).join('\n');
+      const assortmentPrompt = [
+        '【任务】根据以下货盘商品列表，推荐适合投放的超级直播人群类型。',
+        '',
+        '【货盘商品】',
+        `| ${headers.join(' | ')} |`,
+        `| ${headers.map(() => '---').join(' | ')} |`,
+        tableRows,
+        '',
+        `共 ${productItems.length} 个商品。`,
+        '',
+        '请从以下角度分析并给出推荐：',
+        '1. 商品品类分析：货盘的整体品类结构和目标人群画像',
+        '2. 人群推荐：针对每类商品，推荐合适的超级直播投放人群类型（如达摩盘人群、精选人群、智能推荐人群、关键词人群、粉丝人群等）',
+        '3. 策略建议：预算分配优先级、出价策略、不同人群的投放侧重',
+        '4. 注意事项：可能的风险点和优化建议',
+        '',
+        '请用专业、结构化的方式输出，便于运营人员直接参考执行。',
+      ].join('\n');
+
+      const systemPrompt = [
+        '你是广告投放运营分析师，服务于"交个朋友"直播电商团队。',
+        '你擅长根据货盘商品特征，分析适合的投放人群和策略。',
+        '超级直播平台的主要人群类型包括：智能推荐人群、智能竞争直播间、自定义竞争店铺、自定义竞争直播间、自定义竞争宝贝、达摩盘人群、精选人群、关键词人群、粉丝人群、喜欢我的直播、喜欢我的短视频。',
+        '请基于商品特征（品类、价格、佣金率等）给出具体、可执行的人群推荐。',
+        '用简洁专业的中文，避免套话。',
+      ].join('\n');
+
+      console.log(`[genbi-query] assortment mode: ${productItems.length} products`);
+
+      try {
+        const aiAnswer = await callMiniMax(assortmentPrompt, systemPrompt, { maxTokens: 2048 });
+        const sanitized = sanitizeAiOutput(aiAnswer);
+        console.log(`[genbi-query] assortment AI response length=${sanitized.length}`);
+        return new Response(JSON.stringify({
+          success: true,
+          answer: sanitized,
+          ai_enhanced: true,
+        }), {
+          status: 200,
+          headers: CORS_HEADERS,
+        });
+      } catch (aiError) {
+        console.error('[genbi-query] assortment AI error:', aiError);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'AI 推荐服务暂不可用，请稍后重试',
+        }), {
+          status: 503,
+          headers: CORS_HEADERS,
+        });
+      }
+    }
+
+    // ---- 原有 GenBI 问数模式 ----
 
     if (!question) {
       return new Response(JSON.stringify({ success: false, error: '缺少 question' }), {
