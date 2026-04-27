@@ -2,7 +2,18 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta http-equiv="Content-Security-Po
+                <article class="logic-card">
+                    <h3>7. 示例问题如何管理</h3>
+                    <p>GenBI 页面右侧的示例问题列表支持自助管理，无需修改代码。</p>
+                    <ul>
+                        <li><strong>删除问题：</strong> 鼠标悬停在任意示例问题上，右侧出现红色 × 按钮，点击即可删除。</li>
+                        <li><strong>新增问题：</strong> 点击列表底部的“+ 添加示例问题”按钮，在弹出的输入框中填写新问题。</li>
+                        <li><strong>持久化存储：</strong> 增删操作自动保存到浏览器 localStorage，刷新页面不会丢失。</li>
+                        <li><strong>恢复默认：</strong> 清除浏览器数据后，列表自动恢复为预设的 10 个默认示例问题。</li>
+                    </ul>
+                    <div class="logic-note">示例问题管理完全在前端完成，不涉及后端，删除或新增不会影响 GenBI 的分析逻辑。</div>
+                </article>licy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GenBI 工作流程 - 交个朋友·广告智投工作台</title>
     <meta name="description" content="用易懂的方式说明 GenBI 从提问到生成报告，再到保存进洞察中心的完整路径。">
@@ -605,7 +616,7 @@
         <section class="workflow-panel logic-section">
             <h2 class="section-title">更具体的数据流转逻辑</h2>
             <p class="section-desc">
-                如果你想知道 GenBI 到底是怎么“理解问题、取到数据、交给 AI、再把结果展示出来”的，可以看下面这部分。这里保留业务可理解性，但会比上面的 6 步更接近真实运行链路。
+                如果你想知道 GenBI 到底是怎么“理解问题、取到数据、交给 AI、再把结果展示出来”的，可以看下面这部分。这里保留业务可理解性，这里保留业务可理解性，但会比概览更接近真实运行链路。
             </p>
 
             <div class="logic-flow" aria-label="GenBI 数据流转">
@@ -632,7 +643,7 @@
                 <div class="logic-flow-step">
                     <span>5</span>
                     <h4>结果展示</h4>
-                    <p>页面按正文、表格、参考来源、补充说明 4 类结果分区展示。</p>
+                    <p>页面按标题与范围、AI思考过程（可折叠）、分析正文、表格、参考来源、补充说明分区展示。</p>
                 </div>
             </div>
 
@@ -665,8 +676,8 @@
                     <ul>
                         <li><strong>用户原始问题：</strong> 让 AI 知道你真正要解决什么经营问题。</li>
                         <li><strong>规则引擎结果：</strong> 包括当前系统已提炼出的摘要、表格数据、时间范围、关键发现、补充说明。</li>
-                        <li><strong>受控 Prompt：</strong> 还会叠加业务规则、长期记忆、技能指令、运营背景等已发布模板。</li>
-                        <li><strong>参考知识：</strong> 还会额外检索业务规则文档、Prompt 模板、历史报告、经验库，作为参考来源。</li>
+                        <li><strong>受控 Prompt：</strong> 会叠加全部 7 个已发布模板（灵魂设定、业务红线、长期记忆、技能指令、运营业务背景、数据分析框架、单品分析框架），不论问题类型全部加载。</li>
+                        <li><strong>参考知识：</strong> 还会额外检索业务规则文档、Prompt 模板（全量，不再截断）、历史报告、经验库，作为参考来源。</li>
                     </ul>
                     <div class="logic-note">换句话说，AI 接收到的是“问题 + 真实数据 + 规则模板 + 受控知识”，而不是裸问答。</div>
                 </article>
@@ -675,25 +686,28 @@
                     <h3>4. 展示结果会以什么形式出现</h3>
                     <p>GenBI 页面不会把后端原样文本直接糊出来，而是按阅读场景拆成几块。</p>
                     <ul>
+                        <li><strong>结果头部：</strong> 显示分析标题、时间范围，以及“保存到洞察中心”和“查看洞察中心”按钮。</li>
+                        <li><strong>AI 思考过程：</strong> 可折叠的详情区，展示 MiniMax 模型的推理步骤（点击“🧠 查看 AI 思考过程”展开）。</li>
                         <li><strong>分析正文：</strong> 用渲染后的可读格式展示标题、段落、列表、小标题。</li>
+                        <li><strong>关键发现：</strong> 以标签形式展示系统提取的核心结论。</li>
                         <li><strong>结果表格：</strong> 规则引擎输出的结构化表会单独渲染成表格区域。</li>
-                        <li><strong>参考来源：</strong> 用轻量文本样式列出来源类型、标题和查看入口，只用于增强可信度。</li>
+                        <li><strong>参考来源：</strong> 以卡片样式列出来源类型、标题、摘要和跳转入口，用于增强可信度。</li>
                         <li><strong>补充说明：</strong> 展示口径、局限和本次检索到的受控知识说明。</li>
                     </ul>
                     <div class="logic-note">所以你在页面里看到的是“整理后的结果”，不是后端返回的原始 JSON。</div>
                 </article>
 
                 <article class="logic-card">
-                    <h3>5. 页面会过滤掉什么内容</h3>
-                    <p>为了让结果更干净，系统会在返回前和展示前各做一次清理。</p>
+                                <h3>5. 页面如何处理 AI 输出</h3>
+                    <p>系统对 AI 输出做清理和结构化，而不是原样展示。</p>
                     <ul>
-                        <li><strong>隐藏思考痕迹：</strong> 会过滤 `<think>`、`thinking` 这类中间推理片段。</li>
+                        <li><strong>保留思考过程：</strong> 原本包裹在 thinking 标签中的推理步骤会被提取出来，单独展示在可折叠的“AI 思考过程”区域，方便你了解模型的判断依据。</li>
+                        <li><strong>从正文中移除思考标记：</strong> 分析正文会去掉思考标签及其内容，只保留最终结论。</li>
                         <li><strong>移除冗余开场：</strong> 会清掉“好的，我来分析”“根据提供的数据”这类低价值前缀。</li>
                         <li><strong>压缩空行：</strong> 避免正文出现过多空段落，保持阅读连续性。</li>
                         <li><strong>保存时再清洗：</strong> 如果保存到洞察中心，还会再做一次纯文本摘要提取和结构化落库。</li>
                     </ul>
-                    <div class="logic-note">这就是为什么 GenBI 页面看到的正文，会比模型原始输出更整洁、更像正式报告。</div>
-                </article>
+                    <div class="logic-note">这就是为什么 GenBI 页面能同时看到整洁的分析正文和完整的 AI 推理过程。</div>
 
                 <article class="logic-card">
                     <h3>6. 保存到洞察中心后发生了什么</h3>
@@ -708,7 +722,63 @@
             </div>
         </section>
 
-        <section class="workflow-panel mapping-section">
+        <section class="workflow-panel logic-section">
+            <h2 class="section-title">特殊功能：货盘上传与 AI 人群推荐</h2>
+            <p class="section-desc">
+                除了自然语言问数外，GenBI 还支持直接上传货盘 CSV 文件，让 AI 根据商品特征推荐合适的超级直播投放人群。这是智能问数的一种特殊问题类型，与自然语言输入共用同一套界面和结果展示流程。
+            </p>
+
+            <div class="logic-flow" aria-label="货盘推荐流程">
+                <div class="logic-flow-step">
+                    <span>1</span>
+                    <h4>上传货盘</h4>
+                    <p>点击输入框下方的“📎 上传货盘CSV”按钮，选择货盘文件。</p>
+                </div>
+                <div class="logic-flow-step">
+                    <span>2</span>
+                    <h4>解析商品</h4>
+                    <p>系统自动解析 CSV 中的商品名称、价格、类目等信息，生成结构化的商品列表。</p>
+                </div>
+                <div class="logic-flow-step">
+                    <span>3</span>
+                    <h4>AI 分析</h4>
+                    <p>将商品特征和人群投放策略一起发给 MiniMax 2.7，生成人群匹配建议。</p>
+                </div>
+                <div class="logic-flow-step">
+                    <span>4</span>
+                    <h4>展示推荐</h4>
+                    <p>输出推荐人群、匹配理由、预算分配建议，格式与普通问数结果一致。</p>
+                </div>
+                <div class="logic-flow-step">
+                    <span>5</span>
+                    <h4>保存复用</h4>
+                    <p>推荐结果同样支持一键保存到洞察中心，供后续复盘参考。</p>
+                </div>
+            </div>
+
+            <div class="logic-grid">
+                <article class="logic-card">
+                    <h3>如何使用</h3>
+                    <ul>
+                        <li>上传货盘 CSV 文件（支持商品名称、价格、类目等列）</li>
+                        <li>可以同时输入自然语言问题，也可以只上传文件（系统自动补默认问题）</li>
+                        <li>点击“开始分析”，系统会自动识别为货盘推荐模式</li>
+                    </ul>
+                    <div class="logic-note">后端通过请求体中是否存在 product_items 字段来区分普通问数和货盘分析，单接口同时支持两种模式。</div>
+                </article>
+                <article class="logic-card">
+                    <h3>与普通问数的关系</h3>
+                    <ul>
+                        <li>文件上传区域嵌入智能问数输入框下方，共用同一个提交入口</li>
+                        <li>结果展示完全复用智能问数的 Markdown 渲染样式与容器结构</li>
+                        <li>在示例问题区会显示带 📦 图标的货盘专用示例问题（如“帮我根据货盘推荐合适的超级直播投放人群”）</li>
+                    </ul>
+                    <div class="logic-note">货盘推荐不是独立模块，而是智能问数的一种特殊问题类型，确保视觉与交互一致性。</div>
+                </article>
+            </div>
+        </section>
+
+                <section class="workflow-panel mapping-section">
             <h2 class="section-title">意图模块与数据表映射</h2>
             <p class="section-desc">
                 更准确的说法不是“每个问题对应一张表”，而是“每个问题先进入一个规则模块，再由这个模块声明自己需要 ads、crowd、single 哪几类数据，底层统一去取汇总表；如果汇总表缺失，再回退到原始表”。
