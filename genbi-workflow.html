@@ -666,9 +666,9 @@
                         <li><strong>用户原始问题：</strong> 让 AI 知道你真正要解决什么经营问题。</li>
                         <li><strong>规则引擎结果：</strong> 包括当前系统已提炼出的摘要、表格数据、时间范围、关键发现、补充说明。</li>
                         <li><strong>受控 Prompt：</strong> 会叠加全部 7 个已发布模板（灵魂设定、业务红线、长期记忆、技能指令、运营业务背景、数据分析框架、单品分析框架），不论问题类型全部加载。</li>
-                        <li><strong>参考知识：</strong> 还会额外检索业务规则文档、Prompt 模板（全量，不再截断）、历史报告、经验库，作为参考来源。</li>
+                        <li><strong>参考来源检索：</strong> 系统还会额外检索业务规则文档、Prompt 模板（全量，不再截断）、历史报告、经验库，这些会以"参考来源"卡片的形式展示在结果下方供你查阅，但不会注入 AI 的 system prompt。</li>
                     </ul>
-                    <div class="logic-note">换句话说，AI 接收到的是“问题 + 真实数据 + 规则模板 + 受控知识”，而不是裸问答。</div>
+                    <div class="logic-note">换句话说，AI 真正接收的是“问题 + 真实数据 + 规则模板”，参考来源（文档、报告、经验库）不参与 AI 推理。</div>
                 </article>
 
                 <article class="logic-card">
@@ -681,7 +681,7 @@
                         <li><strong>关键发现：</strong> 以标签形式展示系统提取的核心结论。</li>
                         <li><strong>结果表格：</strong> 规则引擎输出的结构化表会单独渲染成表格区域。</li>
                         <li><strong>参考来源：</strong> 以卡片样式列出来源类型、标题、摘要和跳转入口，用于增强可信度。</li>
-                        <li><strong>补充说明：</strong> 展示口径、局限和本次检索到的受控知识说明。</li>
+                        <li><strong>补充说明：</strong> 展示口径、局限和本次检索到的参考来源摘要说明。</li>
                     </ul>
                     <div class="logic-note">所以你在页面里看到的是“整理后的结果”，不是后端返回的原始 JSON。</div>
                 </article>
@@ -705,7 +705,7 @@
                     <ul>
                         <li><strong>保存内容：</strong> 标题、时间范围、分析正文、表格、参考来源、补充说明都会一起落库。</li>
                         <li><strong>留痕与发布分开：</strong> 一份写入运行留痕，一份写入洞察中心正式报告。</li>
-                        <li><strong>后续可复用：</strong> 保存后的历史报告还可以在后续 GenBI 分析里作为受控参考来源。</li>
+                        <li><strong>后续可查阅：</strong> 保存后的历史报告会进入洞察中心，在后续问数时可能被检索到，以“参考来源”卡片形式出现在结果底部，供你对照验证，但 AI 生成分析时不会参考这些历史报告。</li>
                     </ul>
                     <div class="logic-note">所以“保存”不是前端本地收藏，而是正式进入洞察中心的报告链路。</div>
                 </article>
@@ -929,38 +929,7 @@
                 当前 GenBI 的规则模块并不是各自维护独立 SQL，而是统一复用 dashboard 的取数层。也就是说，规则模块真正决定的是“需要什么类型的数据”，底层再由统一的数据层决定查汇总表还是回退到原始表。
             </div>
 
-            <div class="decision-grid">
-                <article class="decision-card">
-                    <h3>为什么要分成 3 个模块</h3>
-                    <p>不是因为页面长得不一样，也不是因为意图名称不一样，而是因为当前系统里已经存在 3 种不同的数据处理范式。</p>
-                    <ul>
-                        <li><strong>人群模块：</strong> 核心分析对象是人群，主要依赖 crowd 数据，常看花费、花费占比、订单成本、人群结构。</li>
-                        <li><strong>商品模块：</strong> 核心分析对象是商品，主要依赖 single 数据，常看商品直接ROI、商品直接成交金额、商品订单成本。</li>
-                        <li><strong>报告模块：</strong> 核心分析对象是整体经营结果，通常同时依赖 ads、crowd、single，常看总花费、盈亏平衡ROI、环比和重点对象。</li>
-                    </ul>
-                    <div class="decision-highlight">
-                        也就是说，三个模块代表的不是三组意图名称，而是三条不同的处理路径：<strong>人群分析路径、商品分析路径、综合报告路径</strong>。
-                    </div>
-                </article>
 
-                <article class="decision-card">
-                    <h3>以后新增意图时怎么判断</h3>
-                    <p>判断复用现有模块还是新建模块，不看名字像不像，而看它是不是还落在现有处理范式里。</p>
-                    <ol>
-                        <li><strong>分析对象</strong> 还是人群、商品、综合经营之一吗？</li>
-                        <li><strong>依赖数据</strong> 还是 crowd、single、ads+crowd+single 之一吗？</li>
-                        <li><strong>核心指标</strong> 还是这一类问题常用的那套指标吗？</li>
-                        <li><strong>输出结构</strong> 还是这一类问题常见的表格和结论结构吗？</li>
-                    </ol>
-                    <ul>
-                        <li>如果这 4 件事基本没变，就优先<strong>复用现有模块</strong>。</li>
-                        <li>如果其中有 2 到 3 件已经明显变了，就应该考虑<strong>新建模块</strong>。</li>
-                    </ul>
-                    <div class="decision-highlight">
-                        一句话总结：<strong>现在分成 crowd.ts、product.ts、report.ts，不是因为意图多，而是因为系统里已经存在三种不同的数据处理范式。</strong>
-                    </div>
-                </article>
-            </div>
         </section>
 
         <section class="cta-panel">
