@@ -231,10 +231,10 @@ Deno.serve(async (req: Request) => {
 
     // ---- 货盘人群推荐模式 ----
     if (productItems && productItems.length > 0) {
-      // 输入验证
-      const promptValidation = validatePromptInput(JSON.stringify(productItems));
-      if (!promptValidation.valid) {
-        return new Response(JSON.stringify({ success: false, error: `输入无效: ${promptValidation.errors.join('，')}` }), {
+      // 货盘模式跳过长度校验（商品数据可超5000字符），仅做安全校验
+      const nonLenErrors = validatePromptInput(JSON.stringify(productItems)).errors.filter((e: string) => !/过长/.test(e));
+      if (nonLenErrors.length > 0) {
+        return new Response(JSON.stringify({ success: false, error: `货盘数据校验失败: ${nonLenErrors.join('，')}` }), {
           status: 400,
           headers: CORS_HEADERS,
         });
