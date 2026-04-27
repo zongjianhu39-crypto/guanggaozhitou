@@ -128,6 +128,26 @@ export async function upsertGenbiRuleConfig(input: {
   return rows[0];
 }
 
+export async function deactivateGenbiRuleConfig(ruleKey: string): Promise<boolean> {
+  const normalized = validateRuleKey(ruleKey);
+
+  const url = buildRestUrl('genbi_rule_configs');
+  url.searchParams.set('rule_key', `eq.${normalized}`);
+
+  const rows = await requestRows<GenbiRuleConfigRecord>(url, {
+    method: 'PATCH',
+    headers: getHeaders({
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation',
+    }),
+    body: JSON.stringify({
+      is_active: false,
+    }),
+  });
+
+  return rows.length > 0;
+}
+
 export function mergeGenbiRulesWithRecords(
   baseRules: Record<string, unknown>,
   records: GenbiRuleConfigRecord[],

@@ -31,7 +31,12 @@
             box-shadow:0 14px 34px rgba(15,23,42,.06);
         }
         .ra-sidebar { overflow:hidden; position:sticky; top:18px; }
-        .ra-sidebar-title { padding:14px 16px; color:var(--text-muted); font-size:12px; font-weight:700; border-bottom:1px solid var(--panel-border); }
+        .ra-sidebar-title { padding:14px 16px; color:var(--text-muted); font-size:12px; font-weight:700; border-bottom:1px solid var(--panel-border); display:flex; justify-content:space-between; align-items:center; }
+        .ra-add-btn {
+            border:0; border-radius:8px; background:var(--accent); color:#fff;
+            padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer;
+        }
+        .ra-add-btn:hover { opacity:0.9; }
         .ra-rule-list { display:grid; }
         .ra-rule-btn {
             border:0; border-bottom:1px solid var(--panel-border); background:#fff;
@@ -73,6 +78,12 @@
             padding:12px 24px; font-size:14px; font-weight:700; cursor:pointer;
         }
         .ra-save-btn:disabled { opacity:.65; cursor:wait; }
+        .ra-delete-btn {
+            border:1px solid var(--bad); border-radius:12px; background:#fff; color:var(--bad);
+            padding:12px 24px; font-size:14px; font-weight:700; cursor:pointer;
+        }
+        .ra-delete-btn:hover { background:#fef2f2; }
+        .ra-delete-btn:disabled { opacity:.65; cursor:wait; }
         .err-banner {
             display:none; margin-bottom:18px; padding:13px 16px; border:1px solid rgba(185,28,28,.18);
             border-radius:14px; background:#fff; color:var(--bad); font-size:14px;
@@ -124,7 +135,10 @@
 
         <section class="ra-layout">
             <aside class="ra-sidebar">
-                <div class="ra-sidebar-title">意图规则</div>
+                <div class="ra-sidebar-title">
+                    <span>意图规则</span>
+                    <button id="add-rule-btn" class="ra-add-btn" type="button">+ 新增</button>
+                </div>
                 <div id="rule-list" class="ra-rule-list"></div>
             </aside>
 
@@ -167,6 +181,7 @@
 
                     <div class="ra-actions">
                         <span id="save-status" class="ra-status"></span>
+                        <button id="delete-btn" class="ra-delete-btn" type="button" style="display:none">删除规则</button>
                         <button id="save-btn" class="ra-save-btn" type="submit">保存规则</button>
                     </div>
                 </form>

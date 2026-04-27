@@ -1,6 +1,6 @@
 import { requirePromptAdminToken } from '../_shared/prompt-admin-auth.ts';
 import { clearGenbiSemanticConfigCache, getGenbiSemanticConfig } from '../_shared/genbi-semantic.ts';
-import { listGenbiRuleConfigRecords, upsertGenbiRuleConfig } from '../_shared/genbi-rule-store.ts';
+import { listGenbiRuleConfigRecords, upsertGenbiRuleConfig, deactivateGenbiRuleConfig } from '../_shared/genbi-rule-store.ts';
 import { createErrorResponseWithStatus } from '../_shared/error-handler.ts';
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
@@ -110,29 +110,92 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     const action = String(body.action || '');
-    if (action !== 'save_rule') {
-      return new Response(JSON.stringify({ success: false, error: `未知 action: ${action}` }), {
-        status: 400,
+
+    if (action === 'save_rule') {
+      const saved = await upsertGenbiRuleConfig({
+        ruleKey: String(body.rule_key || ''),
+        label: String(body.label || ''),
+        config: body.config,
+        updatedBy: admin.email || admin.sub,
+        updatedByName: admin.name || admin.email || admin.sub,
+      });
+      clearGenbiSemanticConfigCache();
+
+      return new Response(JSON.stringify({
+        success: true,
+        action,
+        saved_rule: saved,
+        ...(await buildRuleListResponse()),
+      }), {
+        status: 200,
         headers: CORS_HEADERS,
       });
     }
 
-    const saved = await upsertGenbiRuleConfig({
-      ruleKey: String(body.rule_key || ''),
-      label: String(body.label || ''),
-      config: body.config,
-      updatedBy: admin.email || admin.sub,
-      updatedByName: admin.name || admin.email || admin.sub,
-    });
-    clearGenbiSemanticConfigCache();
+    if (action === 'create_rule') {
+      const ruleKey = String(body.rule_key || '').trim();
+      if (!ruleKey) {
+        return new Response(JSON.stringify({ success: false, error: '规则 key 不能为空' }), {
+          status: 400,
+          headers: CORS_HEADERS,
+        });
+      }
 
-    return new Response(JSON.stringify({
-      success: true,
-      action,
-      saved_rule: saved,
-      ...(await buildRuleListResponse()),
-    }), {
-      status: 200,
+      const label = String(body.label || ruleKey).trim();
+      const config = body.config || { label, dataScope: [], strategy: {}, output: {} };
+
+      const saved = await upsertGenbiRuleConfig({
+        ruleKey,
+        label,
+        config,
+        updatedBy: admin.email || admin.sub,
+        updatedByName: admin.name || admin.email || admin.sub,
+      });
+      clearGenbiSemanticConfigCache();
+
+      return new Response(JSON.stringify({
+        success: true,
+        action,
+        saved_rule: saved,
+        ...(await buildRuleListResponse()),
+      }), {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    if (action === 'delete_rule') {
+      const ruleKey = String(body.rule_key || '').trim();
+      if (!ruleKey) {
+        return new Response(JSON.stringify({ success: false, error: '规则 key 不能为空' }), {
+          status: 400,
+          headers: CORS_HEADERS,
+        });
+      }
+
+      const deleted = await deactivateGenbiRuleConfig(ruleKey);
+      if (!deleted) {
+        return new Response(JSON.stringify({ success: false, error: '规则不存在或已删除' }), {
+          status: 404,
+          headers: CORS_HEADERS,
+        });
+      }
+
+      clearGenbiSemanticConfigCache();
+
+      return new Response(JSON.stringify({
+        success: true,
+        action,
+        deleted_rule_key: ruleKey,
+        ...(await buildRuleListResponse()),
+      }), {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    return new Response(JSON.stringify({ success: false, error: `未知 action: ${action}` }), {
+      status: 400,
       headers: CORS_HEADERS,
     });
   } catch (error) {

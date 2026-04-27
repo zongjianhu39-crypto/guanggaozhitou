@@ -133,6 +133,81 @@
         });
     }
 
+    async function createNewRule() {
+        const label = prompt('请输入新规则的名称：');
+        if (!label || !label.trim()) return;
+
+        const ruleKey = 'rule_' + Date.now();
+        const config = {
+            label: label.trim(),
+            dataScope: [],
+            strategy: { metrics: [] },
+            output: {},
+        };
+
+        try {
+            setStatus('创建中...', 'warn');
+            const data = await apiRequest('POST', {
+                action: 'create_rule',
+                rule_key: ruleKey,
+                label: label.trim(),
+                config,
+            });
+            rules = Array.isArray(data.rules) ? data.rules : [];
+            metrics = data.metrics && typeof data.metrics === 'object' ? data.metrics : {};
+            currentRuleKey = ruleKey;
+            renderRuleList();
+            renderCurrentRule();
+            setStatus('新规则已创建，请继续编辑', 'good');
+        } catch (error) {
+            const errorState = authHelpers.describeFetchError
+                ? authHelpers.describeFetchError(error, '创建失败，请稍后重试。')
+                : { message: `创建失败：${error.message}` };
+            setStatus(errorState.message, 'bad');
+        }
+    }
+
+    async function deleteCurrentRule() {
+        const rule = rules.find((item) => item.rule_key === currentRuleKey);
+        if (!rule) return;
+
+        const confirmed = confirm(`确定要删除规则 "${rule.label || rule.rule_key}" 吗？\n\n此操作将停用该规则，但不会删除历史数据。`);
+        if (!confirmed) return;
+
+        const deleteButton = document.getElementById('delete-btn');
+        deleteButton.disabled = true;
+        setStatus('删除中...', 'warn');
+
+        try {
+            const data = await apiRequest('POST', {
+                action: 'delete_rule',
+                rule_key: currentRuleKey,
+            });
+            rules = Array.isArray(data.rules) ? data.rules : [];
+            metrics = data.metrics && typeof data.metrics === 'object' ? data.metrics : {};
+
+            if (rules.length > 0) {
+                currentRuleKey = rules[0].rule_key;
+                renderRuleList();
+                renderCurrentRule();
+            } else {
+                currentRuleKey = '';
+                renderRuleList();
+                document.getElementById('rule-title').textContent = '暂无规则';
+                document.getElementById('rule-desc').textContent = '请添加新规则开始使用。';
+                document.getElementById('rule-form').style.display = 'none';
+            }
+            setStatus('规则已删除', 'good');
+        } catch (error) {
+            const errorState = authHelpers.describeFetchError
+                ? authHelpers.describeFetchError(error, '删除失败，请稍后重试。')
+                : { message: `删除失败：${error.message}` };
+            setStatus(errorState.message, 'bad');
+        } finally {
+            deleteButton.disabled = false;
+        }
+    }
+
     function renderScopes() {
         const selected = new Set(Array.isArray(currentConfig.dataScope) ? currentConfig.dataScope.map(String) : []);
         const el = document.getElementById('scope-fields');
@@ -209,6 +284,13 @@
         document.getElementById('rule-label').value = String(currentConfig.label || rule.label || '');
         document.getElementById('rule-form').style.display = '';
 
+        const deleteButton = document.getElementById('delete-btn');
+        if (rule.source === 'default') {
+            deleteButton.style.display = 'none';
+        } else {
+            deleteButton.style.display = '';
+        }
+
         renderScopes();
         renderMetrics();
         renderOutputFields();
@@ -264,6 +346,9 @@
                 else window.location.replace('auth/index.html');
             });
         });
+
+        document.getElementById('add-rule-btn').addEventListener('click', createNewRule);
+        document.getElementById('delete-btn').addEventListener('click', deleteCurrentRule);
 
         const labelEl = document.getElementById('rule-label');
         labelEl.addEventListener('input', () => {
