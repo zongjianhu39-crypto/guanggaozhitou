@@ -25,7 +25,8 @@
         if (reference?.sourceType === 'ai_report') {
             const slug = pointer.split('/')[1] || '';
             return slug ? `insights.html?slug=${encodeURIComponent(slug)}` : 'insights.html';
-        }        return '';
+        }
+        return '';
     }
 
     function renderReferences(references) {
@@ -90,19 +91,19 @@
         `;
     }
 
-    function setStatus(message, type = '') {
-        const el = document.getElementById('genbi-status');
+    function setStatus(message, type) {
+        var el = document.getElementById('genbi-status');
         if (!el) return;
-        el.className = `genbi-status ${type}`.trim();
+        el.className = 'genbi-status' + (type ? ' ' + type : '');
         el.textContent = message;
     }
 
     function sanitizeReportText(text) {
         return String(text || '')
             .replace(/\r\n/g, '\n')
-            .replace(/<think>[\s\S]*?<\/think>/gi, '')
+            .replace(/ think[\s\S]*?<\/think>/gi, '')
             .replace(/<\/?think>/gi, '')
-            .replace(/```thinking[\s\S]*?```/gi, '')
+            .replace(/```think[\s\S]*?```/gi, '')
             .replace(/\n{3,}/g, '\n\n')
             .trim();
     }
@@ -125,17 +126,17 @@
         el.textContent = text;
     }
 
-    function setSaveStatus(message, type = '') {
-        const el = document.getElementById('genbi-save-status');
+    function setSaveStatus(message, type) {
+        var el = document.getElementById('genbi-save-status');
         if (!el) return;
-        el.className = `genbi-save-status ${type}`.trim();
+        el.className = 'genbi-save-status' + (type ? ' ' + type : '');
         el.textContent = message;
     }
 
     function toggleSaveActions(payload) {
-        const saveButton = document.getElementById('genbi-save-btn');
-        const openButton = document.getElementById('genbi-open-insights-btn');
-        const canSave = Boolean(payload && payload.intent && payload.intent !== 'unsupported' && String(payload.answer || '').trim());
+        var saveButton = document.getElementById('genbi-save-btn');
+        var openButton = document.getElementById('genbi-open-insights-btn');
+        var canSave = Boolean(payload && payload.intent && payload.intent !== 'unsupported' && String(payload.answer || '').trim());
         if (saveButton) {
             saveButton.style.display = canSave ? 'inline-flex' : 'none';
             saveButton.disabled = false;
@@ -147,36 +148,39 @@
     }
 
     function renderResult(payload) {
-        const safePayload = payload && typeof payload === 'object' ? payload : {};
+        var safePayload = payload && typeof payload === 'object' ? payload : {};
         lastResultPayload = safePayload;
         lastSavedReportSlug = '';
-        const resultSection = document.getElementById('genbi-result-section');
+        var resultSection = document.getElementById('genbi-result-section');
         if (resultSection) {
             resultSection.style.display = 'block';
         }
         document.getElementById('genbi-result').style.display = 'block';
-        const isAiEnhanced = Boolean(safePayload.ai_enhanced);
-        document.getElementById('genbi-result-title').textContent = typeof safePayload.title === 'string' && safePayload.title.trim() ? safePayload.title : '问数结果';
+        var isAiEnhanced = Boolean(safePayload.ai_enhanced);
+        var isAssortment = Boolean(safePayload.assortment_mode);
+        document.getElementById('genbi-result-title').textContent = typeof safePayload.title === 'string' && safePayload.title.trim()
+            ? safePayload.title
+            : (isAssortment ? '🎯 货盘人群推荐' : '问数结果');
         document.getElementById('genbi-result-range').textContent = safePayload.range?.start
             ? `分析范围：${safePayload.range.start} 至 ${safePayload.range.end || safePayload.range.start}${isAiEnhanced ? ' · AI 增强分析' : ''}`
-            : '分析范围：未提供';
+            : (isAssortment ? `分析 ${safePayload.product_count || 0} 个商品 · AI 增强分析` : '分析范围：未提供');
         renderAnswerContent(typeof safePayload.answer === 'string' ? safePayload.answer : '');
-        const highlights = Array.isArray(safePayload.highlights) ? safePayload.highlights.filter((item) => typeof item === 'string' && item.trim()) : [];
-        const notes = Array.isArray(safePayload.notes) ? safePayload.notes.map((item) => typeof item === 'string' ? item : JSON.stringify(item)).filter(Boolean) : [];
-        const tables = Array.isArray(safePayload.tables) ? safePayload.tables : [];
-        document.getElementById('genbi-highlight-tags').innerHTML = highlights.map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join('');
+        var highlights = Array.isArray(safePayload.highlights) ? safePayload.highlights.filter(function(item) { return typeof item === 'string' && item.trim(); }) : [];
+        var notes = Array.isArray(safePayload.notes) ? safePayload.notes.map(function(item) { return typeof item === 'string' ? item : JSON.stringify(item); }).filter(Boolean) : [];
+        var tables = Array.isArray(safePayload.tables) ? safePayload.tables : [];
+        document.getElementById('genbi-highlight-tags').innerHTML = highlights.map(function(item) { return '<span class="tag">' + escapeHtml(item) + '</span>'; }).join('');
         document.getElementById('genbi-result-tables').innerHTML = tables.map(renderTable).join('');
         document.getElementById('genbi-result-references').innerHTML = renderReferences(safePayload.references || []);
         document.getElementById('genbi-result-notes').innerHTML = notes.length
-            ? `<strong>补充说明：</strong><br>${notes.map((item) => escapeHtml(item)).join('<br>')}`
+            ? '<strong>补充说明：</strong><br>' + notes.map(function(item) { return escapeHtml(item); }).join('<br>')
             : '';
         setSaveStatus('', '');
         toggleSaveActions(safePayload);
     }
 
     function openSavedInsight() {
-        const target = lastSavedReportSlug
-            ? `insights.html?slug=${encodeURIComponent(lastSavedReportSlug)}`
+        var target = lastSavedReportSlug
+            ? 'insights.html?slug=' + encodeURIComponent(lastSavedReportSlug)
             : 'insights.html';
         window.location.href = target;
     }
@@ -187,18 +191,18 @@
             return;
         }
 
-        const question = document.getElementById('genbi-question')?.value?.trim() || '';
+        var question = document.getElementById('genbi-question')?.value?.trim() || '';
         if (!question) {
             setSaveStatus('缺少原始问题，无法保存。', 'error');
             return;
         }
 
-        const confirmed = window.confirm('保存后会在洞察中心生成一条正式报告，团队成员可查看。是否继续？');
+        var confirmed = window.confirm('保存后会在洞察中心生成一条正式报告，团队成员可查看。是否继续？');
         if (!confirmed) {
             return;
         }
 
-        const button = document.getElementById('genbi-save-btn');
+        var button = document.getElementById('genbi-save-btn');
         if (button) {
             button.disabled = true;
             button.textContent = '保存中...';
@@ -206,25 +210,25 @@
         setSaveStatus('正在写入洞察中心...', '');
 
         try {
-            const { data } = await authHelpers.fetchFunctionJson('save-insight-report', {
+            var result = await authHelpers.fetchFunctionJson('save-insight-report', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Idempotency-Key': (window.crypto && typeof window.crypto.randomUUID === 'function')
                         ? window.crypto.randomUUID()
-                        : `genbi-${Date.now()}`,
+                        : 'genbi-' + Date.now(),
                 },
                 body: {
                     source_channel: 'genbi',
                     save_mode: 'published',
-                    question,
+                    question: question,
                     result: lastResultPayload,
                 },
                 useSessionToken: true,
                 includePromptAdminToken: true,
                 parseErrorMessage: '保存接口返回了无法解析的响应，请稍后重试',
                 unauthorizedPattern: /未登录|invalid token|Missing Authorization/i,
-                onUnauthorized: () => {
+                onUnauthorized: function() {
                     if (typeof authHelpers.handleReauthRequired === 'function') {
                         authHelpers.handleReauthRequired({
                             source: 'genbi-save',
@@ -245,11 +249,11 @@
                 },
             });
 
-            lastSavedReportSlug = data?.report_slug || '';
+            lastSavedReportSlug = result.data?.report_slug || '';
             setSaveStatus(lastSavedReportSlug ? '已保存到洞察中心，可直接查看详情。' : '已保存到洞察中心。', 'success');
             toggleSaveActions(lastResultPayload);
         } catch (error) {
-            setSaveStatus(`保存失败：${error.message || '请稍后重试'}`, 'error');
+            setSaveStatus('保存失败：' + (error.message || '请稍后重试'), 'error');
             if (button) {
                 button.disabled = false;
                 button.textContent = '保存到洞察中心';
@@ -257,90 +261,9 @@
         }
     }
 
-    async function submitQuestion() {
-        const textarea = document.getElementById('genbi-question');
-        const button = document.getElementById('genbi-submit');
-        const question = textarea?.value?.trim() || '';
-        if (!question) {
-            setStatus('请先输入问题。', 'error');
-            return;
-        }
+    // ============ CSV 解析 ============
 
-        button.disabled = true;
-        button.textContent = '分析中...';
-        setStatus('正在调用 AI 分析真实数据，预计需要 10-30 秒...', '');
-
-        try {
-            const { data } = await authHelpers.fetchFunctionJson('genbi-query', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: { question },
-                useSessionToken: true,
-                includePromptAdminToken: true,
-                parseErrorMessage: 'GenBI 接口返回了无法解析的响应，请稍后重试',
-                unauthorizedPattern: /未登录|invalid token|Missing Authorization/i,
-                onUnauthorized: () => {
-                    if (typeof authHelpers.handleReauthRequired === 'function') {
-                        authHelpers.handleReauthRequired({
-                            source: 'genbi',
-                            targetUrl: window.location.href,
-                            force: true,
-                            delayMs: 800,
-                            reason: 'prompt_admin_reauth_required',
-                        });
-                    } else if (authHelpers.redirectToLogin) {
-                        authHelpers.redirectToLogin({
-                            targetUrl: window.location.href,
-                            force: true,
-                            delayMs: 800,
-                        });
-                    } else {
-                        window.location.href = 'auth/index.html?force=1';
-                    }
-                },
-            });
-            renderResult(data);
-            setStatus('分析完成。', 'success');
-        } catch (error) {
-            setStatus(`分析失败：${error.message || '请稍后重试'}`, 'error');
-        } finally {
-            button.disabled = false;
-            button.textContent = '开始分析';
-        }
-    }
-
-    function bindExamples() {
-        document.querySelectorAll('#genbi-example-list .example-btn').forEach((button) => {
-            button.addEventListener('click', () => {
-                const textarea = document.getElementById('genbi-question');
-                if (textarea) {
-                    textarea.value = button.textContent || '';
-                    textarea.focus();
-                }
-            });
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        bindExamples();
-        document.getElementById('genbi-submit')?.addEventListener('click', submitQuestion);
-        document.getElementById('genbi-save-btn')?.addEventListener('click', saveToInsights);
-        document.getElementById('genbi-open-insights-btn')?.addEventListener('click', openSavedInsight);
-
-        // ---- 货盘人群推荐 ----
-        bindAssortmentEvents();
-    });
-
-    // ============ 货盘人群推荐 ============
-
-    function setAssortmentStatus(message, type) {
-        var el = document.getElementById('assortment-status');
-        if (!el) return;
-        el.className = 'genbi-status' + (type ? ' ' + type : '');
-        el.textContent = message;
-    }
-
-    function parseAssortmentCsv(csvText) {
+    function parseCsv(csvText) {
         var rows = [];
         var row = [];
         var cell = '';
@@ -363,115 +286,162 @@
         if (row.some(function(v) { return v.trim() !== ''; })) rows.push(row);
         if (rows.length < 2) throw new Error('CSV 至少需要表头和一行数据');
         var headers = rows[0].map(function(h) { return h.replace(/^\uFEFF/, '').trim(); });
-        return rows.slice(1).map(function(values) {
-            var item = {};
-            headers.forEach(function(header, index) { item[header] = (values[index] || '').trim(); });
-            return item;
-        }).filter(function(item) { return Object.values(item).some(function(v) { return v !== ''; }); });
+        return {
+            headers: headers,
+            items: rows.slice(1).map(function(values) {
+                var item = {};
+                headers.forEach(function(header, index) { item[header] = (values[index] || '').trim(); });
+                return item;
+            }).filter(function(item) { return Object.values(item).some(function(v) { return v !== ''; }); }),
+        };
     }
 
-    async function readAssortmentItems() {
-        var fileInput = document.getElementById('assortment-csv-file');
-        var textInput = document.getElementById('assortment-csv-text');
-        var csvText = '';
-        if (fileInput && fileInput.files && fileInput.files[0]) {
-            csvText = await fileInput.files[0].text();
-        } else if (textInput && textInput.value.trim()) {
-            csvText = textInput.value.trim();
+    async function readCsvFile() {
+        var fileInput = document.getElementById('genbi-csv-file');
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) return null;
+        var csvText = await fileInput.files[0].text();
+        if (!csvText || !csvText.trim()) return null;
+        return parseCsv(csvText);
+    }
+
+    function updateAttachUI(fileName) {
+        var btn = document.getElementById('genbi-attach-btn');
+        var nameEl = document.getElementById('genbi-attach-name');
+        var clearBtn = document.getElementById('genbi-attach-clear');
+        if (fileName) {
+            if (btn) { btn.textContent = '📄 ' + (fileName.length > 18 ? fileName.slice(0, 18) + '...' : fileName); btn.classList.add('has-file'); }
+            if (nameEl) nameEl.textContent = '';
+            if (clearBtn) clearBtn.style.display = 'inline';
+        } else {
+            if (btn) { btn.textContent = '📎 上传货盘CSV'; btn.classList.remove('has-file'); }
+            if (nameEl) nameEl.textContent = '';
+            if (clearBtn) clearBtn.style.display = 'none';
         }
-        if (!csvText) return [];
-        return parseAssortmentCsv(csvText);
     }
 
-    async function submitAssortment() {
-        var button = document.getElementById('assortment-submit');
-        var productItems;
+    function clearAttach() {
+        var fileInput = document.getElementById('genbi-csv-file');
+        if (fileInput) fileInput.value = '';
+        updateAttachUI(null);
+    }
+
+    // ============ 提交 ============
+
+    async function submitQuestion() {
+        var textarea = document.getElementById('genbi-question');
+        var button = document.getElementById('genbi-submit');
+        var question = textarea?.value?.trim() || '';
+        var csvResult = null;
         try {
-            productItems = await readAssortmentItems();
+            csvResult = await readCsvFile();
         } catch (e) {
-            setAssortmentStatus('货盘解析失败：' + (e.message || '请检查 CSV 格式'), 'error');
+            setStatus('货盘 CSV 解析失败：' + (e.message || '请检查文件格式'), 'error');
             return;
         }
-        if (!productItems || productItems.length === 0) {
-            setAssortmentStatus('请先上传货盘 CSV 文件或粘贴 CSV 内容', 'error');
+        var productItems = csvResult ? csvResult.items : null;
+
+        if (!question && !productItems) {
+            setStatus('请输入问题或上传货盘 CSV 文件。', 'error');
             return;
+        }
+
+        // 只上传了文件没输入问题，自动补一个默认问题
+        if (!question && productItems) {
+            question = '帮我根据货盘推荐合适的超级直播投放人群';
+            if (textarea) textarea.value = question;
         }
 
         button.disabled = true;
-        button.textContent = 'AI 分析中...';
-        setAssortmentStatus('正在调用 MiniMax 2.7 分析 ' + productItems.length + ' 个商品，预计 10-30 秒...', '');
+        button.textContent = '分析中...';
+        var statusMsg = productItems
+            ? '正在调用 MiniMax 2.7 分析 ' + productItems.length + ' 个商品并推荐人群，预计 20-40 秒...'
+            : '正在调用 AI 分析真实数据，预计需要 10-30 秒...';
+        setStatus(statusMsg, '');
 
         try {
-            var result = await authHelpers.fetchFunctionJson('genbi-query', {
+            var body = productItems
+                ? { question: question, product_items: productItems }
+                : { question: question };
+
+            var response = await authHelpers.fetchFunctionJson('genbi-query', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: { product_items: productItems },
+                body: body,
                 useSessionToken: true,
                 includePromptAdminToken: true,
-                parseErrorMessage: 'AI 推荐接口返回异常，请稍后重试',
+                parseErrorMessage: 'GenBI 接口返回了无法解析的响应，请稍后重试',
                 unauthorizedPattern: /未登录|invalid token|Missing Authorization/i,
                 onUnauthorized: function() {
                     if (typeof authHelpers.handleReauthRequired === 'function') {
-                        authHelpers.handleReauthRequired({ source: 'genbi-assortment', targetUrl: window.location.href, force: true, delayMs: 800 });
+                        authHelpers.handleReauthRequired({
+                            source: 'genbi',
+                            targetUrl: window.location.href,
+                            force: true,
+                            delayMs: 800,
+                            reason: 'prompt_admin_reauth_required',
+                        });
                     } else if (authHelpers.redirectToLogin) {
-                        authHelpers.redirectToLogin({ targetUrl: window.location.href, force: true, delayMs: 800 });
+                        authHelpers.redirectToLogin({
+                            targetUrl: window.location.href,
+                            force: true,
+                            delayMs: 800,
+                        });
                     } else {
                         window.location.href = 'auth/index.html?force=1';
                     }
                 },
             });
-            renderAssortmentResult(result);
-            setAssortmentStatus('AI 推荐完成', 'success');
+            renderResult(response.data);
+            setStatus('分析完成。', 'success');
         } catch (error) {
-            setAssortmentStatus('AI 推荐失败：' + (error.message || '请稍后重试'), 'error');
+            setStatus('分析失败：' + (error.message || '请稍后重试'), 'error');
         } finally {
             button.disabled = false;
-            button.textContent = 'AI 分析推荐';
+            button.textContent = '开始分析';
         }
     }
 
-    function renderAssortmentResult(payload) {
-        var section = document.getElementById('assortment-result-section');
-        var resultDiv = document.getElementById('assortment-result');
-        var answerEl = document.getElementById('assortment-result-answer');
-        if (!section || !resultDiv || !answerEl) return;
-        section.style.display = 'block';
-        resultDiv.style.display = 'block';
-        var answer = typeof payload.answer === 'string' ? payload.answer : (typeof payload.data === 'object' && payload.data && typeof payload.data.answer === 'string' ? payload.data.answer : '');
-        if (typeof window.renderAiArticleMarkdown === 'function') {
-            answerEl.innerHTML = window.renderAiArticleMarkdown(answer || 'AI 未返回有效推荐内容');
-        } else {
-            answerEl.innerHTML = '<p>' + (escapeHtml(answer) || 'AI 未返回有效推荐内容') + '</p>';
-        }
-    }
+    // ============ 事件绑定 ============
 
-    function bindAssortmentEvents() {
-        var fileInput = document.getElementById('assortment-csv-file');
-        var dropzone = document.querySelector('#genbi-assortment-layout .upload-dropzone');
-        var fileLabel = document.getElementById('assortment-file-label');
-        var fileName = document.getElementById('assortment-file-name');
-
-        if (dropzone && fileInput) {
-            dropzone.addEventListener('click', function() { fileInput.click(); });
-            dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.style.borderColor = '#6e7ff5'; });
-            dropzone.addEventListener('dragleave', function() { dropzone.style.borderColor = '#d4d8e8'; });
-            dropzone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                dropzone.style.borderColor = '#d4d8e8';
-                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    fileInput.files = e.dataTransfer.files;
-                    if (fileLabel) fileLabel.textContent = '📄 ' + e.dataTransfer.files[0].name;
-                    if (fileName) fileName.textContent = '已选择：' + e.dataTransfer.files[0].name;
+    function bindExamples() {
+        document.querySelectorAll('#genbi-example-list .example-btn').forEach(function(button) {
+            button.addEventListener('click', function() {
+                var textarea = document.getElementById('genbi-question');
+                if (textarea) {
+                    textarea.value = button.textContent || '';
+                    textarea.focus();
                 }
             });
+        });
+    }
+
+    function bindFileUpload() {
+        var attachBtn = document.getElementById('genbi-attach-btn');
+        var fileInput = document.getElementById('genbi-csv-file');
+        var clearBtn = document.getElementById('genbi-attach-clear');
+
+        if (attachBtn && fileInput) {
+            attachBtn.addEventListener('click', function() { fileInput.click(); });
+        }
+        if (fileInput) {
             fileInput.addEventListener('change', function() {
                 if (fileInput.files && fileInput.files[0]) {
-                    if (fileLabel) fileLabel.textContent = '📄 ' + fileInput.files[0].name;
-                    if (fileName) fileName.textContent = '已选择：' + fileInput.files[0].name;
+                    updateAttachUI(fileInput.files[0].name);
+                } else {
+                    updateAttachUI(null);
                 }
             });
         }
-
-        document.getElementById('assortment-submit')?.addEventListener('click', submitAssortment);
+        if (clearBtn) {
+            clearBtn.addEventListener('click', clearAttach);
+        }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        bindExamples();
+        bindFileUpload();
+        document.getElementById('genbi-submit')?.addEventListener('click', submitQuestion);
+        document.getElementById('genbi-save-btn')?.addEventListener('click', saveToInsights);
+        document.getElementById('genbi-open-insights-btn')?.addEventListener('click', openSavedInsight);
+    });
 })(window);

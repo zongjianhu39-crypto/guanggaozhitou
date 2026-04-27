@@ -294,8 +294,11 @@ Deno.serve(async (req: Request) => {
         console.log(`[genbi-query] assortment AI response length=${sanitized.length}`);
         return new Response(JSON.stringify({
           success: true,
+          title: '🎯 货盘人群推荐',
           answer: sanitized,
           ai_enhanced: true,
+          assortment_mode: true,
+          product_count: productItems.length,
         }), {
           status: 200,
           headers: CORS_HEADERS,
