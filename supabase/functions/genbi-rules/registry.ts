@@ -5,6 +5,7 @@ import { buildUnsupportedResponse } from '../_shared/genbi-format.ts';
 import { answerCrowdBudget, answerCrowdMix, answerDailyDropReason } from './crowd.ts';
 import { answerWeakProducts, answerProductPotential, answerProductSales } from './product.ts';
 import { answerPeriodicReport, answerLossReason } from './report.ts';
+import { applyRuleOutputConfig } from '../_shared/genbi-rule-resolver.ts';
 
 type GenbiHandlerContext = {
   question: string;
@@ -95,7 +96,10 @@ export function getSupportedIntentDefinitions() {
 
 export async function dispatchGenbiIntent(intent: GenbiIntent, context: GenbiHandlerContext) {
   const definition = INTENT_HANDLERS[intent];
-  if (definition?.handler) return await definition.handler(context);
+  if (definition?.handler) {
+    const result = await definition.handler(context);
+    return await applyRuleOutputConfig(intent, result);
+  }
   if (definition?.unsupportedReason) {
     return buildUnsupportedResponse(definition.unsupportedReason, context.semanticVersion);
   }

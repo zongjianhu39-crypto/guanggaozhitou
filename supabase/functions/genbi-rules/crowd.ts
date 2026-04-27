@@ -2,7 +2,7 @@ import { getDashboardPayload } from '../_shared/dashboard-payload.ts';
 import type { GenbiRange } from '../_shared/genbi-time.ts';
 import { buildAnswerEnvelope, composeTable, money, percent } from '../_shared/genbi-format.ts';
 import { mapPayloadCrowdSummary } from '../_shared/genbi-payload-adapters.ts';
-import { getCrowdBudgetRuleConfig, getDailyDropReasonRuleConfig } from '../_shared/genbi-rule-resolver.ts';
+import { getCrowdBudgetRuleConfig, getCrowdMixRuleConfig, getDailyDropReasonRuleConfig } from '../_shared/genbi-rule-resolver.ts';
 
 export function buildCrowdBudgetResponse(range: GenbiRange, summary: any[], options: { minCostShare: number; topIncreaseCount: number; topDecreaseCount: number; tableLimit: number }) {
   const totalCost = summary.reduce((sum, item) => sum + item.cost, 0);
@@ -55,7 +55,7 @@ export function buildCrowdBudgetResponse(range: GenbiRange, summary: any[], opti
 
 export async function answerCrowdBudget(range: GenbiRange) {
   const config = await getCrowdBudgetRuleConfig();
-  const payload = await getDashboardPayload(range.start, range.end, { ads: false, crowd: true, single: false }) as any;
+  const payload = await getDashboardPayload(range.start, range.end, config.dataScopeFlags) as any;
   const excluded = new Set(config.excludeLayers);
   const summary = mapPayloadCrowdSummary(payload?.crowd?.summary).filter((item) => !excluded.has(item.layer));
   return buildCrowdBudgetResponse(range, summary, {
@@ -93,7 +93,8 @@ export function buildCrowdMixResponse(range: GenbiRange, summary: any[]) {
 }
 
 export async function answerCrowdMix(range: GenbiRange) {
-  const payload = await getDashboardPayload(range.start, range.end, { ads: false, crowd: true, single: false }) as any;
+  const config = await getCrowdMixRuleConfig();
+  const payload = await getDashboardPayload(range.start, range.end, config.dataScopeFlags) as any;
   const summary = mapPayloadCrowdSummary(payload?.crowd?.summary);
   return buildCrowdMixResponse(range, summary);
 }
@@ -130,8 +131,8 @@ export function buildDailyDropReasonResponse(range: GenbiRange, currentCrowd: an
 export async function answerDailyDropReason(range: GenbiRange) {
   const config = await getDailyDropReasonRuleConfig();
   const [todayPayload, comparePayload] = await Promise.all([
-    getDashboardPayload(range.start, range.end, { ads: false, crowd: true, single: false }),
-    getDashboardPayload(range.compareStart || range.start, range.compareEnd || range.end, { ads: false, crowd: true, single: false }),
+    getDashboardPayload(range.start, range.end, config.dataScopeFlags),
+    getDashboardPayload(range.compareStart || range.start, range.compareEnd || range.end, config.dataScopeFlags),
   ]);
   const currentCrowd = mapPayloadCrowdSummary((todayPayload as any)?.crowd?.summary);
   const previousCrowd = mapPayloadCrowdSummary((comparePayload as any)?.crowd?.summary);

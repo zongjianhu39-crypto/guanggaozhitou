@@ -1,3 +1,5 @@
+import { listGenbiRuleConfigRecords, mergeGenbiRulesWithRecords } from './genbi-rule-store.ts';
+
 type GenbiSemanticConfig = {
   version: string;
   docsSource: string;
@@ -177,32 +179,82 @@ const DEFAULT_GENBI_SEMANTIC: GenbiSemanticConfig = {
       },
     },
   },
+  metrics: {
+    breakeven_roi: { label: '盈亏平衡ROI' },
+    order_cost: { label: '订单成本' },
+    direct_roi: { label: '直接ROI' },
+    ad_cost: { label: '花费' },
+    gmv: { label: '总成交金额' },
+    product_direct_gmv: { label: '该商品直接成交金额' },
+    product_direct_roi: { label: '商品直接ROI' },
+    product_orders: { label: '商品直接成交笔数' },
+    orders: { label: '成交笔数' },
+    crowd_cost_share: { label: '人群花费占比' },
+    wow: { label: '周环比' },
+    mom: { label: '月环比' },
+  },
+  intentGroups: [
+    { key: 'crowd_budget', label: '人群预算建议' },
+    { key: 'weak_products', label: '高花费低回报商品诊断' },
+    { key: 'crowd_mix', label: '老客新客结构分析' },
+    { key: 'product_potential', label: '冲销售额商品识别' },
+    { key: 'product_sales', label: '单商品销售查询' },
+    { key: 'weekly_report', label: '周报生成' },
+    { key: 'monthly_report', label: '月报生成' },
+    { key: 'daily_drop_reason', label: '昨日花费波动归因' },
+    { key: 'loss_reason', label: '亏损原因分析' },
+  ],
 };
 
-let semanticPromise: Promise<GenbiSemanticConfig> | null = null;
+let semanticCache: { value: GenbiSemanticConfig; expiresAt: number } | null = null;
+const SEMANTIC_CACHE_TTL_MS = 30 * 1000;
 
 async function loadSemanticConfig(): Promise<GenbiSemanticConfig> {
+  let fileConfig: GenbiSemanticConfig = DEFAULT_GENBI_SEMANTIC;
   try {
     const semanticUrl = new URL('../../../assets/data/genbi-semantic.json', import.meta.url);
     const raw = await Deno.readTextFile(semanticUrl);
     const parsed = JSON.parse(raw) as GenbiSemanticConfig;
-    if (!parsed || typeof parsed !== 'object') {
-      return DEFAULT_GENBI_SEMANTIC;
+    if (parsed && typeof parsed === 'object') {
+      fileConfig = {
+        ...DEFAULT_GENBI_SEMANTIC,
+        ...parsed,
+        rules: {
+          ...(DEFAULT_GENBI_SEMANTIC.rules ?? {}),
+          ...(parsed.rules ?? {}),
+        },
+      };
     }
-    return {
-      ...DEFAULT_GENBI_SEMANTIC,
-      ...parsed,
-    };
   } catch {
-    return DEFAULT_GENBI_SEMANTIC;
+    fileConfig = DEFAULT_GENBI_SEMANTIC;
+  }
+
+  try {
+    const records = await listGenbiRuleConfigRecords();
+    if (!records.length) return fileConfig;
+    return {
+      ...fileConfig,
+      rules: mergeGenbiRulesWithRecords(fileConfig.rules ?? {}, records),
+    };
+  } catch (error) {
+    console.warn('[genbi-semantic] failed to load database rule configs:', error instanceof Error ? error.message : String(error));
+    return fileConfig;
   }
 }
 
 export async function getGenbiSemanticConfig(): Promise<GenbiSemanticConfig> {
-  if (!semanticPromise) {
-    semanticPromise = loadSemanticConfig();
+  const now = Date.now();
+  if (!semanticCache || semanticCache.expiresAt <= now) {
+    semanticCache = {
+      value: await loadSemanticConfig(),
+      expiresAt: now + SEMANTIC_CACHE_TTL_MS,
+    };
   }
-  return semanticPromise;
+  return semanticCache.value;
+}
+
+export function clearGenbiSemanticConfigCache() {
+  semanticCache = null;
 }
 
 export async function getGenbiRules() {

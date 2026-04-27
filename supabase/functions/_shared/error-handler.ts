@@ -4,11 +4,12 @@
  * 详细错误自动打到 Supabase 日志
  */
 
-export type ErrorContext = 'ai-analysis' | 'ai-prompt-admin' | 'dashboard-data' | 'ai-reports' | 'genbi-query' | 'save-insight-report' | 'plan-dashboard-summary' | 'feishu-auth';
+export type ErrorContext = 'ai-analysis' | 'ai-prompt-admin' | 'genbi-rule-admin' | 'dashboard-data' | 'ai-reports' | 'genbi-query' | 'save-insight-report' | 'plan-dashboard-summary' | 'feishu-auth';
 
 const USER_FRIENDLY_MESSAGES: Record<string, string> = {
   'ai-analysis': 'AI 分析失败，请稍后重试',
   'ai-prompt-admin': 'Prompt 管理请求失败，请稍后重试',
+  'genbi-rule-admin': 'GenBI 规则管理请求失败，请稍后重试',
   'dashboard-data': '数据查询失败，请稍后重试',
   'ai-reports': '报告查询失败，请稍后重试',
   'genbi-query': 'GenBI 查询失败，请稍后重试',

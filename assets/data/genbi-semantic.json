@@ -57,6 +57,7 @@
       "version": "v1",
       "dataScope": ["crowd"],
       "strategy": {
+        "metrics": ["order_cost", "crowd_cost_share", "ad_cost", "gmv", "orders"],
         "primaryMetric": "order_cost",
         "secondaryMetric": "crowd_cost_share",
         "increaseSort": "primary_asc",
@@ -70,7 +71,8 @@
       "output": {
         "topIncreaseCount": 3,
         "topDecreaseCount": 3,
-        "tableLimit": 10
+        "tableLimit": 10,
+        "columns": ["人群分层", "花费", "花费占比", "订单成本", "成交金额", "成交笔数"]
       }
     },
     "crowdMix": {
@@ -78,8 +80,12 @@
       "version": "v1",
       "dataScope": ["crowd"],
       "strategy": {
+        "metrics": ["crowd_cost_share", "order_cost", "ad_cost"],
         "primaryMetric": "crowd_cost_share",
         "comparisonLayers": ["老客", "新客", "兴趣新客"]
+      },
+      "output": {
+        "columns": ["人群分层", "花费", "花费占比", "订单成本"]
       }
     },
     "dailyDropReason": {
@@ -87,11 +93,13 @@
       "version": "v1",
       "dataScope": ["crowd"],
       "strategy": {
+        "metrics": ["ad_cost"],
         "primaryMetric": "ad_cost",
         "comparisonMode": "current_vs_previous"
       },
       "output": {
-        "topDropCount": 3
+        "topDropCount": 3,
+        "columns": ["人群分层", "昨日花费", "前一日花费", "变化额"]
       }
     },
     "weakProducts": {
@@ -99,6 +107,7 @@
       "version": "v1",
       "dataScope": ["single"],
       "strategy": {
+        "metrics": ["product_direct_roi", "order_cost", "ad_cost", "product_direct_gmv", "product_orders"],
         "primaryMetric": "product_direct_roi",
         "secondaryMetric": "order_cost",
         "sort": ["primary_asc", "secondary_desc", "cost_desc"]
@@ -110,7 +119,8 @@
       },
       "output": {
         "topCount": 8,
-        "highlightCount": 3
+        "highlightCount": 3,
+        "columns": ["商品", "花费", "商品订单成本", "商品直接ROI", "商品直接成交金额", "商品直接成交笔数"]
       }
     },
     "productPotential": {
@@ -118,6 +128,7 @@
       "version": "v1",
       "dataScope": ["single"],
       "strategy": {
+        "metrics": ["product_direct_roi", "product_direct_gmv", "order_cost", "ad_cost"],
         "primaryMetric": "product_direct_roi",
         "secondaryMetric": "product_direct_gmv",
         "sort": ["roi_x_gmv_desc"]
@@ -128,7 +139,8 @@
       },
       "output": {
         "topCount": 6,
-        "highlightCount": 3
+        "highlightCount": 3,
+        "columns": ["商品", "花费", "商品直接ROI", "商品直接成交金额", "商品订单成本"]
       }
     },
     "productSales": {
@@ -136,10 +148,12 @@
       "version": "v1",
       "dataScope": ["single"],
       "strategy": {
+        "metrics": ["ad_cost", "product_direct_gmv", "product_orders", "product_direct_roi", "order_cost"],
         "matchMode": "product_name_contains"
       },
       "output": {
-        "resultLimit": 1
+        "resultLimit": 1,
+        "columns": ["商品", "花费", "商品直接成交金额", "商品直接成交笔数", "商品直接ROI", "商品订单成本"]
       }
     },
     "periodicReport": {
@@ -147,12 +161,14 @@
       "version": "v1",
       "dataScope": ["ads", "crowd", "single"],
       "strategy": {
+        "metrics": ["breakeven_roi", "ad_cost", "order_cost", "product_direct_gmv", "product_direct_roi", "wow", "mom"],
         "primaryMetric": "breakeven_roi",
         "secondaryMetric": "wow_or_mom"
       },
       "output": {
         "topCrowdCount": 5,
-        "topProductCount": 5
+        "topProductCount": 5,
+        "columns": ["指标", "当前周期", "上一周期", "周环比", "月环比", "人群分层", "花费", "订单成本", "商品", "商品直接成交金额", "商品直接ROI"]
       }
     },
     "lossReason": {
@@ -160,13 +176,15 @@
       "version": "v1",
       "dataScope": ["ads", "crowd", "single"],
       "strategy": {
+        "metrics": ["breakeven_roi", "ad_cost", "gmv", "order_cost"],
         "primaryMetric": "breakeven_roi",
         "crowdSort": "order_cost_desc",
         "productSort": "order_cost_desc"
       },
       "output": {
         "topCrowdCount": 3,
-        "topProductCount": 3
+        "topProductCount": 3,
+        "columns": ["指标", "数值", "人群分层", "订单成本", "商品", "商品订单成本"]
       }
     }
   },

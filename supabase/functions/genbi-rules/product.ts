@@ -63,7 +63,7 @@ export function buildWeakProductsResponse(range: GenbiRange, allProducts: any[],
 
 export async function answerWeakProducts(range: GenbiRange) {
   const config = await getWeakProductsRuleConfig();
-  const payload = await getDashboardPayload(range.start, range.end, { ads: false, crowd: false, single: true }) as any;
+  const payload = await getDashboardPayload(range.start, range.end, config.dataScopeFlags) as any;
   const allProducts = mapPayloadSingleItems(payload?.single?.items).filter((item) => item.cost > 0);
   return buildWeakProductsResponse(range, allProducts, {
     minFocusPoolSize: config.minFocusPoolSize,
@@ -98,7 +98,7 @@ export function buildProductPotentialResponse(range: GenbiRange, allProducts: an
 
 export async function answerProductPotential(range: GenbiRange) {
   const config = await getProductPotentialRuleConfig();
-  const payload = await getDashboardPayload(range.start, range.end, { ads: false, crowd: false, single: true }) as any;
+  const payload = await getDashboardPayload(range.start, range.end, config.dataScopeFlags) as any;
   const products = mapPayloadSingleItems(payload?.single?.items);
   return buildProductPotentialResponse(range, products, {
     topCount: config.topCount,
@@ -117,7 +117,7 @@ export async function answerProductSales(question: string, range: GenbiRange) {
       range,
     );
   }
-  const payload = await getDashboardPayload(range.start, range.end, { ads: false, crowd: false, single: true }) as any;
+  const payload = await getDashboardPayload(range.start, range.end, config.dataScopeFlags) as any;
   const products = mapPayloadSingleItems(payload?.single?.items).filter((item) => item.productName.includes(productName));
   if (!products.length) {
     return buildAnswerEnvelope('product_sales', '单商品销售查询', `在 ${range.start} 至 ${range.end} 期间没有找到与“${productName}”匹配的单品广告数据。`, range);

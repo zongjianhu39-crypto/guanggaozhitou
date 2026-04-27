@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenBI 规则管理 - 交个朋友·广告智投工作台</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        :root {
+            --panel-bg:#fff;
+            --panel-border:#e5e7ef;
+            --text-muted:#667085;
+            --accent:#4f46e5;
+            --good:#18794e;
+            --warn:#b45309;
+            --bad:#b91c1c;
+        }
+        body { background:#f5f7fb; color:#111827; min-height:100vh; }
+        .ra-shell { max-width:1280px; margin:0 auto; padding:28px 20px 64px; }
+        .ra-header { margin-bottom:20px; }
+        .ra-header h1 { margin:0 0 8px; font-size:28px; }
+        .ra-header p { margin:0; color:var(--text-muted); line-height:1.7; font-size:14px; max-width:820px; }
+        .ra-layout { display:grid; grid-template-columns:280px 1fr; gap:18px; align-items:start; }
+        .ra-sidebar,
+        .ra-panel {
+            background:var(--panel-bg);
+            border:1px solid var(--panel-border);
+            border-radius:18px;
+            box-shadow:0 14px 34px rgba(15,23,42,.06);
+        }
+        .ra-sidebar { overflow:hidden; position:sticky; top:18px; }
+        .ra-sidebar-title { padding:14px 16px; color:var(--text-muted); font-size:12px; font-weight:700; border-bottom:1px solid var(--panel-border); }
+        .ra-rule-list { display:grid; }
+        .ra-rule-btn {
+            border:0; border-bottom:1px solid var(--panel-border); background:#fff;
+            padding:13px 16px; text-align:left; cursor:pointer; color:#344054;
+        }
+        .ra-rule-btn:last-child { border-bottom:0; }
+        .ra-rule-btn:hover { background:#f8faff; }
+        .ra-rule-btn.active { background:#eef2ff; color:#3730a3; font-weight:700; }
+        .ra-rule-source { display:block; margin-top:4px; font-size:12px; color:var(--text-muted); font-weight:500; }
+        .ra-panel { padding:22px; }
+        .ra-panel-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:18px; }
+        .ra-panel-head h2 { margin:0 0 6px; font-size:22px; }
+        .ra-panel-head p { margin:0; color:var(--text-muted); font-size:13px; line-height:1.6; }
+        .ra-chip { display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px; background:#f2f4f7; color:#475467; font-size:12px; white-space:nowrap; }
+        .ra-form { display:grid; gap:18px; }
+        .ra-field label { display:block; margin-bottom:8px; font-size:13px; font-weight:700; color:#344054; }
+        .ra-input,
+        .ra-textarea {
+            width:100%; box-sizing:border-box; border:1px solid #d8deea; border-radius:12px;
+            padding:11px 12px; font:inherit; background:#fff;
+        }
+        .ra-input:focus,
+        .ra-textarea:focus { outline:none; border-color:#8b8cf8; box-shadow:0 0 0 4px rgba(79,70,229,.1); }
+        .ra-check-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+        .ra-check {
+            display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid #e5e7ef;
+            border-radius:12px; background:#fbfcff; color:#344054; font-size:14px;
+        }
+        .ra-output-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+        .ra-small-note { color:var(--text-muted); font-size:12px; line-height:1.6; margin-top:6px; }
+        .ra-textarea { min-height:230px; font-family:Menlo, Monaco, Consolas, monospace; font-size:13px; line-height:1.7; resize:vertical; }
+        .ra-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:4px; flex-wrap:wrap; }
+        .ra-status { color:var(--text-muted); font-size:13px; }
+        .ra-status.good { color:var(--good); }
+        .ra-status.warn { color:var(--warn); }
+        .ra-status.bad { color:var(--bad); }
+        .ra-save-btn {
+            border:0; border-radius:12px; background:var(--accent); color:#fff;
+            padding:12px 24px; font-size:14px; font-weight:700; cursor:pointer;
+        }
+        .ra-save-btn:disabled { opacity:.65; cursor:wait; }
+        .err-banner {
+            display:none; margin-bottom:18px; padding:13px 16px; border:1px solid rgba(185,28,28,.18);
+            border-radius:14px; background:#fff; color:var(--bad); font-size:14px;
+        }
+        .err-banner.show { display:block; }
+        @media (max-width:900px) {
+            .ra-layout { grid-template-columns:1fr; }
+            .ra-sidebar { position:static; }
+        }
+    </style>
+</head>
+<body>
+    <script src="assets/js/auth-helpers.js?v=20260412a"></script>
+    <script src="auth.js?v=20260409a"></script>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span>🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="genbi.html" class="nav-link">GenBI</a></li>
+                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li class="nav-item-dropdown">
+                    <span class="nav-link active">更多 <span class="nav-dropdown-arrow">▾</span></span>
+                    <div class="nav-dropdown">
+                        <a href="conversion-prediction.html">人群推荐</a>
+                        <a href="genbi-workflow.html">GenBI 工作流程</a>
+                        <a href="metric-rules.html">指标规则</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                        <a href="genbi-rule-admin.html" class="active">GenBI 规则管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn"><span></span><span></span><span></span></button>
+        </div>
+    </nav>
+
+    <main class="ra-shell">
+        <div id="err-banner" class="err-banner"></div>
+        <header class="ra-header">
+            <h1>GenBI 规则管理</h1>
+            <p>编辑每个意图使用的数据表、指标和输出参数。底层仍沿用人群、商品、报告三类处理流程，这里只调整每个流程里的数据口径和展示字段。</p>
+        </header>
+
+        <section class="ra-layout">
+            <aside class="ra-sidebar">
+                <div class="ra-sidebar-title">意图规则</div>
+                <div id="rule-list" class="ra-rule-list"></div>
+            </aside>
+
+            <article class="ra-panel">
+                <div class="ra-panel-head">
+                    <div>
+                        <h2 id="rule-title">正在加载…</h2>
+                        <p id="rule-desc">请稍等。</p>
+                    </div>
+                    <span id="identity-chip" class="ra-chip"></span>
+                </div>
+
+                <form id="rule-form" class="ra-form" style="display:none">
+                    <div class="ra-field">
+                        <label for="rule-label">规则名称</label>
+                        <input id="rule-label" class="ra-input" type="text" maxlength="60">
+                    </div>
+
+                    <div class="ra-field">
+                        <label>使用哪些表</label>
+                        <div id="scope-fields" class="ra-check-grid"></div>
+                    </div>
+
+                    <div class="ra-field">
+                        <label>使用哪些指标</label>
+                        <div id="metric-fields" class="ra-check-grid"></div>
+                        <div class="ra-small-note">指标会写入规则配置，并影响结果表可见列与 AI 可读的数据口径说明。</div>
+                    </div>
+
+                    <div class="ra-field">
+                        <label>输出参数</label>
+                        <div id="output-fields" class="ra-output-grid"></div>
+                    </div>
+
+                    <div class="ra-field">
+                        <label for="rule-json">高级 JSON</label>
+                        <textarea id="rule-json" class="ra-textarea" spellcheck="false"></textarea>
+                        <div class="ra-small-note">表单会同步到 JSON。需要编辑排除项、排序规则、阈值时可以直接改这里。</div>
+                    </div>
+
+                    <div class="ra-actions">
+                        <span id="save-status" class="ra-status"></span>
+                        <button id="save-btn" class="ra-save-btn" type="submit">保存规则</button>
+                    </div>
+                </form>
+            </article>
+        </section>
+    </main>
+
+    <script src="assets/js/config.js"></script>
+    <script src="script.js?v=20260403"></script>
+    <script src="assets/js/genbi-rule-admin.js?v=20260427a"></script>
+</body>
+</html>

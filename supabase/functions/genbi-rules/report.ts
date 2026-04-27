@@ -60,8 +60,8 @@ export function buildPeriodicReportResponse(
 export async function answerPeriodicReport(kind: 'weekly_report' | 'monthly_report', range: GenbiRange) {
   const config = await getPeriodicReportRuleConfig();
   const [currentPayload, previousPayload] = await Promise.all([
-    getDashboardPayload(range.start, range.end, { ads: true, crowd: true, single: true }),
-    getDashboardPayload(range.compareStart || range.start, range.compareEnd || range.end, { ads: true, crowd: true, single: false }),
+    getDashboardPayload(range.start, range.end, config.dataScopeFlags),
+    getDashboardPayload(range.compareStart || range.start, range.compareEnd || range.end, config.dataScopeFlags),
   ]);
   const currentAds = {
     cost: Number((currentPayload as any)?.ads?.kpi?.totalCost || 0),
@@ -108,7 +108,7 @@ export function buildLossReasonResponse(
 
 export async function answerLossReason(range: GenbiRange) {
   const config = await getLossReasonRuleConfig();
-  const payload = await getDashboardPayload(range.start, range.end, { ads: true, crowd: true, single: true }) as any;
+  const payload = await getDashboardPayload(range.start, range.end, config.dataScopeFlags) as any;
   const ads = {
     cost: Number(payload?.ads?.kpi?.totalCost || 0),
     breakevenRoi: Number(payload?.ads?.kpi?.totalBreakevenRoi || 0),

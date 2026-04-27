@@ -3,7 +3,8 @@
  * 供 ai-analysis 和 genbi-query 共同使用
  */
 
-const MINIMAX_API_KEY = Deno.env.get('MINIMAX_API_KEY') ?? '';
+const denoEnv = globalThis.Deno?.env;
+const MINIMAX_API_KEY = denoEnv?.get('MINIMAX_API_KEY') ?? '';
 const MINIMAX_MODEL = 'MiniMax-M2.7';
 
 export async function callMiniMax(
