@@ -111,6 +111,8 @@ async function buildSystemPromptFromTemplates(): Promise<string> {
     { label: '【长期记忆】', key: 'memory' },
     { label: '【技能指令】', key: 'skills' },
     { label: '【运营业务背景】', key: 'ops' },
+    { label: '【数据分析框架】', key: 'daily' },
+    { label: '【单品分析框架】', key: 'single' },
   ];
 
   const sections: string[] = [];

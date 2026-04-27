@@ -198,9 +198,7 @@ async function fetchPromptTemplateReferences(intent: GenbiIntent, question: stri
         ].join(' '), keywords);
         return { row, template, score };
       })
-      .filter((item) => item.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 2)
       .map((item) => ({
         sourceType: 'prompt_template' as const,
         title: `${item.template.name || item.template.template_key || 'Prompt'} · ${item.row.version_label || 'published'}`,
@@ -294,9 +292,11 @@ export async function buildGenbiRagContext(intent: GenbiIntent, question: string
       : Promise.resolve({ references: [], failedSource: null }),
   ]);
 
-  const references = rulesDocs
-    .concat(promptTemplates.references, reports.references, playbooks.references)
-    .slice(0, maxReferences);
+  // Prompt 模板全部引用，不计入 maxReferences 上限
+  const otherReferences = rulesDocs
+    .concat(reports.references, playbooks.references)
+    .slice(0, Math.max(1, maxReferences));
+  const references = promptTemplates.references.concat(otherReferences);
   const failedSources = [promptTemplates.failedSource, reports.failedSource, playbooks.failedSource].filter(Boolean);
   const sourceLabels = ['业务规则文档', 'Prompt 管理已发布模板', '历史报告'];
   if (playbooksEnabled) {
