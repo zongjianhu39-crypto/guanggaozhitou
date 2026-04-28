@@ -46,6 +46,135 @@
         el.className = 'ra-status' + (kind ? ` ${kind}` : '');
     }
 
+    function getDefaultPreviewRange() {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - 6);
+        const fmt = (d) => d.toISOString().slice(0, 10);
+        return { start: fmt(start), end: fmt(end) };
+    }
+
+    function ensurePreviewDateDefaults() {
+        const startEl = document.getElementById('preview-start');
+        const endEl = document.getElementById('preview-end');
+        if (!startEl || !endEl) return { start: '', end: '' };
+        const defaults = getDefaultPreviewRange();
+        if (!startEl.value) startEl.value = defaults.start;
+        if (!endEl.value) endEl.value = defaults.end;
+        return { start: startEl.value, end: endEl.value };
+    }
+
+    function renderPreviewPanel(meta, preview, errorMessage) {
+        const panel = document.getElementById('preview-panel');
+        if (!panel) return;
+        panel.classList.add('show');
+
+        if (errorMessage) {
+            panel.innerHTML = `<div class="ra-preview-head"><h3>试跑预览</h3></div>`
+                + `<div class="ra-preview-answer" style="color:#b91c1c">${escapeHtml(errorMessage)}</div>`;
+            return;
+        }
+
+        const envelope = preview || {};
+        const headline = envelope.headline || '无标题';
+        const answer = envelope.answer || '';
+        const tables = Array.isArray(envelope.tables) ? envelope.tables : [];
+        const notes = Array.isArray(envelope.notes) ? envelope.notes : [];
+        const insights = Array.isArray(envelope.insights) ? envelope.insights : [];
+        const execution = envelope.rule_execution || {};
+        const range = (meta && meta.range) || {};
+
+        const metaLines = [
+            `规则 Key：${escapeHtml(meta?.rule_key || '-')}`,
+            `意图：${escapeHtml(meta?.intent || '-')}`,
+            `日期范围：${escapeHtml(range.start || '-')} 至 ${escapeHtml(range.end || '-')}`,
+            `耗时：${meta?.duration_ms ?? '-'} ms`,
+        ];
+        if (execution && typeof execution === 'object') {
+            if (execution.source) metaLines.push(`执行源：${escapeHtml(String(execution.source))}`);
+            if (execution.primaryMetric) metaLines.push(`主指标：${escapeHtml(String(execution.primaryMetric))}`);
+            if (execution.secondaryMetric) metaLines.push(`次指标：${escapeHtml(String(execution.secondaryMetric))}`);
+            if (execution.originalCount !== undefined) {
+                metaLines.push(`数据流水：${execution.originalCount} → ${execution.filteredCount ?? '-'}`);
+            }
+        }
+
+        let tablesHtml = '';
+        tables.forEach((table, idx) => {
+            if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows)) return;
+            const cols = table.columns.map((c) => String(c));
+            const rowsHtml = table.rows.slice(0, 20).map((row) => {
+                return '<tr>' + cols.map((col) => `<td>${escapeHtml(row?.[col] ?? '')}</td>`).join('') + '</tr>';
+            }).join('');
+            const extra = table.rows.length > 20 ? `<div class="ra-small-note">（仅展示前 20 行，共 ${table.rows.length} 行）</div>` : '';
+            tablesHtml += `
+                <div class="ra-preview-section">
+                    <h4>${escapeHtml(table.title || `表格 ${idx + 1}`)}</h4>
+                    <table class="ra-preview-table">
+                        <thead><tr>${cols.map((c) => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>
+                        <tbody>${rowsHtml || `<tr><td colspan="${cols.length}">无数据</td></tr>`}</tbody>
+                    </table>
+                    ${extra}
+                </div>`;
+        });
+
+        const insightsHtml = insights.length
+            ? `<div class="ra-preview-section"><h4>洞察</h4><ul style="margin:0;padding-left:18px;color:#344054;font-size:13px;line-height:1.7;">${insights.map((i) => `<li>${escapeHtml(String(i))}</li>`).join('')}</ul></div>`
+            : '';
+        const notesHtml = notes.length
+            ? `<div class="ra-preview-section"><h4>备注</h4><ul style="margin:0;padding-left:18px;color:#475467;font-size:12px;line-height:1.7;">${notes.map((n) => `<li>${escapeHtml(String(n))}</li>`).join('')}</ul></div>`
+            : '';
+
+        panel.innerHTML = `
+            <div class="ra-preview-head">
+                <h3>${escapeHtml(headline)}</h3>
+                <div class="ra-preview-meta">${metaLines.map((line) => `<div>${line}</div>`).join('')}</div>
+            </div>
+            ${answer ? `<div class="ra-preview-section"><h4>回答</h4><div class="ra-preview-answer">${escapeHtml(answer)}</div></div>` : ''}
+            ${tablesHtml}
+            ${insightsHtml}
+            ${notesHtml}
+        `;
+    }
+
+    async function runPreview() {
+        const previewBtn = document.getElementById('preview-btn');
+        if (!currentRuleKey) {
+            setStatus('请先选择或新建一条规则', 'warn');
+            return;
+        }
+        const rule = rules.find((item) => item.rule_key === currentRuleKey);
+        if (!rule) return;
+        const range = ensurePreviewDateDefaults();
+        if (!range.start || !range.end) {
+            setStatus('请设定试跑日期范围', 'warn');
+            return;
+        }
+
+        previewBtn.disabled = true;
+        setStatus('试跑中…', 'warn');
+        try {
+            const data = await apiRequest('POST', {
+                action: 'preview_rule',
+                rule_key: currentRuleKey,
+                label: String(currentConfig.label || rule.label || currentRuleKey),
+                intent: String(currentConfig.intentKey || '').trim(),
+                config: currentConfig,
+                range,
+            });
+            renderPreviewPanel(data.preview_meta, data.preview, null);
+            setStatus(`试跑完成（${data?.preview_meta?.duration_ms ?? '-'} ms）`, 'good');
+        } catch (error) {
+            const errorState = authHelpers.describeFetchError
+                ? authHelpers.describeFetchError(error, '试跑失败，请稍后重试。')
+                : { message: `试跑失败：${error.message}` };
+            renderPreviewPanel({ rule_key: currentRuleKey }, null, errorState.message);
+            setStatus(errorState.message, 'bad');
+        } finally {
+            previewBtn.disabled = false;
+        }
+    }
+
     function getAdminToken() {
         return authHelpers.getPromptAdminToken ? authHelpers.getPromptAdminToken() : (localStorage.getItem('prompt_admin_token') || '');
     }
@@ -614,6 +743,9 @@
 
         document.getElementById('add-rule-btn').addEventListener('click', createNewRule);
         document.getElementById('delete-btn').addEventListener('click', deleteCurrentRule);
+        const previewBtn = document.getElementById('preview-btn');
+        if (previewBtn) previewBtn.addEventListener('click', runPreview);
+        ensurePreviewDateDefaults();
 
         const labelEl = document.getElementById('rule-label');
         labelEl.addEventListener('input', () => {

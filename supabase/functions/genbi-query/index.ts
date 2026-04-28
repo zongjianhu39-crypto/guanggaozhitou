@@ -10,6 +10,7 @@ import { callMiniMax } from '../_shared/minimax-client.ts';
 import { resolveActivePromptTemplate, type ActivePromptTemplate } from '../_shared/prompt-store.ts';
 import { validatePromptInput } from '../_shared/input-validator.ts';
 import { checkRateLimit, createRateLimitResponse } from '../_shared/rate-limiter.ts';
+import { insertGenbiQueryEvent } from '../_shared/genbi-event-store.ts';
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
 
@@ -59,6 +60,28 @@ function buildDataContextFromRuleResult(ruleResult: Record<string, unknown>, que
 
   parts.push(`【用户问题】${question}`);
 
+  // 注入规则元数据，让 AI 知道数据是被哪条规则按什么口径筛出的。
+  const ruleExec = ruleResult.rule_execution && typeof ruleResult.rule_execution === 'object'
+    ? ruleResult.rule_execution as Record<string, unknown>
+    : null;
+  const topCount = ruleExec && Number.isFinite(Number(ruleExec.topCount))
+    ? Math.max(5, Number(ruleExec.topCount))
+    : 20;
+
+  if (ruleExec) {
+    const metaLines: string[] = [];
+    if (ruleExec.ruleKey) metaLines.push(`规则 key=${String(ruleExec.ruleKey)}`);
+    if (ruleExec.source) metaLines.push(`执行路径=${String(ruleExec.source)}`);
+    if (ruleExec.primaryMetric) metaLines.push(`主指标=${String(ruleExec.primaryMetric)}`);
+    if (ruleExec.secondaryMetric) metaLines.push(`次指标=${String(ruleExec.secondaryMetric)}`);
+    if (Number.isFinite(Number(ruleExec.originalCount)) && Number.isFinite(Number(ruleExec.filteredCount))) {
+      metaLines.push(`过滤前后=${ruleExec.originalCount}→${ruleExec.filteredCount}`);
+    }
+    if (metaLines.length) {
+      parts.push(`\n【数据口径】${metaLines.join('；')}`);
+    }
+  }
+
   const ruleAnswer = String(ruleResult.answer || '').trim();
   if (ruleAnswer) {
     parts.push(`\n【系统数据摘要】${ruleAnswer}`);
@@ -75,9 +98,13 @@ function buildDataContextFromRuleResult(ruleResult: Record<string, unknown>, que
         parts.push(`\n【${title}】`);
         parts.push(`| ${columns.join(' | ')} |`);
         parts.push(`| ${columns.map(() => '---').join(' | ')} |`);
-        for (const row of rows.slice(0, 20)) {
+        const visibleRows = rows.slice(0, topCount);
+        for (const row of visibleRows) {
           const cells = columns.map((col) => String(row[col] ?? '-'));
           parts.push(`| ${cells.join(' | ')} |`);
+        }
+        if (rows.length > visibleRows.length) {
+          parts.push(`（仅展示 top ${visibleRows.length}，完整样本共 ${rows.length} 行）`);
         }
       }
     }
@@ -151,7 +178,18 @@ async function buildSystemPromptFromTemplates(): Promise<string> {
 
 // ============ 主处理逻辑 ============
 
+// 按 intent 给 maxTokens 做自适应：
+// - 周报/月报/亏损归因类需要更长篇幅；
+// - 简单问数保持 2048 降低拖延。
+function resolveAnswerMaxTokens(intent: string): number {
+  if (intent === 'weekly_report' || intent === 'monthly_report' || intent === 'loss_reason') {
+    return 4096;
+  }
+  return 2048;
+}
+
 async function handleIntent(question: string) {
+  const startedAt = Date.now();
   const semantic = await getGenbiSemanticConfig();
   const { intent, source: intentSource } = await detectIntentByAI(question);
   const range = detectDateRange(question);
@@ -167,12 +205,14 @@ async function handleIntent(question: string) {
 
   // 2. unsupported 意图直接返回，不调 AI
   if (intent === 'unknown' || ruleResult.intent === 'unsupported') {
-    const ragContext = await buildGenbiRagContext(intent, question, range);
-    return {
+    const ragContext = await buildGenbiRagContext(intent as GenbiIntent, question, range);
+    const unsupportedResult = {
       ...ruleResult,
       references: ragContext.references,
       notes: [...(Array.isArray(ruleResult.notes) ? (ruleResult.notes as string[]) : []), ...ragContext.notes],
     };
+    void insertGenbiQueryEvent(buildEventFromResult(intent, question, range, semantic.version, ruleResult, Date.now() - startedAt, false));
+    return unsupportedResult;
   }
 
   // 3. 拼装数据上下文
@@ -182,34 +222,76 @@ async function handleIntent(question: string) {
   const systemPrompt = await buildSystemPromptFromTemplates();
   console.log(`[genbi-query] system prompt length=${systemPrompt.length}, data context length=${dataContext.length}`);
 
-  // 5. 调用 MiniMax AI
+  // 5. 调用 MiniMax AI（按 intent 自适应 maxTokens）
+  const maxTokens = resolveAnswerMaxTokens(String(intent));
   let aiAnswer = '';
   let aiThinking = '';
+  let aiEnhanced = true;
   try {
-    const rawAiResponse = await callMiniMax(dataContext, systemPrompt, { maxTokens: 2048 });
+    const rawAiResponse = await callMiniMax(dataContext, systemPrompt, { maxTokens });
     const sanitized = sanitizeAiOutput(rawAiResponse);
     aiAnswer = sanitized.answer;
     aiThinking = sanitized.thinking;
-    console.log(`[genbi-query] AI response received, answer=${aiAnswer.length}, thinking=${aiThinking.length}`);
+    console.log(`[genbi-query] AI response received, answer=${aiAnswer.length}, thinking=${aiThinking.length}, maxTokens=${maxTokens}`);
   } catch (aiError) {
     console.warn('[genbi-query] AI 调用失败，回退到规则引擎回答:', aiError instanceof Error ? aiError.message : String(aiError));
     aiAnswer = String(ruleResult.answer || '');
+    aiEnhanced = false;
   }
 
   // 6. RAG 参考来源
-  const ragContext = await buildGenbiRagContext(intent, question, range);
+  const ragContext = await buildGenbiRagContext(intent as GenbiIntent, question, range);
 
   // 7. 合并：保留规则引擎的表格 + AI 的自然语言分析
-  return {
+  const finalResult = {
     ...ruleResult,
     answer: aiAnswer || String(ruleResult.answer || ''),
     thinking: aiThinking || null,
-    ai_enhanced: true,
+    ai_enhanced: aiEnhanced,
     references: ragContext.references,
     notes: [
       ...(Array.isArray(ruleResult.notes) ? (ruleResult.notes as string[]) : []),
       ...ragContext.notes,
     ],
+  };
+
+  // 8. 埋点（非阻塞）
+  void insertGenbiQueryEvent(buildEventFromResult(intent, question, range, semantic.version, ruleResult, Date.now() - startedAt, aiEnhanced));
+
+  return finalResult;
+}
+
+function buildEventFromResult(
+  intent: string,
+  question: string,
+  range: { start?: string; end?: string } | undefined,
+  semanticVersion: string | undefined | null,
+  ruleResult: Record<string, unknown>,
+  latencyMs: number,
+  aiEnhanced: boolean,
+) {
+  const exec = (ruleResult.rule_execution && typeof ruleResult.rule_execution === 'object')
+    ? ruleResult.rule_execution as Record<string, unknown>
+    : {};
+  const toNumber = (value: unknown) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  };
+  return {
+    intent: String(intent || '') || null,
+    ruleKey: exec.ruleKey ? String(exec.ruleKey) : null,
+    source: exec.source ? String(exec.source) : null,
+    primaryMetric: exec.primaryMetric ? String(exec.primaryMetric) : null,
+    secondaryMetric: exec.secondaryMetric ? String(exec.secondaryMetric) : null,
+    originalCount: toNumber(exec.originalCount),
+    filteredCount: toNumber(exec.filteredCount),
+    fallbackReason: exec.reason ? String(exec.reason) : null,
+    latencyMs,
+    aiEnhanced,
+    questionPrefix: question ? question.slice(0, 80) : null,
+    rangeStart: range?.start ?? null,
+    rangeEnd: range?.end ?? null,
+    semanticVersion: semanticVersion ? String(semanticVersion) : null,
   };
 }
 

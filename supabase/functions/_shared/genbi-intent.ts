@@ -7,6 +7,7 @@
  */
 
 import { callMiniMax } from './minimax-client.ts';
+import { listGenbiRuleConfigRecords } from './genbi-rule-store.ts';
 
 export type GenbiIntent =
   | 'crowd_budget'
@@ -94,10 +95,40 @@ export const INTENT_DEFINITIONS: Array<{ intent: GenbiIntent; label: string; des
 
 const VALID_INTENTS = new Set<string>(INTENT_DEFINITIONS.map((d) => d.intent));
 
+// ============ 数据库动态意图合并 ============
+
+type IntentDefinition = { intent: GenbiIntent | string; label: string; desc: string; examples: string[] };
+
+async function buildIntentDefinitionsWithDynamic(): Promise<IntentDefinition[]> {
+  const base: IntentDefinition[] = INTENT_DEFINITIONS.map((d) => ({ ...d, examples: [...d.examples] }));
+  try {
+    const records = await listGenbiRuleConfigRecords();
+    const knownKeys = new Set<string>(base.map((d) => String(d.intent)));
+    for (const record of records) {
+      const config = (record.config || {}) as Record<string, unknown>;
+      const intentKey = String(config.intentKey || '').trim();
+      if (!intentKey) continue;
+      // 与内置重复的 intentKey 沿用内置 label；完全新的自定义意图才追加到菜单。
+      if (knownKeys.has(intentKey)) continue;
+      const label = String(record.label || config.label || intentKey);
+      const desc = String((config as Record<string, unknown>).description || label);
+      const examples = Array.isArray((config as Record<string, unknown>).examples)
+        ? ((config as Record<string, unknown>).examples as unknown[]).map((v) => String(v)).filter(Boolean)
+        : [label];
+      base.push({ intent: intentKey, label, desc, examples });
+      knownKeys.add(intentKey);
+    }
+  } catch (error) {
+    console.warn('[genbi-intent] 加载数据库动态意图失败，仅使用内置菜单：', error instanceof Error ? error.message : String(error));
+  }
+  return base;
+}
+
 // ============ AI 意图分类 Prompt ============
 
-function buildIntentDetectionPrompt(question: string): string {
-  const intentList = INTENT_DEFINITIONS
+function buildIntentDetectionPrompt(question: string, intentDefs?: IntentDefinition[]): string {
+  const defs = intentDefs ?? INTENT_DEFINITIONS;
+  const intentList = defs
     .filter((d) => d.intent !== 'unknown')
     .map((d) => `- ${d.intent}：${d.label}。${d.desc}`)
     .join('\n');
@@ -189,7 +220,11 @@ function correctMisclassification(intent: GenbiIntent | string, question: string
 
 export async function detectIntentByAI(question: string): Promise<{ intent: GenbiIntent | string; source: 'ai' | 'regex' }> {
   try {
-    const prompt = buildIntentDetectionPrompt(question);
+    // 合并数据库动态意图，让管理后台添加的新 intentKey 能被 AI 看到。
+    const intentDefs = await buildIntentDefinitionsWithDynamic();
+    const dynamicKeys = new Set<string>(intentDefs.map((d) => String(d.intent)));
+
+    const prompt = buildIntentDetectionPrompt(question, intentDefs);
     // maxTokens 提到 128：MiniMax-M2.7 需要为 <think> 留足预算，
     // 否则极易截断导致最后一行不是真正的意图结论。
     const result = await callMiniMax(prompt, undefined, { maxTokens: 128 });
@@ -201,14 +236,14 @@ export async function detectIntentByAI(question: string): Promise<{ intent: Genb
     // 正则兜底结果，用于不可信 AI 输出时作为可靠 fallback
     const regexIntent = detectIntentByRegex(question);
 
-    if (VALID_INTENTS.has(cleaned)) {
+    if (VALID_INTENTS.has(cleaned) || dynamicKeys.has(cleaned)) {
       const corrected = correctMisclassification(cleaned as GenbiIntent, question);
       console.log(`[genbi-intent] AI: "${question.slice(0, 40)}" → ${corrected}${corrected !== cleaned ? ` (纠正自 ${cleaned})` : ''}`);
       return { intent: corrected, source: 'ai' };
     }
 
-    const extracted = cleaned.replace(/[^a-z_]/g, '');
-    if (VALID_INTENTS.has(extracted)) {
+    const extracted = cleaned.replace(/[^a-z0-9_]/g, '');
+    if (VALID_INTENTS.has(extracted) || dynamicKeys.has(extracted)) {
       const corrected = correctMisclassification(extracted as GenbiIntent, question);
       console.log(`[genbi-intent] AI(提取): "${question.slice(0, 40)}" → ${corrected}${corrected !== extracted ? ` (纠正自 ${extracted})` : ''}`);
       return { intent: corrected, source: 'ai' };
@@ -218,7 +253,7 @@ export async function detectIntentByAI(question: string): Promise<{ intent: Genb
     // 否则回退到正则兜底，避免凭空产生不支持的自定义意图。
     if (extracted && /^[a-z][a-z0-9_]{1,63}$/.test(extracted)) {
       const corrected = correctMisclassification(extracted, question);
-      if (typeof corrected === 'string' && SUPPORTED_INTENT_WHITELIST.has(corrected as GenbiIntent)) {
+      if (typeof corrected === 'string' && (SUPPORTED_INTENT_WHITELIST.has(corrected as GenbiIntent) || dynamicKeys.has(corrected))) {
         console.log(`[genbi-intent] AI 近似意图纠偏: "${question.slice(0, 40)}" → ${corrected} (原始 ${extracted})`);
         return { intent: corrected, source: 'ai' };
       }

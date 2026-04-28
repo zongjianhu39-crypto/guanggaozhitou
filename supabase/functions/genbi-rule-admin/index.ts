@@ -2,6 +2,20 @@ import { requirePromptAdminToken } from '../_shared/prompt-admin-auth.ts';
 import { clearGenbiSemanticConfigCache, getGenbiSemanticConfig } from '../_shared/genbi-semantic.ts';
 import { listGenbiRuleConfigRecords, upsertGenbiRuleConfig, deactivateGenbiRuleConfig } from '../_shared/genbi-rule-store.ts';
 import { createErrorResponseWithStatus } from '../_shared/error-handler.ts';
+import { previewDynamicRule } from '../genbi-rules/dynamic.ts';
+import { getLastWeekRange } from '../_shared/genbi-time.ts';
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizePreviewRange(raw: unknown): { start: string; end: string; label: string } {
+  const safe = asRecord(raw);
+  const start = String(safe.start || '').trim();
+  const end = String(safe.end || '').trim();
+  if (ISO_DATE_RE.test(start) && ISO_DATE_RE.test(end) && start <= end) {
+    return { start, end, label: `${start} 至 ${end}` };
+  }
+  return getLastWeekRange();
+}
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
 
@@ -165,6 +179,40 @@ Deno.serve(async (req: Request) => {
         action,
         saved_rule: saved,
         ...(await buildRuleListResponse()),
+      }), {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    }
+
+    if (action === 'preview_rule') {
+      const ruleKey = String(body.rule_key || '').trim() || 'preview_rule';
+      const config = asRecord(body.config);
+      if (!config || Object.keys(config).length === 0) {
+        return new Response(JSON.stringify({ success: false, error: '预览时必须提供当前规则配置' }), {
+          status: 400,
+          headers: CORS_HEADERS,
+        });
+      }
+      const intentFromBody = String(body.intent || '').trim();
+      const intentFromConfig = String((config as any).intentKey || '').trim();
+      const intent = intentFromBody || intentFromConfig || ruleKey;
+      const range = normalizePreviewRange(body.range);
+
+      const previewStart = Date.now();
+      const previewResult = await previewDynamicRule(intent, ruleKey, config, range);
+      const durationMs = Date.now() - previewStart;
+
+      return new Response(JSON.stringify({
+        success: true,
+        action,
+        preview: previewResult,
+        preview_meta: {
+          intent,
+          rule_key: ruleKey,
+          range,
+          duration_ms: durationMs,
+        },
       }), {
         status: 200,
         headers: CORS_HEADERS,

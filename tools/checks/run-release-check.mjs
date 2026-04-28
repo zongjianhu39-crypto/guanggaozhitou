@@ -124,6 +124,12 @@ async function main() {
   );
 
   await runCommand(
+    'GenBI dynamic rule',
+    'npx',
+    ['--yes', 'tsx', path.join(ROOT, 'supabase/tests/run-genbi-rule-dynamic.ts')],
+  );
+
+  await runCommand(
     'Plan dashboard regression',
     'npx',
     ['--yes', 'tsx', path.join(ROOT, 'supabase/tests/run-plan-dashboard-regression.ts')],

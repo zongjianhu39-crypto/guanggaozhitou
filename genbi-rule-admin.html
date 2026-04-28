@@ -131,6 +131,27 @@
         }
         .ra-delete-btn:hover { background:#fef2f2; }
         .ra-delete-btn:disabled { opacity:.65; cursor:wait; }
+        .ra-preview-btn {
+            border:1px solid var(--accent); border-radius:12px; background:#fff; color:var(--accent);
+            padding:12px 20px; font-size:14px; font-weight:700; cursor:pointer;
+        }
+        .ra-preview-btn:hover { background:#eef2ff; }
+        .ra-preview-btn:disabled { opacity:.65; cursor:wait; }
+        .ra-preview-panel {
+            display:none; margin-top:16px; padding:16px 18px; border:1px solid #e5e7ef;
+            border-radius:14px; background:#fbfcff;
+        }
+        .ra-preview-panel.show { display:block; }
+        .ra-preview-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+        .ra-preview-head h3 { margin:0; font-size:15px; color:#344054; }
+        .ra-preview-meta { color:var(--text-muted); font-size:12px; line-height:1.7; }
+        .ra-preview-section { margin-top:12px; }
+        .ra-preview-section h4 { margin:0 0 6px; font-size:13px; color:#475467; }
+        .ra-preview-answer { color:#1f2937; font-size:13px; line-height:1.7; white-space:pre-wrap; background:#fff; border:1px solid #eef0f5; border-radius:10px; padding:10px 12px; }
+        .ra-preview-table { width:100%; border-collapse:collapse; font-size:12px; background:#fff; border:1px solid #eef0f5; border-radius:10px; overflow:hidden; }
+        .ra-preview-table th, .ra-preview-table td { border-bottom:1px solid #eef0f5; padding:6px 10px; text-align:left; }
+        .ra-preview-table th { background:#f4f6fb; color:#344054; font-weight:700; }
+        .ra-preview-date { border:1px solid #d8deea; border-radius:10px; padding:8px 10px; font:inherit; }
         .err-banner {
             display:none; margin-bottom:18px; padding:13px 16px; border:1px solid rgba(185,28,28,.18);
             border-radius:14px; background:#fff; color:var(--bad); font-size:14px;
@@ -370,9 +391,17 @@
 
                     <div class="ra-actions">
                         <span id="save-status" class="ra-status"></span>
+                        <label class="ra-small-note" style="margin:0;display:flex;align-items:center;gap:8px;">
+                            试跑日期
+                            <input id="preview-start" type="date" class="ra-preview-date">
+                            <span>至</span>
+                            <input id="preview-end" type="date" class="ra-preview-date">
+                        </label>
+                        <button id="preview-btn" class="ra-preview-btn" type="button">试跑预览</button>
                         <button id="delete-btn" class="ra-delete-btn" type="button" style="display:none">删除规则</button>
                         <button id="save-btn" class="ra-save-btn" type="submit">保存规则</button>
                     </div>
+                    <div id="preview-panel" class="ra-preview-panel" aria-live="polite"></div>
                 </form>
             </article>
         </section>
@@ -380,6 +409,6 @@
 
     <script src="assets/js/config.js"></script>
     <script src="script.js?v=20260403"></script>
-    <script src="assets/js/genbi-rule-admin.js?v=20260428b"></script>
+    <script src="assets/js/genbi-rule-admin.js?v=20260428c"></script>
 </body>
 </html>

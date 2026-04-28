@@ -82,7 +82,7 @@ function getMetricFormatter(metricKey: string): MetricFormatter | null {
   return METRIC_FORMATTERS[metricKey] || null;
 }
 
-function buildDynamicAnswer(
+export function buildDynamicAnswer(
   intent: string,
   ruleKey: string,
   rule: Record<string, unknown>,
@@ -378,6 +378,39 @@ export async function answerDynamicRule(intent: string, context: DynamicRuleCont
     );
   }
 
+  return await runDynamicRuleWithConfig(intent, resolved.ruleKey || intent, rule, context.range);
+}
+
+/**
+ * 使用显式传入的 rule 配置运行动态规则（dry-run 预览专用），不依赖
+ * semantic cache，避免保存前就能看到配置效果。
+ */
+export async function previewDynamicRule(
+  intent: string,
+  ruleKey: string,
+  rule: Record<string, unknown>,
+  range: GenbiRange,
+) {
+  if (!rule || Object.keys(rule).length === 0) {
+    return buildAnswerEnvelope(
+      intent,
+      '规则配置为空',
+      `传入的规则配置为空，无法执行预览。`,
+      range,
+      [],
+      [],
+      ['preview_rule 收到空配置'],
+    );
+  }
+  return await runDynamicRuleWithConfig(intent, ruleKey || intent, rule, range);
+}
+
+async function runDynamicRuleWithConfig(
+  intent: string,
+  ruleKey: string,
+  rule: Record<string, unknown>,
+  range: GenbiRange,
+) {
   // 解析数据范围
   const dataScope = Array.isArray(rule.dataScope) ? rule.dataScope : [];
   const hasCrowd = dataScope.includes('crowd');
@@ -386,20 +419,20 @@ export async function answerDynamicRule(intent: string, context: DynamicRuleCont
 
   try {
     const payload = await getDashboardPayload(
-      context.range.start,
-      context.range.end,
+      range.start,
+      range.end,
       { ads: hasAds, crowd: hasCrowd, single: hasSingle },
     ) as any;
 
     // 根据数据范围选择数据源
     if (hasCrowd && payload?.crowd?.summary) {
       const crowdData = mapPayloadCrowdSummary(payload.crowd.summary);
-      return buildDynamicAnswer(intent, resolved.ruleKey || intent, rule, context.range, 'crowd', crowdData as any);
+      return buildDynamicAnswer(intent, ruleKey, rule, range, 'crowd', crowdData as any);
     }
     
     if (hasSingle && payload?.single?.items) {
       const singleData = mapPayloadSingleItems(payload.single.items);
-      return buildDynamicAnswer(intent, resolved.ruleKey || intent, rule, context.range, 'single', singleData as any);
+      return buildDynamicAnswer(intent, ruleKey, rule, range, 'single', singleData as any);
     }
     
     if (hasAds && payload?.ads?.kpi) {
@@ -409,25 +442,25 @@ export async function answerDynamicRule(intent: string, context: DynamicRuleCont
         amount: Number(payload.ads.kpi.totalAmount || 0),
         orders: Number(payload.ads.kpi.totalOrders || 0),
       }];
-      return buildDynamicAnswer(intent, resolved.ruleKey || intent, rule, context.range, 'ads', adsData as any);
+      return buildDynamicAnswer(intent, ruleKey, rule, range, 'ads', adsData as any);
     }
 
     return buildAnswerEnvelope(
       intent,
       '暂无数据',
-      `在 ${context.range.start} 至 ${context.range.end} 期间没有找到相关数据。`,
-      context.range,
+      `在 ${range.start} 至 ${range.end} 期间没有找到相关数据。`,
+      range,
       [],
       [],
       ['数据源为空'],
     );
   } catch (error) {
-    console.error(`[dynamic-rule] error executing rule ${resolved.ruleKey}:`, error);
+    console.error(`[dynamic-rule] error executing rule ${ruleKey}:`, error);
     return buildAnswerEnvelope(
       intent,
       '数据查询失败',
-      `执行规则 ${resolved.ruleKey || intent} 时发生错误：${error instanceof Error ? error.message : '未知错误'}`,
-      context.range,
+      `执行规则 ${ruleKey || intent} 时发生错误：${error instanceof Error ? error.message : '未知错误'}`,
+      range,
       [],
       [],
       ['动态规则执行异常'],
