@@ -108,9 +108,7 @@
     }
 
     function syncJsonTextarea() {
-        const jsonEl = document.getElementById('rule-json');
-        if (!jsonEl) return;
-        jsonEl.value = JSON.stringify(currentConfig, null, 2);
+        // JSON 编辑区已移除，所有配置通过可视化表单编辑
     }
 
     function renderRuleList() {
@@ -355,6 +353,71 @@
                 syncJsonTextarea();
             });
         }
+
+        // 对比人群分层
+        const comparisonLayersInput = document.getElementById('strategy-comparison-layers');
+        if (comparisonLayersInput) {
+            const layers = Array.isArray(strategy.comparisonLayers) ? strategy.comparisonLayers.join(',') : '';
+            comparisonLayersInput.value = layers;
+            comparisonLayersInput.addEventListener('input', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                const value = comparisonLayersInput.value.trim();
+                if (value) {
+                    currentConfig.strategy.comparisonLayers = value.split(',').map(s => s.trim()).filter(s => s);
+                } else {
+                    delete currentConfig.strategy.comparisonLayers;
+                }
+                syncJsonTextarea();
+            });
+        }
+
+        // 对比模式
+        const comparisonModeSelect = document.getElementById('strategy-comparison-mode');
+        if (comparisonModeSelect) {
+            comparisonModeSelect.value = strategy.comparisonMode || '';
+            comparisonModeSelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                currentConfig.strategy.comparisonMode = comparisonModeSelect.value || undefined;
+                if (!currentConfig.strategy.comparisonMode) delete currentConfig.strategy.comparisonMode;
+                syncJsonTextarea();
+            });
+        }
+
+        // 匹配模式
+        const matchModeSelect = document.getElementById('strategy-match-mode');
+        if (matchModeSelect) {
+            matchModeSelect.value = strategy.matchMode || '';
+            matchModeSelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                currentConfig.strategy.matchMode = matchModeSelect.value || undefined;
+                if (!currentConfig.strategy.matchMode) delete currentConfig.strategy.matchMode;
+                syncJsonTextarea();
+            });
+        }
+
+        // 人群排序
+        const crowdSortSelect = document.getElementById('strategy-crowd-sort');
+        if (crowdSortSelect) {
+            crowdSortSelect.value = strategy.crowdSort || '';
+            crowdSortSelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                currentConfig.strategy.crowdSort = crowdSortSelect.value || undefined;
+                if (!currentConfig.strategy.crowdSort) delete currentConfig.strategy.crowdSort;
+                syncJsonTextarea();
+            });
+        }
+
+        // 商品排序
+        const productSortSelect = document.getElementById('strategy-product-sort');
+        if (productSortSelect) {
+            productSortSelect.value = strategy.productSort || '';
+            productSortSelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                currentConfig.strategy.productSort = productSortSelect.value || undefined;
+                if (!currentConfig.strategy.productSort) delete currentConfig.strategy.productSort;
+                syncJsonTextarea();
+            });
+        }
     }
 
     // 新增：渲染过滤条件（可视化）
@@ -564,29 +627,9 @@
             syncJsonTextarea();
         });
 
-        const jsonEl = document.getElementById('rule-json');
-        jsonEl.addEventListener('blur', () => {
-            try {
-                currentConfig = JSON.parse(jsonEl.value || '{}');
-                renderScopes();
-                renderMetrics();
-                renderOutputFields();
-                document.getElementById('rule-label').value = String(currentConfig.label || '');
-                setStatus('JSON 已同步到表单', 'good');
-            } catch {
-                setStatus('JSON 格式不正确，保存前需要修正', 'bad');
-            }
-        });
-
         document.getElementById('rule-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const saveButton = document.getElementById('save-btn');
-            try {
-                currentConfig = JSON.parse(jsonEl.value || '{}');
-            } catch {
-                setStatus('JSON 格式不正确，无法保存', 'bad');
-                return;
-            }
 
             const rule = rules.find((item) => item.rule_key === currentRuleKey);
             if (!rule) return;

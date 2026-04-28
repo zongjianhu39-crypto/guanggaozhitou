@@ -249,6 +249,7 @@
                                     <option value="product_direct_roi">商品直接ROI</option>
                                     <option value="product_direct_gmv">商品直接GMV</option>
                                     <option value="ad_cost">花费</option>
+                                    <option value="wow_or_mom">周/月环比</option>
                                 </select>
                             </div>
                             <div class="ra-strategy-item">
@@ -276,8 +277,49 @@
                                 </select>
                                 <div class="ra-small-note">选择复杂排序逻辑时，上述简单排序配置将被忽略</div>
                             </div>
+                            <div class="ra-strategy-item">
+                                <label for="strategy-comparison-layers">对比人群分层</label>
+                                <input id="strategy-comparison-layers" class="ra-input" type="text" placeholder="老客,新客,兴趣新客">
+                                <div class="ra-small-note">多个值用逗号分隔，用于老客新客结构分析等场景</div>
+                            </div>
+                            <div class="ra-strategy-item">
+                                <label for="strategy-comparison-mode">对比模式</label>
+                                <select id="strategy-comparison-mode" class="ra-select">
+                                    <option value="">不设置</option>
+                                    <option value="current_vs_previous">当前周期 vs 上一周期</option>
+                                </select>
+                                <div class="ra-small-note">用于花费波动归因等对比分析场景</div>
+                            </div>
+                            <div class="ra-strategy-item">
+                                <label for="strategy-match-mode">匹配模式</label>
+                                <select id="strategy-match-mode" class="ra-select">
+                                    <option value="">不设置</option>
+                                    <option value="product_name_contains">商品名模糊匹配</option>
+                                </select>
+                                <div class="ra-small-note">用于单商品销售查询等场景</div>
+                            </div>
+                            <div class="ra-strategy-item">
+                                <label for="strategy-crowd-sort">人群排序</label>
+                                <select id="strategy-crowd-sort" class="ra-select">
+                                    <option value="">不设置</option>
+                                    <option value="order_cost_asc">订单成本升序</option>
+                                    <option value="order_cost_desc">订单成本降序</option>
+                                    <option value="cost_share_asc">花费占比升序</option>
+                                    <option value="cost_share_desc">花费占比降序</option>
+                                </select>
+                            </div>
+                            <div class="ra-strategy-item">
+                                <label for="strategy-product-sort">商品排序</label>
+                                <select id="strategy-product-sort" class="ra-select">
+                                    <option value="">不设置</option>
+                                    <option value="order_cost_asc">订单成本升序</option>
+                                    <option value="order_cost_desc">订单成本降序</option>
+                                    <option value="roi_asc">ROI升序</option>
+                                    <option value="roi_desc">ROI降序</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="ra-small-note">策略配置决定数据如何排序和筛选。</div>
+                        <div class="ra-small-note">策略配置决定数据如何排序和筛选，所有字段均已可视化，无需手动编辑 JSON。</div>
                     </div>
 
                     <div class="ra-field">
@@ -326,12 +368,6 @@
                             </div>
                         </div>
                         <div class="ra-small-note">过滤条件决定哪些数据被排除。</div>
-                    </div>
-
-                    <div class="ra-field">
-                        <label for="rule-json">高级 JSON（可选）</label>
-                        <textarea id="rule-json" class="ra-textarea" spellcheck="false" rows="12"></textarea>
-                        <div class="ra-small-note">表单会自动同步到 JSON。需要编辑 FocusPool、多字段排序等高级功能时可以直接改这里。</div>
                     </div>
 
                     <div class="ra-actions">
