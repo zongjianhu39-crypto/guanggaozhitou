@@ -287,6 +287,16 @@
     "wow": {
       "label": "周环比"
     },
+    "product_direct_roi": {
+      "label": "商品直接ROI",
+      "formula": "该商品直接成交金额 / 花费"
+    },
+    "product_orders": {
+      "label": "商品直接成交笔数"
+    },
+    "orders": {
+      "label": "成交笔数"
+    },
     "mom": {
       "label": "月环比"
     }
