@@ -1,12 +1,7 @@
 import type { GenbiIntent } from '../_shared/genbi-intent.ts';
 import type { GenbiRange } from '../_shared/genbi-time.ts';
-import { getLastMonthRange, getLastWeekRange, getYesterdayRange } from '../_shared/genbi-time.ts';
 import { buildUnsupportedResponse } from '../_shared/genbi-format.ts';
-import { answerCrowdBudget, answerCrowdMix, answerDailyDropReason } from './crowd.ts';
-import { answerWeakProducts, answerProductPotential, answerProductSales } from './product.ts';
-import { answerPeriodicReport, answerLossReason } from './report.ts';
 import { answerDynamicRule } from './dynamic.ts';
-import { applyRuleOutputConfig } from '../_shared/genbi-rule-resolver.ts';
 import { getGenbiSemanticConfig } from '../_shared/genbi-semantic.ts';
 
 type GenbiHandlerContext = {
@@ -24,78 +19,44 @@ type GenbiHandlerDefinition = {
   unsupportedReason?: string;
 };
 
-const INTENT_HANDLERS: Partial<Record<GenbiIntent, GenbiHandlerDefinition>> = {
-  crowd_budget: {
-    label: '人群预算建议',
-    examples: ['哪些具体人群效果好需要增加预算，哪些人群差需要降低预算'],
-    handler: ({ range }) => answerCrowdBudget(range),
-  },
-  weak_products: {
-    label: '高花费低回报商品',
-    examples: ['单品广告里哪些商品花费高但回报差'],
-    handler: ({ range }) => answerWeakProducts(range),
-  },
-  crowd_mix: {
-    label: '老客新客结构',
-    examples: ['老客和新客的占比情况如何，是否合理'],
-    handler: ({ range }) => answerCrowdMix(range),
-  },
-  product_potential: {
-    label: '冲销售额商品识别',
-    examples: ['哪些商品适合冲销售额'],
-    handler: ({ range }) => answerProductPotential(range),
-  },
-  product_sales: {
-    label: '单商品销售查询',
-    examples: ['某个商品近期的单品广告销售数据如何'],
-    handler: ({ question, range }) => answerProductSales(question, range),
-  },
-  weekly_report: {
-    label: '周报生成',
-    examples: ['帮我整理一下上周的周报需要有近期周环比'],
-    handler: () => answerPeriodicReport('weekly_report', getLastWeekRange()),
-  },
-  monthly_report: {
-    label: '月报生成',
-    examples: ['帮我整理一下上月的月报需要有近期月环比'],
-    handler: () => answerPeriodicReport('monthly_report', getLastMonthRange()),
-  },
-  daily_drop_reason: {
-    label: '昨日花费波动归因',
-    examples: ['为什么昨日的花费下降了，在人群上有什么变化'],
-    handler: () => answerDailyDropReason(getYesterdayRange()),
-  },
-  loss_reason: {
-    label: '亏损原因分析',
-    examples: ['为什么上周的花费盈亏ROI低于 1 是亏钱的，亏在了哪里'],
-    handler: () => answerLossReason(getLastWeekRange()),
-  },
-  budget_plan: {
-    label: '预算分配建议',
-    examples: ['如果本月还有 100 万预算，按照目前的情况接下来的费用该怎么花'],
-    // budget_plan 与 crowd_budget 语义高度重叠（都涉及人群预算增减），
-    // AI 容易误判。委托给人群预算建议 handler 统一处理。
-    handler: ({ range }) => answerCrowdBudget(range),
-  },
+// 注意：INTENT_HANDLERS 已废弃，仅保留用于 getSupportedIntentDefinitions() 生成系统提示词
+// 实际的意图处理已完全迁移到动态规则引擎（answerDynamicRule）
+const INTENT_LABELS: Partial<Record<GenbiIntent, string>> = {
+  crowd_budget: '人群预算建议',
+  weak_products: '高花费低回报商品',
+  crowd_mix: '老客新客结构',
+  product_potential: '冲销售额商品识别',
+  product_sales: '单商品销售查询',
+  weekly_report: '周报生成',
+  monthly_report: '月报生成',
+  daily_drop_reason: '昨日花费波动归因',
+  loss_reason: '亏损原因分析',
+  budget_plan: '预算分配建议',
 };
 
-function buildSupportedIntentHint() {
-  const supported = Object.values(INTENT_HANDLERS)
-    .filter((definition) => definition?.handler)
-    .map((definition) => definition?.label)
-    .filter(Boolean);
-  return supported.join(' / ');
-}
+const INTENT_EXAMPLES: Partial<Record<GenbiIntent, string[]>> = {
+  crowd_budget: ['哪些具体人群效果好需要增加预算，哪些人群差需要降低预算'],
+  weak_products: ['单品广告里哪些商品花费高但回报差'],
+  crowd_mix: ['老客和新客的占比情况如何，是否合理'],
+  product_potential: ['哪些商品适合冲销售额'],
+  product_sales: ['某个商品近期的单品广告销售数据如何'],
+  weekly_report: ['帮我整理一下上周的周报需要有近期周环比'],
+  monthly_report: ['帮我整理一下上月的月报需要有近期月环比'],
+  daily_drop_reason: ['为什么昨日的花费下降了，在人群上有什么变化'],
+  loss_reason: ['为什么上周的花费盈亏ROI低于 1 是亏钱的，亏在了哪里'],
+  budget_plan: ['如果本月还有 100 万预算，按照目前的情况接下来的费用该怎么花'],
+};
 
 export function getSupportedIntentDefinitions() {
-  return Object.entries(INTENT_HANDLERS)
-    .filter(([, definition]) => Boolean(definition))
-    .map(([intent, definition]) => ({
-      intent,
-      label: definition!.label,
-      examples: [...definition!.examples],
-      supported: Boolean(definition!.handler),
-    }));
+  // 从语义配置中读取当前启用的意图列表（只返回 is_active=true 的规则对应的意图）
+  // 注意：这里返回的是所有预定义意图，用于系统提示词生成
+  // 实际的路由由 dispatchGenbiIntent 根据数据库动态规则决定
+  return (Object.keys(INTENT_LABELS) as GenbiIntent[]).map((intent) => ({
+    intent,
+    label: INTENT_LABELS[intent] || intent,
+    examples: INTENT_EXAMPLES[intent] || [],
+    supported: true,  // 所有意图都标记为 supported，实际是否可用由动态规则决定
+  }));
 }
 
 function attachRuleExecutionMeta(result: unknown, meta: Record<string, unknown>): Record<string, unknown> {
@@ -108,11 +69,9 @@ function attachRuleExecutionMeta(result: unknown, meta: Record<string, unknown>)
 }
 
 export async function dispatchGenbiIntent(intent: GenbiIntent | string, context: GenbiHandlerContext) {
-  // 策略：优先使用数据库中的动态规则，fallback 到专用 handler
+  // 策略：仅使用数据库中的动态规则，不再降级到硬编码 handler
 
-  const hardcodedDefinition = INTENT_HANDLERS[intent as GenbiIntent];
-
-  // 判断动态规则返回是否为“空数据”状态。空数据特征：没有 tables 或 tables内所有 rows 都为空。
+  // 判断动态规则返回是否为"空数据"状态。空数据特征：没有 tables 或 tables内所有 rows 都为空。
   function isEmptyDynamicResult(result: unknown): boolean {
     if (!result || typeof result !== 'object') return true;
     const obj = result as Record<string, unknown>;
@@ -125,7 +84,6 @@ export async function dispatchGenbiIntent(intent: GenbiIntent | string, context:
     });
   }
 
-  // 1. 先检查数据库中是否有动态规则配置
   try {
     const semantic = await getGenbiSemanticConfig();
     const intentRules = semantic.intentRules || {};
@@ -136,22 +94,13 @@ export async function dispatchGenbiIntent(intent: GenbiIntent | string, context:
       console.log(`[registry] using dynamic rule from database for intent: ${intent}, ruleKey: ${ruleKey}`);
       const dynamicResult = await answerDynamicRule(intent, context) as Record<string, unknown>;
 
-      // 动态规则返回空数据时（过滤条件太严、数据源为空、或规则配置有误），
-      // 如果存在硬编码 handler，降级到硬编码的专用逻辑，避免“没有数据给到 MiniMax”
-      if (isEmptyDynamicResult(dynamicResult) && hardcodedDefinition?.handler) {
-        console.warn(`[registry] dynamic rule produced empty result for intent: ${intent}, falling back to hardcoded handler`);
-        const fallback = await hardcodedDefinition.handler(context) as Record<string, unknown>;
-        const fallbackNotes = Array.isArray(fallback?.notes) ? fallback.notes as unknown[] : [];
-        fallback.notes = [
-          ...fallbackNotes,
-          `动态规则 ${ruleKey} 过滤后无数据，已降级到内置逻辑（请在 genbi-rule-admin 页面放宽 filters 或检查 dataScope）。`,
-        ];
-        return attachRuleExecutionMeta(fallback, {
-          source: 'hardcoded_fallback',
-          ruleKey,
-          intent,
-          reason: 'dynamic_result_empty',
-        });
+      // 动态规则返回空数据时，直接返回 unsupported 响应
+      if (isEmptyDynamicResult(dynamicResult)) {
+        console.warn(`[registry] dynamic rule produced empty result for intent: ${intent}, ruleKey: ${ruleKey}`);
+        return buildUnsupportedResponse(
+          `动态规则 ${ruleKey} 过滤后无数据，请在 genbi-rule-admin 页面放宽 filters 或检查 dataScope。`,
+          context.semanticVersion,
+        );
       }
 
       // 动态路径本身已根据规则的 strategy.metrics / output.topCount 构造列，
@@ -164,28 +113,16 @@ export async function dispatchGenbiIntent(intent: GenbiIntent | string, context:
       });
     }
   } catch (error) {
-    console.warn('[registry] dynamic rule engine failed, falling back to hardcoded handler:', error);
+    console.warn('[registry] dynamic rule engine failed:', error);
+    return buildUnsupportedResponse(
+      `动态规则引擎执行失败（${error instanceof Error ? error.message : String(error)}），请检查规则配置或联系管理员。`,
+      context.semanticVersion,
+    );
   }
 
-  // 2. 数据库中没有，回退到硬编码的专用 handler（向后兼容）
-  if (hardcodedDefinition?.handler) {
-    console.log(`[registry] using hardcoded handler for intent: ${intent}`);
-    const result = await hardcodedDefinition.handler(context);
-    const shaped = await applyRuleOutputConfig(intent as GenbiIntent, result);
-    return attachRuleExecutionMeta(shaped, {
-      source: 'hardcoded',
-      intent,
-    });
-  }
-
-  // 3. 检查是否是预定义的不支持意图
-  if (hardcodedDefinition?.unsupportedReason) {
-    return buildUnsupportedResponse(hardcodedDefinition.unsupportedReason, context.semanticVersion);
-  }
-
-  // 4. 都没有命中，返回不支持
+  // 数据库中找不到动态规则配置，返回 unsupported
   return buildUnsupportedResponse(
-    `这个问题当前没有命中第一版受控问题集。我只会基于真实数据回答广告投放相关问题；当前稳定支持的方向是：${buildSupportedIntentHint()}。`,
+    `这个问题当前没有配置动态规则。请在 genbi-rule-admin 页面为意图 "${intent}" 配置规则后重试。`,
     context.semanticVersion,
   );
 }
