@@ -50,18 +50,19 @@ const DEFAULT_GENBI_SEMANTIC: GenbiSemanticConfig = {
     lossReason: 'v1',
   },
   // 注意：intentRules 和 rules 已迁移到数据库，这里保留作为 fallback
-  // 当数据库中没有配置时，系统会使用这里的默认配置
+  // 当数据库和外部 JSON 配置都不可用时，系统会使用这里的默认映射
+  // 避免动态规则路径静默退化导致 unsupported fallback
   intentRules: {
-    // 以下为向后兼容的默认映射，实际使用中优先从数据库读取
-    // crowd_budget: 'crowdBudget',
-    // crowd_mix: 'crowdMix',
-    // daily_drop_reason: 'dailyDropReason',
-    // weak_products: 'weakProducts',
-    // product_potential: 'productPotential',
-    // product_sales: 'productSales',
-    // weekly_report: 'periodicReport',
-    // monthly_report: 'periodicReport',
-    // loss_reason: 'lossReason',
+    crowd_budget: 'crowdBudget',
+    crowd_mix: 'crowdMix',
+    daily_drop_reason: 'dailyDropReason',
+    weak_products: 'weakProducts',
+    product_potential: 'productPotential',
+    product_sales: 'productSales',
+    weekly_report: 'periodicReport',
+    monthly_report: 'periodicReport',
+    loss_reason: 'lossReason',
+    budget_plan: 'crowdBudget',
   },
   rules: {
     // 以下为向后兼容的默认规则配置，实际使用中优先从数据库读取

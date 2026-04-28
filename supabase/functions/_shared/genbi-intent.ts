@@ -117,20 +117,70 @@ ${intentList}
 用户提问：${question}`;
 }
 
+// ============ AI 输出清洗 ============
+
+/**
+ * MiniMax-M2.7 是推理模型，会先输出 <think>...</think> 块再给结论。
+ * 意图识别只关心最终结论，必须先剥离思考过程，避免 maxTokens 截断时
+ * 把 <think> 内的中间文本当成意图。
+ */
+function stripThinkBlocks(text: string): string {
+  return String(text || '')
+    .replace(/<think[\s\S]*?<\/think>/gi, '')
+    .replace(/<think[\s\S]*$/i, '') // 未闭合的 think 尾块（被 maxTokens 截断的情形）
+    .replace(/<\/?think>/gi, '')
+    .replace(/```think[\s\S]*?```/gi, '')
+    .replace(/```thinking[\s\S]*?```/gi, '')
+    .trim();
+}
+
 // ============ AI 常见误判纠正 ============
 
 /**
- * AI 容易把"哪些人群该加预算/降预算"误判为 budget_plan（预算分配建议），
- * 因为两个意图都涉及"预算"。用正则二次校验纠正。
+ * 规则引擎/硬编码 handler 真正支持的意图白名单。
+ * 如果 AI 输出的意图不在此白名单，一律视为不可信并回退到正则兜底，
+ * 避免 "自定义意图" 被静默采纳后命中 unsupported fallback。
  */
-function correctMisclassification(intent: GenbiIntent, question: string): GenbiIntent {
-  if (intent !== 'budget_plan') return intent;
+const SUPPORTED_INTENT_WHITELIST = new Set<GenbiIntent>([
+  'crowd_budget',
+  'weak_products',
+  'crowd_mix',
+  'product_potential',
+  'product_sales',
+  'weekly_report',
+  'monthly_report',
+  'daily_drop_reason',
+  'loss_reason',
+  'budget_plan',
+]);
 
+/**
+ * AI 常见误判纠正：
+ * 1) budget_plan → crowd_budget：问题明确带"人群 + 预算增减"维度时。
+ * 2) unknown → 正则兜底：AI 误判为 unknown 但正则能识别，以正则结果为准。
+ * 3) 已知 AI 爱用但不在白名单的近似意图名（如 crowd_budget_advice）。
+ */
+function correctMisclassification(intent: GenbiIntent | string, question: string): GenbiIntent | string {
   const normalized = question.replace(/\s+/g, '');
-  // 问题明确包含"人群"维度 + 预算增减 → 应该是 crowd_budget
-  if (/哪些.*人群.*(增加预算|降低预算|预算|加预算|降预算)/.test(normalized)) {
-    console.log(`[genbi-intent] 纠正 AI 误判: budget_plan → crowd_budget`);
+  const looksLikeCrowdBudget = /哪些.*人群.*(增加预算|降低预算|预算|加预算|降预算)/.test(normalized);
+
+  if ((intent === 'budget_plan' || intent === 'unknown') && looksLikeCrowdBudget) {
+    console.log(`[genbi-intent] 纠正 AI 误判: ${intent} → crowd_budget`);
     return 'crowd_budget';
+  }
+
+  // AI 可能吐出近似但非白名单的 intent，做前缀/关键字规则纠偏
+  if (typeof intent === 'string' && !SUPPORTED_INTENT_WHITELIST.has(intent as GenbiIntent) && intent !== 'unknown') {
+    if (intent.includes('crowd') && intent.includes('budget')) return 'crowd_budget';
+    if (intent.includes('weak') || intent.includes('low_roi')) return 'weak_products';
+    if (intent.includes('crowd') && (intent.includes('mix') || intent.includes('structure'))) return 'crowd_mix';
+    if (intent.includes('potential') || intent.includes('gmv_boost')) return 'product_potential';
+    if (intent.includes('product_sales') || intent.includes('sku_sales')) return 'product_sales';
+    if (intent.includes('weekly') || intent.includes('week_report')) return 'weekly_report';
+    if (intent.includes('monthly') || intent.includes('month_report')) return 'monthly_report';
+    if (intent.includes('drop') || intent.includes('daily_')) return 'daily_drop_reason';
+    if (intent.includes('loss') || intent.includes('roi_below')) return 'loss_reason';
+    if (intent.includes('budget')) return 'budget_plan';
   }
   return intent;
 }
@@ -140,9 +190,16 @@ function correctMisclassification(intent: GenbiIntent, question: string): GenbiI
 export async function detectIntentByAI(question: string): Promise<{ intent: GenbiIntent | string; source: 'ai' | 'regex' }> {
   try {
     const prompt = buildIntentDetectionPrompt(question);
-    const result = await callMiniMax(prompt, undefined, { maxTokens: 20 });
+    // maxTokens 提到 128：MiniMax-M2.7 需要为 <think> 留足预算，
+    // 否则极易截断导致最后一行不是真正的意图结论。
+    const result = await callMiniMax(prompt, undefined, { maxTokens: 128 });
 
-    const cleaned = result.trim().split('\n').pop()?.trim().toLowerCase() ?? '';
+    // 先剥离 <think> 思考块，再取最后一行做意图结论
+    const stripped = stripThinkBlocks(result);
+    const cleaned = stripped.split('\n').filter((line) => line.trim()).pop()?.trim().toLowerCase() ?? '';
+
+    // 正则兜底结果，用于不可信 AI 输出时作为可靠 fallback
+    const regexIntent = detectIntentByRegex(question);
 
     if (VALID_INTENTS.has(cleaned)) {
       const corrected = correctMisclassification(cleaned as GenbiIntent, question);
@@ -157,13 +214,20 @@ export async function detectIntentByAI(question: string): Promise<{ intent: Genb
       return { intent: corrected, source: 'ai' };
     }
 
+    // 仅当 AI 吐出的 snake_case 意图经纠偏后命中白名单，才接受；
+    // 否则回退到正则兜底，避免凭空产生不支持的自定义意图。
     if (extracted && /^[a-z][a-z0-9_]{1,63}$/.test(extracted)) {
-      console.log(`[genbi-intent] AI 自定义意图: "${question.slice(0, 40)}" → ${extracted}`);
-      return { intent: extracted, source: 'ai' };
+      const corrected = correctMisclassification(extracted, question);
+      if (typeof corrected === 'string' && SUPPORTED_INTENT_WHITELIST.has(corrected as GenbiIntent)) {
+        console.log(`[genbi-intent] AI 近似意图纠偏: "${question.slice(0, 40)}" → ${corrected} (原始 ${extracted})`);
+        return { intent: corrected, source: 'ai' };
+      }
+      console.warn(`[genbi-intent] AI 自定义意图 "${extracted}" 不在白名单，回退正则 → ${regexIntent}`);
+      return { intent: regexIntent, source: 'regex' };
     }
 
-    console.warn(`[genbi-intent] AI 返回无效意图 "${cleaned}"，回退正则`);
-    return { intent: detectIntentByRegex(question), source: 'regex' };
+    console.warn(`[genbi-intent] AI 返回无效意图 "${cleaned}"，回退正则 → ${regexIntent}`);
+    return { intent: regexIntent, source: 'regex' };
   } catch (error) {
     console.warn('[genbi-intent] AI 调用失败，回退正则:', error instanceof Error ? error.message : String(error));
     return { intent: detectIntentByRegex(question), source: 'regex' };
