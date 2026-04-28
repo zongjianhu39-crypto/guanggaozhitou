@@ -117,6 +117,24 @@ ${intentList}
 用户提问：${question}`;
 }
 
+// ============ AI 常见误判纠正 ============
+
+/**
+ * AI 容易把"哪些人群该加预算/降预算"误判为 budget_plan（预算分配建议），
+ * 因为两个意图都涉及"预算"。用正则二次校验纠正。
+ */
+function correctMisclassification(intent: GenbiIntent, question: string): GenbiIntent {
+  if (intent !== 'budget_plan') return intent;
+
+  const normalized = question.replace(/\s+/g, '');
+  // 问题明确包含"人群"维度 + 预算增减 → 应该是 crowd_budget
+  if (/哪些.*人群.*(增加预算|降低预算|预算|加预算|降预算)/.test(normalized)) {
+    console.log(`[genbi-intent] 纠正 AI 误判: budget_plan → crowd_budget`);
+    return 'crowd_budget';
+  }
+  return intent;
+}
+
 // ============ AI 语义分类 ============
 
 export async function detectIntentByAI(question: string): Promise<{ intent: GenbiIntent | string; source: 'ai' | 'regex' }> {
@@ -124,35 +142,30 @@ export async function detectIntentByAI(question: string): Promise<{ intent: Genb
     const prompt = buildIntentDetectionPrompt(question);
     const result = await callMiniMax(prompt, undefined, { maxTokens: 20 });
 
-    // 清理 AI 返回结果：去空白、去标点、取最后一行
     const cleaned = result.trim().split('\n').pop()?.trim().toLowerCase() ?? '';
 
-    // 尝试直接匹配预定义意图
     if (VALID_INTENTS.has(cleaned)) {
-      console.log(`[genbi-intent] AI 识别成功: "${question.slice(0, 40)}" → ${cleaned}`);
-      return { intent: cleaned as GenbiIntent, source: 'ai' };
+      const corrected = correctMisclassification(cleaned as GenbiIntent, question);
+      console.log(`[genbi-intent] AI: "${question.slice(0, 40)}" → ${corrected}${corrected !== cleaned ? ` (纠正自 ${cleaned})` : ''}`);
+      return { intent: corrected, source: 'ai' };
     }
 
-    // AI 可能返回 "意图：crowd_budget" 这样的格式，提取意图名
     const extracted = cleaned.replace(/[^a-z_]/g, '');
     if (VALID_INTENTS.has(extracted)) {
-      console.log(`[genbi-intent] AI 识别成功(提取): "${question.slice(0, 40)}" → ${extracted}`);
-      return { intent: extracted as GenbiIntent, source: 'ai' };
+      const corrected = correctMisclassification(extracted as GenbiIntent, question);
+      console.log(`[genbi-intent] AI(提取): "${question.slice(0, 40)}" → ${corrected}${corrected !== extracted ? ` (纠正自 ${extracted})` : ''}`);
+      return { intent: corrected, source: 'ai' };
     }
 
-    // 如果 AI 返回了不在预定义列表中的意图，可能是自定义意图
-    // 保留原始返回值，让下游的动态规则引擎处理
     if (extracted && /^[a-z][a-z0-9_]{1,63}$/.test(extracted)) {
-      console.log(`[genbi-intent] AI 识别到自定义意图: "${question.slice(0, 40)}" → ${extracted}`);
+      console.log(`[genbi-intent] AI 自定义意图: "${question.slice(0, 40)}" → ${extracted}`);
       return { intent: extracted, source: 'ai' };
     }
 
-    // AI 返回了无效意图，回退到正则
-    console.warn(`[genbi-intent] AI 返回无效意图 "${cleaned}"，回退到正则匹配`);
+    console.warn(`[genbi-intent] AI 返回无效意图 "${cleaned}"，回退正则`);
     return { intent: detectIntentByRegex(question), source: 'regex' };
   } catch (error) {
-    // AI 调用失败，回退到正则
-    console.warn('[genbi-intent] AI 意图识别失败，回退到正则匹配:', error instanceof Error ? error.message : String(error));
+    console.warn('[genbi-intent] AI 调用失败，回退正则:', error instanceof Error ? error.message : String(error));
     return { intent: detectIntentByRegex(question), source: 'regex' };
   }
 }

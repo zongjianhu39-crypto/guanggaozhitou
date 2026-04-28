@@ -73,7 +73,9 @@ const INTENT_HANDLERS: Partial<Record<GenbiIntent, GenbiHandlerDefinition>> = {
   budget_plan: {
     label: '预算分配建议',
     examples: ['如果本月还有 100 万预算，按照目前的情况接下来的费用该怎么花'],
-    unsupportedReason: '预算分配建议需要先接入更完整的约束条件，例如渠道上限、商品库存、投放目标和利润阈值。第一版暂不自动给出预算排布。',
+    // budget_plan 与 crowd_budget 语义高度重叠（都涉及人群预算增减），
+    // AI 容易误判。委托给人群预算建议 handler 统一处理。
+    handler: ({ range }) => answerCrowdBudget(range),
   },
 };
 
