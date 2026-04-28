@@ -26,13 +26,14 @@ jobs:
           [[ -n "$FTP_PASS" ]] || { echo "Missing repository secret: FTP_PASS"; exit 1; }
 
       - name: 部署到 FTP
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        uses: SamKirkland/FTP-Deploy-Action@4.3.5
         with:
           server: ${{ vars.FTP_HOST }}
           username: ${{ vars.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./
           server-dir: /wwwroot/
+          dangerous-clean-slate: false
           exclude: |
             .git/**
             .github/**
@@ -47,3 +48,5 @@ jobs:
             **/*.map
             tsconfig.json
             package*.json
+          connection-timeout: 60
+          keep-alive: true
