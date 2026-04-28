@@ -16,6 +16,10 @@
         .genbi-kicker { display:inline-flex; padding:6px 12px; border-radius:999px; background:#e9efff; color:#4053b5; font-size:12px; font-weight:700; letter-spacing:0.04em; }
         .genbi-hero h1 { font-size:36px; line-height:1.15; margin:16px 0 12px; }
         .genbi-hero p { max-width:760px; color:#5b6476; font-size:15px; line-height:1.8; margin:0; }
+        .genbi-workflow-btn { display:inline-flex; padding:10px 20px; border-radius:14px; background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; font-size:14px; font-weight:700; text-decoration:none; border:none; cursor:pointer; transition:transform 0.16s ease,box-shadow 0.16s ease,opacity 0.16s ease; }
+        .genbi-workflow-btn:hover { transform:translateY(-1px); box-shadow:0 10px 24px rgba(79,70,229,0.25); opacity:0.95; }
+        .genbi-workflow-btn:focus { outline:2px solid #6e7ff5; outline-offset:2px; }
+        .genbi-workflow-btn:active { transform:translateY(0); opacity:0.9; }
         .genbi-layout { display:grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr); gap:20px; align-items:stretch; }
         .genbi-card { background:#fff; border:1px solid #eaecf3; border-radius:20px; padding:24px; box-shadow:0 12px 28px rgba(15,23,42,0.05); }
         .genbi-card--question,
@@ -187,7 +191,6 @@
                 <li class="nav-item-dropdown">
                     <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
                     <div class="nav-dropdown" role="menu">
-                        <a href="genbi-workflow.html">GenBI 工作流程</a>
                         <a href="metric-rules.html">指标规则</a>
                         <a href="prompt-admin.html">Prompt 管理</a>
                         <a href="genbi-rule-admin.html">GenBI 规则管理</a>
@@ -206,6 +209,9 @@
             <span class="genbi-kicker">Controlled GenBI MVP</span>
             <h1>直接问经营问题，不再自己翻表。</h1>
             <p>第一版 GenBI 只回答真实广告投放数据问题。当前覆盖投放分析、人群分层、单品广告，默认口径以盈亏平衡 ROI 为主；人群和单品无法计算盈亏平衡 ROI 时，退化为订单成本。</p>
+            <div style="margin-top:20px;">
+                <a href="genbi-workflow.html" class="genbi-workflow-btn" aria-label="查看GenBI工作流程" title="了解GenBI工作方式">查看工作流程</a>
+            </div>
         </section>
 
         <section class="genbi-layout">
