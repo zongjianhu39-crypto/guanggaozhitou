@@ -67,19 +67,28 @@ async function buildRuleListResponse() {
     });
   });
 
-  const rules = Object.entries(asRecord(semantic.rules)).map(([ruleKey, config]) => {
-    const safeConfig = asRecord(config);
-    const record = recordMap.get(ruleKey);
-    return {
-      rule_key: ruleKey,
-      label: String(safeConfig.label || record?.label || ruleKey),
-      config: safeConfig,
-      intents: ruleIntents[ruleKey] || [],
-      source: record ? 'database' : 'default',
-      updated_at: record?.updated_at || null,
-      updated_by_name: record?.updated_by_name || null,
-    };
-  });
+  const rules = Object.entries(asRecord(semantic.rules))
+    .filter(([ruleKey]) => {
+      // 如果该规则在数据库中存在但 is_active=false，则跳过（软删除）
+      const record = recordMap.get(ruleKey);
+      if (record && record.is_active === false) {
+        return false;
+      }
+      return true;
+    })
+    .map(([ruleKey, config]) => {
+      const safeConfig = asRecord(config);
+      const record = recordMap.get(ruleKey);
+      return {
+        rule_key: ruleKey,
+        label: String(safeConfig.label || record?.label || ruleKey),
+        config: safeConfig,
+        intents: ruleIntents[ruleKey] || [],
+        source: record ? 'database' : 'default',
+        updated_at: record?.updated_at || null,
+        updated_by_name: record?.updated_by_name || null,
+      };
+    });
 
   return {
     semantic_version: semantic.version,
