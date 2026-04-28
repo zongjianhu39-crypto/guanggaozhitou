@@ -98,7 +98,9 @@ const DEFAULT_GENBI_SEMANTIC: GenbiSemanticConfig = {
 };
 
 let semanticCache: { value: GenbiSemanticConfig; expiresAt: number } | null = null;
-const SEMANTIC_CACHE_TTL_MS = 30 * 1000;
+// 缓存 5 分钟；save_rule 后会主动调用 clearGenbiSemanticConfigCache() 穿透，
+// 其他 Edge 实例未实时触发时最多 5 分钟内自行失效。
+const SEMANTIC_CACHE_TTL_MS = 5 * 60 * 1000;
 
 async function loadSemanticConfig(): Promise<GenbiSemanticConfig> {
   let fileConfig: GenbiSemanticConfig = DEFAULT_GENBI_SEMANTIC;

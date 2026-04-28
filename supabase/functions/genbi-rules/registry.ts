@@ -98,6 +98,15 @@ export function getSupportedIntentDefinitions() {
     }));
 }
 
+function attachRuleExecutionMeta(result: unknown, meta: Record<string, unknown>): Record<string, unknown> {
+  const safe = (result && typeof result === 'object' ? result : {}) as Record<string, unknown>;
+  const existing = (safe.rule_execution && typeof safe.rule_execution === 'object')
+    ? safe.rule_execution as Record<string, unknown>
+    : {};
+  safe.rule_execution = { ...existing, ...meta };
+  return safe;
+}
+
 export async function dispatchGenbiIntent(intent: GenbiIntent | string, context: GenbiHandlerContext) {
   // 策略：优先使用数据库中的动态规则，fallback 到专用 handler
 
@@ -125,17 +134,34 @@ export async function dispatchGenbiIntent(intent: GenbiIntent | string, context:
     const ruleKey = String(intentRules[intent] || '').trim();
     if (ruleKey && rules[ruleKey]) {
       console.log(`[registry] using dynamic rule from database for intent: ${intent}, ruleKey: ${ruleKey}`);
-      const dynamicResult = await answerDynamicRule(intent, context);
+      const dynamicResult = await answerDynamicRule(intent, context) as Record<string, unknown>;
 
       // 动态规则返回空数据时（过滤条件太严、数据源为空、或规则配置有误），
       // 如果存在硬编码 handler，降级到硬编码的专用逻辑，避免“没有数据给到 MiniMax”
       if (isEmptyDynamicResult(dynamicResult) && hardcodedDefinition?.handler) {
         console.warn(`[registry] dynamic rule produced empty result for intent: ${intent}, falling back to hardcoded handler`);
-        const fallback = await hardcodedDefinition.handler(context);
-        return await applyRuleOutputConfig(intent as GenbiIntent, fallback);
+        const fallback = await hardcodedDefinition.handler(context) as Record<string, unknown>;
+        const fallbackNotes = Array.isArray(fallback?.notes) ? fallback.notes as unknown[] : [];
+        fallback.notes = [
+          ...fallbackNotes,
+          `动态规则 ${ruleKey} 过滤后无数据，已降级到内置逻辑（请在 genbi-rule-admin 页面放宽 filters 或检查 dataScope）。`,
+        ];
+        return attachRuleExecutionMeta(fallback, {
+          source: 'hardcoded_fallback',
+          ruleKey,
+          intent,
+          reason: 'dynamic_result_empty',
+        });
       }
 
-      return await applyRuleOutputConfig(intent as GenbiIntent, dynamicResult);
+      // 动态路径本身已根据规则的 strategy.metrics / output.topCount 构造列，
+      // 这里不再经过 applyRuleOutputConfig 的白名单裁剪（后者是给硬编码 handler 补齐的补丁），
+      // 避免新增指标时列被静默丢弃。
+      return attachRuleExecutionMeta(dynamicResult, {
+        source: 'dynamic',
+        ruleKey,
+        intent,
+      });
     }
   } catch (error) {
     console.warn('[registry] dynamic rule engine failed, falling back to hardcoded handler:', error);
@@ -145,7 +171,11 @@ export async function dispatchGenbiIntent(intent: GenbiIntent | string, context:
   if (hardcodedDefinition?.handler) {
     console.log(`[registry] using hardcoded handler for intent: ${intent}`);
     const result = await hardcodedDefinition.handler(context);
-    return await applyRuleOutputConfig(intent as GenbiIntent, result);
+    const shaped = await applyRuleOutputConfig(intent as GenbiIntent, result);
+    return attachRuleExecutionMeta(shaped, {
+      source: 'hardcoded',
+      intent,
+    });
   }
 
   // 3. 检查是否是预定义的不支持意图

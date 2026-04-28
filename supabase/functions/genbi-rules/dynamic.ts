@@ -101,35 +101,47 @@ function buildDynamicAnswer(
 
   // ============ 高级过滤逻辑 ============
   
+  const originalCount = data.length;
+  const filterCounters: Array<{ step: string; before: number; after: number }> = [];
   let filteredData = [...data];
   
   // 过滤 1：最小花费占比过滤（用于 crowdBudget）
   const minCostShare = Number(filters.minCostShare);
   if (Number.isFinite(minCostShare) && minCostShare > 0) {
+    const before = filteredData.length;
     filteredData = filteredData.filter((item) => {
       const costShare = Number(item.costShare || 0);
       return costShare >= minCostShare;
     });
+    filterCounters.push({ step: `minCostShare>=${minCostShare}`, before, after: filteredData.length });
   }
   
   // 过滤 2：排除特定分层（用于 crowdBudget）
   const excludeLayers = Array.isArray(filters.excludeLayers) ? filters.excludeLayers.map(String) : [];
   if (excludeLayers.length > 0) {
     const excludeSet = new Set(excludeLayers);
+    const before = filteredData.length;
     filteredData = filteredData.filter((item) => {
       const layer = String(item.layer || item.crowd || '');
       return !excludeSet.has(layer);
     });
+    filterCounters.push({ step: `excludeLayers[${excludeLayers.join(',')}]`, before, after: filteredData.length });
   }
   
-  // 过滤 3：要求主要指标有效（用于 crowdBudget）
-  if (filters.requireFinitePrimaryMetric && primaryMetric) {
+  // 过滤 3：要求主要指标有效。默认开启，需显式设为 false 才关闭，
+  // 避免 topN 全是 0 值行。
+  const shouldRequireFinitePrimary = filters.requireFinitePrimaryMetric === false
+    ? false
+    : Boolean(primaryMetric);
+  if (shouldRequireFinitePrimary && primaryMetric) {
     const formatter = getMetricFormatter(primaryMetric);
     if (formatter) {
+      const before = filteredData.length;
       filteredData = filteredData.filter((item) => {
         const value = formatter.extract(item);
         return Number.isFinite(value) && value > 0;
       });
+      filterCounters.push({ step: `requireFinitePrimaryMetric(${primaryMetric})`, before, after: filteredData.length });
     }
   }
   
@@ -157,12 +169,16 @@ function buildDynamicAnswer(
   
   // 过滤 5：要求正花费（用于 weakProducts, productPotential）
   if (filters.requirePositiveCost) {
+    const before = filteredData.length;
     filteredData = filteredData.filter((item) => Number(item.cost || 0) > 0);
+    filterCounters.push({ step: 'requirePositiveCost', before, after: filteredData.length });
   }
   
   // 过滤 6：要求正订单数（用于 productPotential）
   if (filters.requirePositiveOrders) {
+    const before = filteredData.length;
     filteredData = filteredData.filter((item) => Number(item.productOrders || item.orders || 0) > 0);
+    filterCounters.push({ step: 'requirePositiveOrders', before, after: filteredData.length });
   }
 
   // ============ 高级排序逻辑 ============
@@ -310,7 +326,11 @@ function buildDynamicAnswer(
 
   const answer = answerParts.join('');
 
-  return buildAnswerEnvelope(
+  const filterSummary = filterCounters.length
+    ? filterCounters.map((c) => `${c.step}: ${c.before}→${c.after}`).join('；')
+    : '无过滤';
+
+  const envelope = buildAnswerEnvelope(
     intent,
     title,
     answer,
@@ -322,8 +342,24 @@ function buildDynamicAnswer(
         : (item.productName || item.product || '未知商品');
       return `重点关注：${name}`;
     }),
-    [`当前基于动态规则引擎生成，规则 key: ${ruleKey}`],
-  );
+    [
+      `当前基于动态规则引擎生成，规则 key: ${ruleKey}`,
+      `数据流水：原始 ${originalCount} → 最终 ${filteredData.length}（${filterSummary}）`,
+    ],
+  ) as Record<string, unknown>;
+
+  // 把规则基础元数据挂在结果上，供上层注入 AI prompt / 前端展示。
+  envelope.rule_execution = {
+    ruleKey,
+    intent,
+    primaryMetric,
+    secondaryMetric,
+    topCount,
+    originalCount,
+    filteredCount: filteredData.length,
+    filters: filterCounters,
+  };
+  return envelope;
 }
 
 export async function answerDynamicRule(intent: string, context: DynamicRuleContext) {
