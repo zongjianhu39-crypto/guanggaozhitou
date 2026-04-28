@@ -115,6 +115,7 @@ async function buildIntentDefinitionsWithDynamic(): Promise<IntentDefinition[]> 
       const examples = Array.isArray((config as Record<string, unknown>).examples)
         ? ((config as Record<string, unknown>).examples as unknown[]).map((v) => String(v)).filter(Boolean)
         : [label];
+      
       base.push({ intent: intentKey, label, desc, examples });
       knownKeys.add(intentKey);
     }

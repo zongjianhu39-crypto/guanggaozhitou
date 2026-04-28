@@ -164,8 +164,8 @@
     </style>
 </head>
 <body>
-    <script src="assets/js/auth-helpers.js?v=202604290324"></script>
-    <script src="auth.js?v=202604290324"></script>
+    <script src="assets/js/auth-helpers.js?v=202604290354"></script>
+    <script src="auth.js?v=202604290354"></script>
 
     <nav class="navbar">
         <div class="nav-container">
@@ -227,6 +227,18 @@
                         <label for="rule-intent">关联意图（可选）</label>
                         <input id="rule-intent" class="ra-input" type="text" maxlength="60" placeholder="例如：custom_analysis">
                         <div class="ra-small-note">填写后，当 AI 识别到该意图时会自动使用此规则。留空则仅作为配置模板。</div>
+                    </div>
+
+                    <div class="ra-field">
+                        <label for="rule-description">意图描述（可选）</label>
+                        <textarea id="rule-description" class="ra-textarea" style="min-height:80px" placeholder="例如：用户上传货盘 CSV 后，AI 分析商品特征并推荐最适合投放的超级直播人群分层"></textarea>
+                        <div class="ra-small-note">详细描述该意图的使用场景，帮助 AI 更准确地识别用户问题。留空则使用规则名称作为描述。</div>
+                    </div>
+
+                    <div class="ra-field">
+                        <label for="rule-examples">示例问题（可选）</label>
+                        <textarea id="rule-examples" class="ra-textarea" style="min-height:100px" placeholder="每行一个问题，例如：&#10;帮我根据货盘推荐合适的超级直播投放人群&#10;这个货盘适合哪些人群投放&#10;根据商品特征推荐投放人群"></textarea>
+                        <div class="ra-small-note">提供多样化的示例问题（每行一个），帮助 AI 理解不同说法。留空则使用规则名称作为唯一示例。</div>
                     </div>
 
                     <div class="ra-field">
@@ -408,7 +420,7 @@
     </main>
 
     <script src="assets/js/config.js"></script>
-    <script src="script.js?v=202604290324"></script>
-    <script src="assets/js/genbi-rule-admin.js?v=202604290324"></script>
+    <script src="script.js?v=202604290354"></script>
+    <script src="assets/js/genbi-rule-admin.js?v=202604290354"></script>
 </body>
 </html>

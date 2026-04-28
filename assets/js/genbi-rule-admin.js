@@ -275,6 +275,8 @@
         const config = {
             label: label.trim(),
             intentKey: '',
+            description: '',
+            examples: [],
             dataScope: [],
             strategy: { metrics: [] },
             output: {},
@@ -674,6 +676,11 @@
         document.getElementById('rule-desc').innerHTML = `对应意图：${escapeHtml(intentText)}。类型：${typeBadge}`;
         document.getElementById('rule-label').value = String(currentConfig.label || rule.label || '');
         document.getElementById('rule-intent').value = String(currentConfig.intentKey || '');
+        document.getElementById('rule-description').value = String(currentConfig.description || '');
+        
+        // 渲染示例问题（每行一个）
+        const examplesArray = Array.isArray(currentConfig.examples) ? currentConfig.examples : [];
+        document.getElementById('rule-examples').value = examplesArray.join('\n');
         document.getElementById('rule-form').style.display = '';
 
         const deleteButton = document.getElementById('delete-btn');
@@ -756,6 +763,21 @@
         const intentEl = document.getElementById('rule-intent');
         intentEl.addEventListener('input', () => {
             currentConfig.intentKey = intentEl.value.trim();
+            syncJsonTextarea();
+        });
+
+        const descEl = document.getElementById('rule-description');
+        descEl.addEventListener('input', () => {
+            currentConfig.description = descEl.value.trim();
+            syncJsonTextarea();
+        });
+
+        const examplesEl = document.getElementById('rule-examples');
+        examplesEl.addEventListener('input', () => {
+            const examplesText = examplesEl.value.trim();
+            currentConfig.examples = examplesText
+                ? examplesText.split('\n').map(line => line.trim()).filter(Boolean)
+                : [];
             syncJsonTextarea();
         });
 
