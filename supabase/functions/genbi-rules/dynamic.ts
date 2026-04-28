@@ -92,32 +92,155 @@ function buildDynamicAnswer(
 ): Record<string, unknown> {
   const config = rule.strategy && typeof rule.strategy === 'object' ? rule.strategy as Record<string, unknown> : {};
   const output = rule.output && typeof rule.output === 'object' ? rule.output as Record<string, unknown> : {};
+  const filters = rule.filters && typeof rule.filters === 'object' ? rule.filters as Record<string, unknown> : {};
   
   const primaryMetric = String(config.primaryMetric || '');
   const secondaryMetric = String(config.secondaryMetric || '');
   const topCount = Number(output.topCount || output.tableLimit || 10);
   const highlightCount = Number(output.highlightCount || Math.min(3, topCount));
 
-  // 根据数据范围和策略排序
-  let sortedData = [...data];
-  const sortArray = Array.isArray(config.sort) ? config.sort : [];
-  const sortMode = String(sortArray[0] || config.increaseSort || config.decreaseSort || '');
+  // ============ 高级过滤逻辑 ============
   
-  if (sortMode.includes('asc') && primaryMetric) {
+  let filteredData = [...data];
+  
+  // 过滤 1：最小花费占比过滤（用于 crowdBudget）
+  const minCostShare = Number(filters.minCostShare);
+  if (Number.isFinite(minCostShare) && minCostShare > 0) {
+    filteredData = filteredData.filter((item) => {
+      const costShare = Number(item.costShare || 0);
+      return costShare >= minCostShare;
+    });
+  }
+  
+  // 过滤 2：排除特定分层（用于 crowdBudget）
+  const excludeLayers = Array.isArray(filters.excludeLayers) ? filters.excludeLayers.map(String) : [];
+  if (excludeLayers.length > 0) {
+    const excludeSet = new Set(excludeLayers);
+    filteredData = filteredData.filter((item) => {
+      const layer = String(item.layer || item.crowd || '');
+      return !excludeSet.has(layer);
+    });
+  }
+  
+  // 过滤 3：要求主要指标有效（用于 crowdBudget）
+  if (filters.requireFinitePrimaryMetric && primaryMetric) {
     const formatter = getMetricFormatter(primaryMetric);
     if (formatter) {
-      sortedData.sort((a, b) => formatter.extract(a) - formatter.extract(b));
+      filteredData = filteredData.filter((item) => {
+        const value = formatter.extract(item);
+        return Number.isFinite(value) && value > 0;
+      });
     }
-  } else if (sortMode.includes('desc') && primaryMetric) {
-    const formatter = getMetricFormatter(primaryMetric);
-    if (formatter) {
-      sortedData.sort((a, b) => formatter.extract(b) - formatter.extract(a));
-    }
-  } else if (primaryMetric) {
-    // 默认降序
-    const formatter = getMetricFormatter(primaryMetric);
-    if (formatter) {
-      sortedData.sort((a, b) => formatter.extract(b) - formatter.extract(a));
+  }
+  
+  // 过滤 4：FocusPool 筛选逻辑（用于 weakProducts）
+  const minFocusPoolSize = Number(filters.minFocusPoolSize);
+  const focusPoolCostCoverage = Number(filters.focusPoolCostCoverage);
+  if (Number.isFinite(minFocusPoolSize) && dataScope === 'single') {
+    const totalCost = filteredData.reduce((sum, item) => sum + Number(item.cost || 0), 0);
+    const sortedByCost = [...filteredData].sort((a, b) => Number(b.cost || 0) - Number(a.cost || 0));
+    
+    let cumulativeCost = 0;
+    const focusPoolSet = new Set(
+      sortedByCost.filter((item, index) => {
+        cumulativeCost += Number(item.cost || 0);
+        if (index < minFocusPoolSize) return true;
+        if (totalCost <= 0) return false;
+        return cumulativeCost / totalCost <= focusPoolCostCoverage;
+      }).map((item) => item.productName || item.productId)
+    );
+    
+    filteredData = filteredData.filter((item) => 
+      focusPoolSet.has(item.productName || item.productId)
+    );
+  }
+  
+  // 过滤 5：要求正花费（用于 weakProducts, productPotential）
+  if (filters.requirePositiveCost) {
+    filteredData = filteredData.filter((item) => Number(item.cost || 0) > 0);
+  }
+  
+  // 过滤 6：要求正订单数（用于 productPotential）
+  if (filters.requirePositiveOrders) {
+    filteredData = filteredData.filter((item) => Number(item.productOrders || item.orders || 0) > 0);
+  }
+
+  // ============ 高级排序逻辑 ============
+  
+  let sortedData = [...filteredData];
+  const sortArray = Array.isArray(config.sort) ? config.sort : [];
+  
+  // 支持多字段排序（用于 weakProducts）
+  if (sortArray.length > 0) {
+    sortedData.sort((a, b) => {
+      for (const sortKey of sortArray) {
+        const sortStr = String(sortKey);
+        
+        // primary_asc: 主要指标升序
+        if (sortStr === 'primary_asc' && primaryMetric) {
+          const formatter = getMetricFormatter(primaryMetric);
+          if (formatter) {
+            const diff = formatter.extract(a) - formatter.extract(b);
+            if (diff !== 0) return diff;
+          }
+        }
+        
+        // primary_desc: 主要指标降序
+        if (sortStr === 'primary_desc' && primaryMetric) {
+          const formatter = getMetricFormatter(primaryMetric);
+          if (formatter) {
+            const diff = formatter.extract(b) - formatter.extract(a);
+            if (diff !== 0) return diff;
+          }
+        }
+        
+        // secondary_desc: 次要指标降序
+        if (sortStr === 'secondary_desc' && secondaryMetric) {
+          const formatter = getMetricFormatter(secondaryMetric);
+          if (formatter) {
+            const diff = formatter.extract(b) - formatter.extract(a);
+            if (diff !== 0) return diff;
+          }
+        }
+        
+        // cost_desc: 花费降序
+        if (sortStr === 'cost_desc') {
+          const diff = Number(b.cost || 0) - Number(a.cost || 0);
+          if (diff !== 0) return diff;
+        }
+        
+        // roi_x_gmv_desc: ROI * GMV 降序（用于 productPotential）
+        if (sortStr === 'roi_x_gmv_desc') {
+          const roiA = Number(a.productDirectRoi || a.directRoi || 0);
+          const gmvA = Number(a.productAmount || a.directAmount || 0);
+          const roiB = Number(b.productDirectRoi || b.directRoi || 0);
+          const gmvB = Number(b.productAmount || b.directAmount || 0);
+          const diff = (roiB * gmvB) - (roiA * gmvA);
+          if (diff !== 0) return diff;
+        }
+      }
+      return 0;
+    });
+  } else {
+    // 简单排序模式
+    const sortMode = String(config.increaseSort || config.decreaseSort || '');
+    
+    if (sortMode.includes('asc') && primaryMetric) {
+      const formatter = getMetricFormatter(primaryMetric);
+      if (formatter) {
+        sortedData.sort((a, b) => formatter.extract(a) - formatter.extract(b));
+      }
+    } else if (sortMode.includes('desc') && primaryMetric) {
+      const formatter = getMetricFormatter(primaryMetric);
+      if (formatter) {
+        sortedData.sort((a, b) => formatter.extract(b) - formatter.extract(a));
+      }
+    } else if (primaryMetric) {
+      // 默认降序
+      const formatter = getMetricFormatter(primaryMetric);
+      if (formatter) {
+        sortedData.sort((a, b) => formatter.extract(b) - formatter.extract(a));
+      }
     }
   }
 

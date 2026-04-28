@@ -97,19 +97,9 @@ export function getSupportedIntentDefinitions() {
 }
 
 export async function dispatchGenbiIntent(intent: GenbiIntent | string, context: GenbiHandlerContext) {
-  // 1. 先检查是否有硬编码的 handler
-  const definition = INTENT_HANDLERS[intent as GenbiIntent];
-  if (definition?.handler) {
-    const result = await definition.handler(context);
-    return await applyRuleOutputConfig(intent as GenbiIntent, result);
-  }
+  // 策略：优先使用数据库中的动态规则，fallback 到专用 handler
   
-  // 2. 检查是否是预定义的不支持意图
-  if (definition?.unsupportedReason) {
-    return buildUnsupportedResponse(definition.unsupportedReason, context.semanticVersion);
-  }
-
-  // 3. 动态规则引擎：检查是否有自定义规则配置
+  // 1. 先检查数据库中是否有动态规则配置
   try {
     const semantic = await getGenbiSemanticConfig();
     const intentRules = semantic.intentRules || {};
@@ -117,12 +107,25 @@ export async function dispatchGenbiIntent(intent: GenbiIntent | string, context:
     
     const ruleKey = String(intentRules[intent] || '').trim();
     if (ruleKey && rules[ruleKey]) {
-      console.log(`[registry] using dynamic rule engine for intent: ${intent}, ruleKey: ${ruleKey}`);
+      console.log(`[registry] using dynamic rule from database for intent: ${intent}, ruleKey: ${ruleKey}`);
       const result = await answerDynamicRule(intent, context);
       return await applyRuleOutputConfig(intent as GenbiIntent, result);
     }
   } catch (error) {
-    console.warn('[registry] dynamic rule engine failed:', error);
+    console.warn('[registry] dynamic rule engine failed, falling back to hardcoded handler:', error);
+  }
+
+  // 2. 数据库中没有，回退到硬编码的专用 handler（向后兼容）
+  const definition = INTENT_HANDLERS[intent as GenbiIntent];
+  if (definition?.handler) {
+    console.log(`[registry] using hardcoded handler for intent: ${intent}`);
+    const result = await definition.handler(context);
+    return await applyRuleOutputConfig(intent as GenbiIntent, result);
+  }
+  
+  // 3. 检查是否是预定义的不支持意图
+  if (definition?.unsupportedReason) {
+    return buildUnsupportedResponse(definition.unsupportedReason, context.semanticVersion);
   }
 
   // 4. 都没有命中，返回不支持

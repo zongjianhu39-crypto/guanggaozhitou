@@ -49,135 +49,25 @@ const DEFAULT_GENBI_SEMANTIC: GenbiSemanticConfig = {
     periodicReport: 'v1',
     lossReason: 'v1',
   },
+  // 注意：intentRules 和 rules 已迁移到数据库，这里保留作为 fallback
+  // 当数据库中没有配置时，系统会使用这里的默认配置
   intentRules: {
-    crowd_budget: 'crowdBudget',
-    crowd_mix: 'crowdMix',
-    daily_drop_reason: 'dailyDropReason',
-    weak_products: 'weakProducts',
-    product_potential: 'productPotential',
-    product_sales: 'productSales',
-    weekly_report: 'periodicReport',
-    monthly_report: 'periodicReport',
-    loss_reason: 'lossReason',
+    // 以下为向后兼容的默认映射，实际使用中优先从数据库读取
+    // crowd_budget: 'crowdBudget',
+    // crowd_mix: 'crowdMix',
+    // daily_drop_reason: 'dailyDropReason',
+    // weak_products: 'weakProducts',
+    // product_potential: 'productPotential',
+    // product_sales: 'productSales',
+    // weekly_report: 'periodicReport',
+    // monthly_report: 'periodicReport',
+    // loss_reason: 'lossReason',
   },
   rules: {
-    crowdBudget: {
-      label: '人群预算建议',
-      version: 'v1',
-      dataScope: ['crowd'],
-      strategy: {
-        primaryMetric: 'order_cost',
-        secondaryMetric: 'crowd_cost_share',
-        increaseSort: 'primary_asc',
-        decreaseSort: 'primary_desc',
-      },
-      filters: {
-        minCostShare: 0.05,
-        excludeLayers: ['未知'],
-        requireFinitePrimaryMetric: true,
-      },
-      output: {
-        topIncreaseCount: 3,
-        topDecreaseCount: 3,
-        tableLimit: 10,
-      },
-    },
-    crowdMix: {
-      label: '老客新客结构分析',
-      version: 'v1',
-      dataScope: ['crowd'],
-      strategy: {
-        primaryMetric: 'crowd_cost_share',
-        comparisonLayers: ['老客', '新客', '兴趣新客'],
-      },
-    },
-    dailyDropReason: {
-      label: '昨日花费波动归因',
-      version: 'v1',
-      dataScope: ['crowd'],
-      strategy: {
-        primaryMetric: 'ad_cost',
-        comparisonMode: 'current_vs_previous',
-      },
-      output: {
-        topDropCount: 3,
-      },
-    },
-    weakProducts: {
-      label: '高花费低回报商品',
-      version: 'v1',
-      dataScope: ['single'],
-      strategy: {
-        primaryMetric: 'product_direct_roi',
-        secondaryMetric: 'order_cost',
-        sort: ['primary_asc', 'secondary_desc', 'cost_desc'],
-      },
-      filters: {
-        minFocusPoolSize: 20,
-        focusPoolCostCoverage: 0.85,
-        requirePositiveCost: true,
-      },
-      output: {
-        topCount: 8,
-        highlightCount: 3,
-      },
-    },
-    productPotential: {
-      label: '冲销售额商品识别',
-      version: 'v1',
-      dataScope: ['single'],
-      strategy: {
-        primaryMetric: 'product_direct_roi',
-        secondaryMetric: 'product_direct_gmv',
-        sort: ['roi_x_gmv_desc'],
-      },
-      filters: {
-        requirePositiveCost: true,
-        requirePositiveOrders: true,
-      },
-      output: {
-        topCount: 6,
-        highlightCount: 3,
-      },
-    },
-    productSales: {
-      label: '单商品销售查询',
-      version: 'v1',
-      dataScope: ['single'],
-      strategy: {
-        matchMode: 'product_name_contains',
-      },
-      output: {
-        resultLimit: 1,
-      },
-    },
-    periodicReport: {
-      label: '周期报告',
-      version: 'v1',
-      dataScope: ['ads', 'crowd', 'single'],
-      strategy: {
-        primaryMetric: 'breakeven_roi',
-        secondaryMetric: 'wow_or_mom',
-      },
-      output: {
-        topCrowdCount: 5,
-        topProductCount: 5,
-      },
-    },
-    lossReason: {
-      label: '亏损原因分析',
-      version: 'v1',
-      dataScope: ['ads', 'crowd', 'single'],
-      strategy: {
-        primaryMetric: 'breakeven_roi',
-        crowdSort: 'order_cost_desc',
-        productSort: 'order_cost_desc',
-      },
-      output: {
-        topCrowdCount: 3,
-        topProductCount: 3,
-      },
-    },
+    // 以下为向后兼容的默认规则配置，实际使用中优先从数据库读取
+    // crowdBudget: { ... },
+    // crowdMix: { ... },
+    // 已迁移到数据库，此处注释掉以避免混淆
   },
   metrics: {
     breakeven_roi: { label: '盈亏平衡ROI' },

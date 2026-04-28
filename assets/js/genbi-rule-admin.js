@@ -120,11 +120,26 @@
             const intentText = Array.isArray(rule.intents) && rule.intents.length
                 ? rule.intents.map((item) => item.label || item.intent).join('、')
                 : rule.rule_key;
-            const sourceText = rule.source === 'database' ? '已自定义' : '默认规则';
+            
+            // 判断规则类型
+            let typeLabel = '';
+            let typeColor = '';
+            if (rule.source === 'database') {
+                const hasIntentKey = rule.config && rule.config.intentKey;
+                typeLabel = hasIntentKey ? '动态规则' : '配置模板';
+                typeColor = hasIntentKey ? '#18794e' : '#667085';
+            } else {
+                typeLabel = '专用处理器';
+                typeColor = '#4f46e5';
+            }
+            
             return `
                 <button class="ra-rule-btn${rule.rule_key === currentRuleKey ? ' active' : ''}" type="button" data-rule-key="${escapeHtml(rule.rule_key)}">
                     ${escapeHtml(rule.label || rule.rule_key)}
-                    <span class="ra-rule-source">${escapeHtml(intentText)} · ${sourceText}</span>
+                    <span class="ra-rule-source">
+                        ${escapeHtml(intentText)} · 
+                        <span style="color:${typeColor};font-weight:600;">${typeLabel}</span>
+                    </span>
                 </button>
             `;
         }).join('');
@@ -280,8 +295,20 @@
         const intentText = Array.isArray(rule.intents) && rule.intents.length
             ? rule.intents.map((item) => item.label || item.intent).join('、')
             : rule.rule_key;
+        
+        // 判断规则类型
+        let typeBadge = '';
+        if (rule.source === 'database') {
+            const hasIntentKey = rule.config && rule.config.intentKey;
+            typeBadge = hasIntentKey 
+                ? '<span style="background:#dcfce7;color:#18794e;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">动态规则</span>'
+                : '<span style="background:#f2f4f7;color:#667085;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">配置模板</span>';
+        } else {
+            typeBadge = '<span style="background:#eef2ff;color:#4f46e5;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">专用处理器</span>';
+        }
+        
         document.getElementById('rule-title').textContent = rule.label || rule.rule_key;
-        document.getElementById('rule-desc').textContent = `对应意图：${intentText}。来源：${rule.source === 'database' ? '已自定义规则' : '默认规则'}。`;
+        document.getElementById('rule-desc').innerHTML = `对应意图：${escapeHtml(intentText)}。类型：${typeBadge}`;
         document.getElementById('rule-label').value = String(currentConfig.label || rule.label || '');
         document.getElementById('rule-intent').value = String(currentConfig.intentKey || '');
         document.getElementById('rule-form').style.display = '';
