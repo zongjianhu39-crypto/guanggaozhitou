@@ -133,6 +133,34 @@
             font-size: 13px;
         }
 
+        .metric-rules-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        .metric-rules-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            opacity: 0.95;
+        }
+        .metric-rules-link:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+        .metric-rules-link:active {
+            transform: translateY(0);
+            opacity: 0.9;
+        }
+
         .ai-analysis-btn {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: #fff;
@@ -558,7 +586,6 @@
                     <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
                     <div class="nav-dropdown" role="menu">
                         <a href="genbi-rule-admin.html">GenBI 规则管理</a>
-                        <a href="metric-rules.html">指标规则</a>
                         <a href="prompt-admin.html">Prompt 管理</a>
                     </div>
                 </li>
@@ -590,6 +617,7 @@
             <button class="tab" data-tab="crowd" role="tab" aria-selected="false" aria-controls="panel-crowd">👥 人群维度</button>
             <button class="tab" data-tab="single" role="tab" aria-selected="false" aria-controls="panel-single">📦 单品广告</button>
             <button class="ai-analysis-btn" id="ai-analysis-btn" type="button">🤖 AI 分析</button>
+            <a href="metric-rules.html" class="metric-rules-link" aria-label="查看指标规则" title="配置和管理指标规则">📋 查看指标规则</a>
             <button class="download-btn" id="download-full-report-btn" type="button" style="margin-left:auto">📥 下载当前聚合报告 CSV</button>
         </div>
 
