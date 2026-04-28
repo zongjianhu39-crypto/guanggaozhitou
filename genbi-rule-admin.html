@@ -8,6 +8,52 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
+        .ra-strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .ra-strategy-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ra-select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+        .ra-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .ra-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        .ra-filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ra-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .ra-checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+    </style>
         :root {
             --panel-bg:#fff;
             --panel-border:#e5e7ef;
@@ -180,9 +226,111 @@
                     </div>
 
                     <div class="ra-field">
-                        <label for="rule-json">高级 JSON</label>
-                        <textarea id="rule-json" class="ra-textarea" spellcheck="false"></textarea>
-                        <div class="ra-small-note">表单会同步到 JSON。需要编辑排除项、排序规则、阈值时可以直接改这里。</div>
+                        <label>策略配置（可视化）</label>
+                        <div id="strategy-fields" class="ra-strategy-grid">
+                            <div class="ra-strategy-item">
+                                <label for="strategy-primary">主要指标</label>
+                                <select id="strategy-primary" class="ra-select">
+                                    <option value="">不设置</option>
+                                    <option value="order_cost">订单成本</option>
+                                    <option value="crowd_cost_share">人群花费占比</option>
+                                    <option value="product_direct_roi">商品直接ROI</option>
+                                    <option value="ad_cost">花费</option>
+                                    <option value="breakeven_roi">盈亏平衡ROI</option>
+                                </select>
+                            </div>
+                            <div class="ra-strategy-item">
+                                <label for="strategy-secondary">次要指标</label>
+                                <select id="strategy-secondary" class="ra-select">
+                                    <option value="">不设置</option>
+                                    <option value="order_cost">订单成本</option>
+                                    <option value="crowd_cost_share">人群花费占比</option>
+                                    <option value="product_direct_roi">商品直接ROI</option>
+                                    <option value="product_direct_gmv">商品直接GMV</option>
+                                    <option value="ad_cost">花费</option>
+                                </select>
+                            </div>
+                            <div class="ra-strategy-item">
+                                <label for="strategy-increase">加预算排序</label>
+                                <select id="strategy-increase" class="ra-select">
+                                    <option value="">不设置</option>
+                                    <option value="primary_asc">主要指标升序（低→高）</option>
+                                    <option value="primary_desc">主要指标降序（高→低）</option>
+                                </select>
+                            </div>
+                            <div class="ra-strategy-item">
+                                <label for="strategy-decrease">减预算排序</label>
+                                <select id="strategy-decrease" class="ra-select">
+                                    <option value="">不设置</option>
+                                    <option value="primary_asc">主要指标升序（低→高）</option>
+                                    <option value="primary_desc">主要指标降序（高→低）</option>
+                                </select>
+                            </div>
+                            <div class="ra-strategy-item">
+                                <label for="strategy-sort-mode">高级排序模式</label>
+                                <select id="strategy-sort-mode" class="ra-select">
+                                    <option value="">简单排序（使用上述配置）</option>
+                                    <option value="primary_asc_secondary_desc_cost_desc">ROI升序 + 成本降序 + 花费降序</option>
+                                    <option value="roi_x_gmv_desc">ROI × GMV 降序（潜力指标）</option>
+                                </select>
+                                <div class="ra-small-note">选择复杂排序逻辑时，上述简单排序配置将被忽略</div>
+                            </div>
+                        </div>
+                        <div class="ra-small-note">策略配置决定数据如何排序和筛选。</div>
+                    </div>
+
+                    <div class="ra-field">
+                        <label>过滤条件（可视化）</label>
+                        <div id="filter-fields" class="ra-filter-grid">
+                            <div class="ra-filter-item">
+                                <label for="filter-min-cost-share">最小花费占比</label>
+                                <input id="filter-min-cost-share" class="ra-input" type="number" step="0.01" min="0" max="1" placeholder="0.05">
+                                <div class="ra-small-note">例如：0.05 表示过滤掉花费占比 < 5% 的数据</div>
+                            </div>
+                            <div class="ra-filter-item">
+                                <label for="filter-exclude-layers">排除分层</label>
+                                <input id="filter-exclude-layers" class="ra-input" type="text" placeholder="未知,测试">
+                                <div class="ra-small-note">多个值用逗号分隔，例如：未知,测试</div>
+                            </div>
+                            <div class="ra-filter-item">
+                                <label class="ra-checkbox-label">
+                                    <input id="filter-require-finite" type="checkbox">
+                                    <span>要求主要指标有效</span>
+                                </label>
+                                <div class="ra-small-note">过滤掉主要指标为无效值的数据</div>
+                            </div>
+                            <div class="ra-filter-item">
+                                <label for="filter-min-focus-pool">FocusPool 最小商品数</label>
+                                <input id="filter-min-focus-pool" class="ra-input" type="number" min="1" placeholder="20">
+                                <div class="ra-small-note">用于商品分析，按花费取 Top N 商品</div>
+                            </div>
+                            <div class="ra-filter-item">
+                                <label for="filter-focus-pool-coverage">FocusPool 花费覆盖率</label>
+                                <input id="filter-focus-pool-coverage" class="ra-input" type="number" step="0.01" min="0" max="1" placeholder="0.85">
+                                <div class="ra-small-note">例如：0.85 表示覆盖 85% 总花费的商品</div>
+                            </div>
+                            <div class="ra-filter-item">
+                                <label class="ra-checkbox-label">
+                                    <input id="filter-require-positive-cost" type="checkbox">
+                                    <span>要求正花费</span>
+                                </label>
+                                <div class="ra-small-note">只保留花费 > 0 的数据</div>
+                            </div>
+                            <div class="ra-filter-item">
+                                <label class="ra-checkbox-label">
+                                    <input id="filter-require-positive-orders" type="checkbox">
+                                    <span>要求正订单数</span>
+                                </label>
+                                <div class="ra-small-note">只保留订单数 > 0 的数据</div>
+                            </div>
+                        </div>
+                        <div class="ra-small-note">过滤条件决定哪些数据被排除。</div>
+                    </div>
+
+                    <div class="ra-field">
+                        <label for="rule-json">高级 JSON（可选）</label>
+                        <textarea id="rule-json" class="ra-textarea" spellcheck="false" rows="12"></textarea>
+                        <div class="ra-small-note">表单会自动同步到 JSON。需要编辑 FocusPool、多字段排序等高级功能时可以直接改这里。</div>
                     </div>
 
                     <div class="ra-actions">
@@ -197,6 +345,6 @@
 
     <script src="assets/js/config.js"></script>
     <script src="script.js?v=20260403"></script>
-    <script src="assets/js/genbi-rule-admin.js?v=20260427a"></script>
+    <script src="assets/js/genbi-rule-admin.js?v=20260428b"></script>
 </body>
 </html>

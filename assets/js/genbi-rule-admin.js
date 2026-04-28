@@ -258,7 +258,7 @@
         const entries = Object.entries(output).filter(([, value]) => typeof value === 'number' || typeof value === 'string');
         const el = document.getElementById('output-fields');
         if (!entries.length) {
-            el.innerHTML = '<div class="ra-small-note">这个规则暂无可视化输出参数，可在高级 JSON 中编辑。</div>';
+            el.innerHTML = '<div class="ra-small-note">这个规则暂无可视化输出参数。</div>';
             return;
         }
         el.innerHTML = entries.map(([key, value]) => `
@@ -277,6 +277,193 @@
                 syncJsonTextarea();
             });
         });
+    }
+
+    // 新增：渲染策略配置（可视化）
+    function renderStrategyFields() {
+        const strategy = currentConfig.strategy || {};
+        
+        const primarySelect = document.getElementById('strategy-primary');
+        if (primarySelect) {
+            primarySelect.value = strategy.primaryMetric || '';
+            primarySelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                currentConfig.strategy.primaryMetric = primarySelect.value || undefined;
+                if (!currentConfig.strategy.primaryMetric) delete currentConfig.strategy.primaryMetric;
+                syncJsonTextarea();
+            });
+        }
+        
+        const secondarySelect = document.getElementById('strategy-secondary');
+        if (secondarySelect) {
+            secondarySelect.value = strategy.secondaryMetric || '';
+            secondarySelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                currentConfig.strategy.secondaryMetric = secondarySelect.value || undefined;
+                if (!currentConfig.strategy.secondaryMetric) delete currentConfig.strategy.secondaryMetric;
+                syncJsonTextarea();
+            });
+        }
+        
+        const increaseSelect = document.getElementById('strategy-increase');
+        if (increaseSelect) {
+            increaseSelect.value = strategy.increaseSort || '';
+            increaseSelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                currentConfig.strategy.increaseSort = increaseSelect.value || undefined;
+                if (!currentConfig.strategy.increaseSort) delete currentConfig.strategy.increaseSort;
+                syncJsonTextarea();
+            });
+        }
+        
+        const decreaseSelect = document.getElementById('strategy-decrease');
+        if (decreaseSelect) {
+            decreaseSelect.value = strategy.decreaseSort || '';
+            decreaseSelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                currentConfig.strategy.decreaseSort = decreaseSelect.value || undefined;
+                if (!currentConfig.strategy.decreaseSort) delete currentConfig.strategy.decreaseSort;
+                syncJsonTextarea();
+            });
+        }
+        
+        // 高级排序模式
+        const sortModeSelect = document.getElementById('strategy-sort-mode');
+        if (sortModeSelect) {
+            // 根据现有的 sort 数组判断使用哪种模式
+            const sortArray = Array.isArray(strategy.sort) ? strategy.sort : [];
+            let currentMode = '';
+            
+            if (sortArray.includes('roi_x_gmv_desc')) {
+                currentMode = 'roi_x_gmv_desc';
+            } else if (sortArray.includes('primary_asc') && sortArray.includes('secondary_desc') && sortArray.includes('cost_desc')) {
+                currentMode = 'primary_asc_secondary_desc_cost_desc';
+            }
+            
+            sortModeSelect.value = currentMode;
+            sortModeSelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                const mode = sortModeSelect.value;
+                
+                if (mode === 'roi_x_gmv_desc') {
+                    currentConfig.strategy.sort = ['roi_x_gmv_desc'];
+                } else if (mode === 'primary_asc_secondary_desc_cost_desc') {
+                    currentConfig.strategy.sort = ['primary_asc', 'secondary_desc', 'cost_desc'];
+                } else {
+                    delete currentConfig.strategy.sort;
+                }
+                syncJsonTextarea();
+            });
+        }
+    }
+
+    // 新增：渲染过滤条件（可视化）
+    function renderFilterFields() {
+        const filters = currentConfig.filters || {};
+        
+        const minCostShareInput = document.getElementById('filter-min-cost-share');
+        if (minCostShareInput) {
+            minCostShareInput.value = filters.minCostShare ?? '';
+            minCostShareInput.addEventListener('input', () => {
+                currentConfig.filters = currentConfig.filters || {};
+                const value = parseFloat(minCostShareInput.value);
+                if (Number.isFinite(value) && value > 0) {
+                    currentConfig.filters.minCostShare = value;
+                } else {
+                    delete currentConfig.filters.minCostShare;
+                }
+                syncJsonTextarea();
+            });
+        }
+        
+        const excludeLayersInput = document.getElementById('filter-exclude-layers');
+        if (excludeLayersInput) {
+            const layers = Array.isArray(filters.excludeLayers) ? filters.excludeLayers.join(',') : '';
+            excludeLayersInput.value = layers;
+            excludeLayersInput.addEventListener('input', () => {
+                currentConfig.filters = currentConfig.filters || {};
+                const value = excludeLayersInput.value.trim();
+                if (value) {
+                    currentConfig.filters.excludeLayers = value.split(',').map(s => s.trim()).filter(s => s);
+                } else {
+                    delete currentConfig.filters.excludeLayers;
+                }
+                syncJsonTextarea();
+            });
+        }
+        
+        const requireFiniteCheckbox = document.getElementById('filter-require-finite');
+        if (requireFiniteCheckbox) {
+            requireFiniteCheckbox.checked = !!filters.requireFinitePrimaryMetric;
+            requireFiniteCheckbox.addEventListener('change', () => {
+                currentConfig.filters = currentConfig.filters || {};
+                if (requireFiniteCheckbox.checked) {
+                    currentConfig.filters.requireFinitePrimaryMetric = true;
+                } else {
+                    delete currentConfig.filters.requireFinitePrimaryMetric;
+                }
+                syncJsonTextarea();
+            });
+        }
+        
+        // FocusPool 配置
+        const minFocusPoolInput = document.getElementById('filter-min-focus-pool');
+        if (minFocusPoolInput) {
+            minFocusPoolInput.value = filters.minFocusPoolSize ?? '';
+            minFocusPoolInput.addEventListener('input', () => {
+                currentConfig.filters = currentConfig.filters || {};
+                const value = parseInt(minFocusPoolInput.value);
+                if (Number.isFinite(value) && value > 0) {
+                    currentConfig.filters.minFocusPoolSize = value;
+                } else {
+                    delete currentConfig.filters.minFocusPoolSize;
+                }
+                syncJsonTextarea();
+            });
+        }
+        
+        const focusPoolCoverageInput = document.getElementById('filter-focus-pool-coverage');
+        if (focusPoolCoverageInput) {
+            focusPoolCoverageInput.value = filters.focusPoolCostCoverage ?? '';
+            focusPoolCoverageInput.addEventListener('input', () => {
+                currentConfig.filters = currentConfig.filters || {};
+                const value = parseFloat(focusPoolCoverageInput.value);
+                if (Number.isFinite(value) && value > 0 && value <= 1) {
+                    currentConfig.filters.focusPoolCostCoverage = value;
+                } else {
+                    delete currentConfig.filters.focusPoolCostCoverage;
+                }
+                syncJsonTextarea();
+            });
+        }
+        
+        const requirePositiveCostCheckbox = document.getElementById('filter-require-positive-cost');
+        if (requirePositiveCostCheckbox) {
+            requirePositiveCostCheckbox.checked = !!filters.requirePositiveCost;
+            requirePositiveCostCheckbox.addEventListener('change', () => {
+                currentConfig.filters = currentConfig.filters || {};
+                if (requirePositiveCostCheckbox.checked) {
+                    currentConfig.filters.requirePositiveCost = true;
+                } else {
+                    delete currentConfig.filters.requirePositiveCost;
+                }
+                syncJsonTextarea();
+            });
+        }
+        
+        const requirePositiveOrdersCheckbox = document.getElementById('filter-require-positive-orders');
+        if (requirePositiveOrdersCheckbox) {
+            requirePositiveOrdersCheckbox.checked = !!filters.requirePositiveOrders;
+            requirePositiveOrdersCheckbox.addEventListener('change', () => {
+                currentConfig.filters = currentConfig.filters || {};
+                if (requirePositiveOrdersCheckbox.checked) {
+                    currentConfig.filters.requirePositiveOrders = true;
+                } else {
+                    delete currentConfig.filters.requirePositiveOrders;
+                }
+                syncJsonTextarea();
+            });
+        }
     }
 
     function renderCurrentRule() {
@@ -307,6 +494,8 @@
         renderScopes();
         renderMetrics();
         renderOutputFields();
+        renderStrategyFields();  // 新增：渲染策略配置
+        renderFilterFields();    // 新增：渲染过滤条件
         syncJsonTextarea();
         setStatus('');
         renderRuleList();
