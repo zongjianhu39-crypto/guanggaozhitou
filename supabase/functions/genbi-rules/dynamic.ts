@@ -19,62 +19,62 @@ const METRIC_FORMATTERS: Record<string, MetricFormatter> = {
   ad_cost: {
     label: '花费',
     format: money,
-    extract: (data) => Number(data['花费'] || data['ad_cost'] || 0),
+    extract: (data) => Number(data['花费'] ?? data['ad_cost'] ?? data['cost'] ?? 0),
   },
   order_cost: {
     label: '订单成本',
     format: money,
-    extract: (data) => Number(data['订单成本'] || data['order_cost'] || 0),
+    extract: (data) => Number(data['订单成本'] ?? data['order_cost'] ?? data['orderCost'] ?? 0),
   },
   direct_roi: {
     label: '直接ROI',
     format: ratio,
-    extract: (data) => Number(data['直接ROI'] || data['direct_roi'] || 0),
+    extract: (data) => Number(data['直接ROI'] ?? data['direct_roi'] ?? data['directRoi'] ?? 0),
   },
   product_direct_roi: {
     label: '商品直接ROI',
     format: ratio,
-    extract: (data) => Number(data['商品直接ROI'] || data['product_direct_roi'] || 0),
+    extract: (data) => Number(data['商品直接ROI'] ?? data['product_direct_roi'] ?? data['productDirectRoi'] ?? 0),
   },
   gmv: {
     label: '总成交金额',
     format: money,
-    extract: (data) => Number(data['总成交金额'] || data['gmv'] || 0),
+    extract: (data) => Number(data['总成交金额'] ?? data['gmv'] ?? data['amount'] ?? 0),
   },
   product_direct_gmv: {
     label: '商品直接成交金额',
     format: money,
-    extract: (data) => Number(data['商品直接成交金额'] || data['product_direct_gmv'] || 0),
+    extract: (data) => Number(data['商品直接成交金额'] ?? data['product_direct_gmv'] ?? data['productAmount'] ?? 0),
   },
   product_orders: {
     label: '商品直接成交笔数',
     format: (v) => String(Math.round(v)),
-    extract: (data) => Number(data['商品直接成交笔数'] || data['product_orders'] || 0),
+    extract: (data) => Number(data['商品直接成交笔数'] ?? data['product_orders'] ?? data['productOrders'] ?? 0),
   },
   orders: {
     label: '成交笔数',
     format: (v) => String(Math.round(v)),
-    extract: (data) => Number(data['成交笔数'] || data['orders'] || 0),
+    extract: (data) => Number(data['成交笔数'] ?? data['orders'] ?? 0),
   },
   crowd_cost_share: {
     label: '人群花费占比',
     format: percent,
-    extract: (data) => Number(data['人群花费占比'] || data['crowd_cost_share'] || 0),
+    extract: (data) => Number(data['人群花费占比'] ?? data['crowd_cost_share'] ?? data['costShare'] ?? 0),
   },
   wow: {
     label: '周环比',
     format: percent,
-    extract: (data) => Number(data['周环比'] || data['wow'] || 0),
+    extract: (data) => Number(data['周环比'] ?? data['wow'] ?? 0),
   },
   mom: {
     label: '月环比',
     format: percent,
-    extract: (data) => Number(data['月环比'] || data['mom'] || 0),
+    extract: (data) => Number(data['月环比'] ?? data['mom'] ?? 0),
   },
   breakeven_roi: {
     label: '盈亏平衡ROI',
     format: ratio,
-    extract: (data) => Number(data['盈亏平衡ROI'] || data['breakeven_roi'] || 0),
+    extract: (data) => Number(data['盈亏平衡ROI'] ?? data['breakeven_roi'] ?? data['breakevenRoi'] ?? 0),
   },
 };
 

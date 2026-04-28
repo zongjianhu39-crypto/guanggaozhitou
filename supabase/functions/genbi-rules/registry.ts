@@ -100,34 +100,57 @@ export function getSupportedIntentDefinitions() {
 
 export async function dispatchGenbiIntent(intent: GenbiIntent | string, context: GenbiHandlerContext) {
   // 策略：优先使用数据库中的动态规则，fallback 到专用 handler
-  
+
+  const hardcodedDefinition = INTENT_HANDLERS[intent as GenbiIntent];
+
+  // 判断动态规则返回是否为“空数据”状态。空数据特征：没有 tables 或 tables内所有 rows 都为空。
+  function isEmptyDynamicResult(result: unknown): boolean {
+    if (!result || typeof result !== 'object') return true;
+    const obj = result as Record<string, unknown>;
+    const tables = Array.isArray(obj.tables) ? obj.tables : [];
+    if (!tables.length) return true;
+    return tables.every((t) => {
+      const table = t && typeof t === 'object' ? t as Record<string, unknown> : {};
+      const rows = Array.isArray(table.rows) ? table.rows : [];
+      return rows.length === 0;
+    });
+  }
+
   // 1. 先检查数据库中是否有动态规则配置
   try {
     const semantic = await getGenbiSemanticConfig();
     const intentRules = semantic.intentRules || {};
     const rules = semantic.rules || {};
-    
+
     const ruleKey = String(intentRules[intent] || '').trim();
     if (ruleKey && rules[ruleKey]) {
       console.log(`[registry] using dynamic rule from database for intent: ${intent}, ruleKey: ${ruleKey}`);
-      const result = await answerDynamicRule(intent, context);
-      return await applyRuleOutputConfig(intent as GenbiIntent, result);
+      const dynamicResult = await answerDynamicRule(intent, context);
+
+      // 动态规则返回空数据时（过滤条件太严、数据源为空、或规则配置有误），
+      // 如果存在硬编码 handler，降级到硬编码的专用逻辑，避免“没有数据给到 MiniMax”
+      if (isEmptyDynamicResult(dynamicResult) && hardcodedDefinition?.handler) {
+        console.warn(`[registry] dynamic rule produced empty result for intent: ${intent}, falling back to hardcoded handler`);
+        const fallback = await hardcodedDefinition.handler(context);
+        return await applyRuleOutputConfig(intent as GenbiIntent, fallback);
+      }
+
+      return await applyRuleOutputConfig(intent as GenbiIntent, dynamicResult);
     }
   } catch (error) {
     console.warn('[registry] dynamic rule engine failed, falling back to hardcoded handler:', error);
   }
 
   // 2. 数据库中没有，回退到硬编码的专用 handler（向后兼容）
-  const definition = INTENT_HANDLERS[intent as GenbiIntent];
-  if (definition?.handler) {
+  if (hardcodedDefinition?.handler) {
     console.log(`[registry] using hardcoded handler for intent: ${intent}`);
-    const result = await definition.handler(context);
+    const result = await hardcodedDefinition.handler(context);
     return await applyRuleOutputConfig(intent as GenbiIntent, result);
   }
-  
+
   // 3. 检查是否是预定义的不支持意图
-  if (definition?.unsupportedReason) {
-    return buildUnsupportedResponse(definition.unsupportedReason, context.semanticVersion);
+  if (hardcodedDefinition?.unsupportedReason) {
+    return buildUnsupportedResponse(hardcodedDefinition.unsupportedReason, context.semanticVersion);
   }
 
   // 4. 都没有命中，返回不支持
