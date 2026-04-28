@@ -61,11 +61,13 @@ FILES=(
   plan-dashboard.html
   plan-dashboard-preview.html
   prompt-admin.html
+  genbi-rule-admin.html
   dashboard.js
   prompt-admin.js
   assets/js/config.js
   assets/js/auth-helpers.js
   assets/js/genbi-page.js
+  assets/js/genbi-rule-admin.js
   assets/js/metric-rules-page.js
   assets/js/insights-render.js
   assets/js/insights-page.js

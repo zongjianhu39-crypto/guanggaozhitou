@@ -26,7 +26,7 @@ jobs:
           [[ -n "$FTP_PASS" ]] || { echo "Missing repository secret: FTP_PASS"; exit 1; }
 
       - name: 部署到 FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ vars.FTP_HOST }}
           username: ${{ vars.FTP_USER }}
