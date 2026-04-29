@@ -268,6 +268,41 @@
     }
 
     async function createNewRule() {
+        const label = prompt('请输入新规则的名称：');
+        if (!label || !label.trim()) return;
+
+        const ruleKey = 'rule_' + Date.now();
+        const config = {
+            label: label.trim(),
+            intentKey: '',
+            description: '',
+            examples: [],
+            dataScope: [],
+            strategy: { metrics: [] },
+            output: {},
+        };
+
+        try {
+            setStatus('创建中...', 'warn');
+            const data = await apiRequest('POST', {
+                action: 'create_rule',
+                rule_key: ruleKey,
+                label: label.trim(),
+                config,
+            });
+            rules = Array.isArray(data.rules) ? data.rules : [];
+            metrics = data.metrics && typeof data.metrics === 'object' ? data.metrics : {};
+            currentRuleKey = ruleKey;
+            renderRuleList();
+            renderCurrentRule();
+            setStatus('新规则已创建，请继续编辑', 'good');
+        } catch (error) {
+            const errorState = authHelpers.describeFetchError
+                ? authHelpers.describeFetchError(error, '创建失败，请稍后重试。')
+                : { message: `创建失败：${error.message}` };
+            setStatus(errorState.message, 'bad');
+        }
+    }
 
     function renderScopes() {
         const selected = new Set(Array.isArray(currentConfig.dataScope) ? currentConfig.dataScope.map(String) : []);
