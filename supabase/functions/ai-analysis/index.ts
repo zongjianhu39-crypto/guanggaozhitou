@@ -2090,7 +2090,7 @@ Deno.serve(async (req: Request) => {
       promptDefinition.content
     );
     console.log('[ai-analysis] final prompt preview (前800字):', prompt.slice(0, 800));
-    const analysis = await callMiniMax(prompt, combinedSystemPrompt, analysisType);
+    const analysis = await callMiniMax(prompt, combinedSystemPrompt, { maxTokens: 32768 });
 
     const headline = extractHeadlineFromAnalysis(analysis, reportResult.reportSummary);
     const reportPayload: StructuredReportPayload = {

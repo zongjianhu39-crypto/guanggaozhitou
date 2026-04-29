@@ -16,7 +16,9 @@ export async function callMiniMax(
     throw new Error('Missing MINIMAX_API_KEY');
   }
 
-  const maxTokens = options?.maxTokens ?? 4096;
+  // MiniMax-M2.7 是推理模型，会先输出 <think> 思考块，占用大量 token；
+  // 默认 32768（模型上限）避免任何场景下的截断风险。
+  const maxTokens = options?.maxTokens ?? 32768;
 
   const response = await fetch('https://api.minimax.chat/v1/chat/completions', {
     method: 'POST',

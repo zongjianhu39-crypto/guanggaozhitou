@@ -388,7 +388,7 @@ Deno.serve(async (req: Request) => {
       console.log(`[genbi-query] assortment mode: ${productItems.length} products`);
 
       try {
-        const aiAnswer = await callMiniMax(assortmentPrompt, systemPrompt, { maxTokens: 2048 });
+        const aiAnswer = await callMiniMax(assortmentPrompt, systemPrompt, { maxTokens: 32768 });
         const sanitized = sanitizeAiOutput(aiAnswer);
         console.log(`[genbi-query] assortment AI response answer=${sanitized.answer.length}, thinking=${sanitized.thinking.length}`);
         return new Response(JSON.stringify({
