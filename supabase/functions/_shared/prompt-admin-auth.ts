@@ -72,7 +72,7 @@ function getPromptAdminSigningSecret(): string {
   return Deno.env.get('PROMPT_ADMIN_SIGNING_SECRET') ?? Deno.env.get('FEISHU_APP_SECRET') ?? '';
 }
 
-function isPromptAdminAllowed(user: PromptAdminUser): boolean {
+export function isPromptAdminAllowed(user: PromptAdminUser): boolean {
   const allowedEmails = normalizeCsvList(Deno.env.get('PROMPT_ADMIN_EMAILS'));
   const allowedOpenIds = normalizeCsvList(Deno.env.get('PROMPT_ADMIN_OPEN_IDS'));
 

@@ -1,6 +1,22 @@
 import assert from 'node:assert/strict';
 import { isPromptAdminAllowed, verifyPromptAdminToken, issuePromptAdminSession } from '../functions/_shared/prompt-admin-auth.ts';
 
+const runtimeProcess = (globalThis as any).process;
+if (typeof (globalThis as any).Deno === 'undefined' && runtimeProcess?.env) {
+  (globalThis as any).Deno = {
+    env: {
+      get: (key: string) => runtimeProcess.env[key],
+      set: (key: string, value: string) => {
+        runtimeProcess.env[key] = value;
+      },
+      delete: (key: string) => {
+        delete runtimeProcess.env[key];
+      },
+    },
+    exit: (code = 0) => runtimeProcess.exit(code),
+  };
+}
+
 let passed = 0;
 let failed = 0;
 

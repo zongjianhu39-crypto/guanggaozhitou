@@ -68,6 +68,14 @@ function runCommand(label, command, args, options = {}) {
   });
 }
 
+function runTsTest(label, relPath) {
+  return runCommand(
+    label,
+    'node',
+    ['--experimental-strip-types', path.join(ROOT, relPath)],
+  );
+}
+
 async function checkLocalFiles(files) {
   console.log('\n[check] local static files');
   for (const relPath of files) {
@@ -111,35 +119,15 @@ async function main() {
     [path.join(ROOT, 'tools/checks/check-no-keys.sh')],
   );
 
-  await runCommand(
-    'GenBI regression',
-    'npx',
-    ['--yes', 'tsx', path.join(ROOT, 'supabase/tests/run-genbi-regression.ts')],
-  );
+  await runTsTest('GenBI regression', 'supabase/tests/run-genbi-regression.ts');
 
-  await runCommand(
-    'GenBI contract',
-    'npx',
-    ['--yes', 'tsx', path.join(ROOT, 'supabase/tests/run-genbi-contract.ts')],
-  );
+  await runTsTest('GenBI contract', 'supabase/tests/run-genbi-contract.ts');
 
-  await runCommand(
-    'GenBI dynamic rule',
-    'npx',
-    ['--yes', 'tsx', path.join(ROOT, 'supabase/tests/run-genbi-rule-dynamic.ts')],
-  );
+  await runTsTest('GenBI dynamic rule', 'supabase/tests/run-genbi-rule-dynamic.ts');
 
-  await runCommand(
-    'Plan dashboard regression',
-    'npx',
-    ['--yes', 'tsx', path.join(ROOT, 'supabase/tests/run-plan-dashboard-regression.ts')],
-  );
+  await runTsTest('Plan dashboard regression', 'supabase/tests/run-plan-dashboard-regression.ts');
 
-  await runCommand(
-    'Plan dashboard contract',
-    'npx',
-    ['--yes', 'tsx', path.join(ROOT, 'supabase/tests/run-plan-dashboard-contract.ts')],
-  );
+  await runTsTest('Plan dashboard contract', 'supabase/tests/run-plan-dashboard-contract.ts');
 
   await runCommand(
     'Plan dashboard UI check',
@@ -147,11 +135,7 @@ async function main() {
     [path.join(ROOT, 'tools/checks/run-plan-dashboard-ui-check.mjs')],
   );
 
-  await runCommand(
-    'Security contract checks',
-    'npx',
-    ['--yes', 'tsx', path.join(ROOT, 'supabase/tests/run-security-checks.ts')],
-  );
+  await runTsTest('Security contract checks', 'supabase/tests/run-security-checks.ts');
 
   const shouldRunDashboardSmoke = args.dashboardSmoke || args.online || process.env.RELEASE_CHECK_DASHBOARD_SMOKE === '1';
   if (shouldRunDashboardSmoke) {

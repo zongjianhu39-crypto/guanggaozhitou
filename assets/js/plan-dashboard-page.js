@@ -199,6 +199,8 @@
   }
 
   window.PlanDashboardPage = {
+    getInitialMonth,
+    isMonthDisabled,
     init,
     reloadSummary,
   };
