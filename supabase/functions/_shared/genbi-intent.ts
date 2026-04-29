@@ -131,7 +131,12 @@ function buildIntentDetectionPrompt(question: string, intentDefs?: IntentDefinit
   const defs = intentDefs ?? INTENT_DEFINITIONS;
   const intentList = defs
     .filter((d) => d.intent !== 'unknown')
-    .map((d) => `- ${d.intent}：${d.label}。${d.desc}`)
+    .map((d) => {
+      const examplesText = d.examples && d.examples.length > 0
+        ? `。示例：${d.examples.slice(0, 5).join('、')}`
+        : '';
+      return `- ${d.intent}：${d.label}。${d.desc}${examplesText}`;
+    })
     .join('\n');
 
   return `你是一个意图分类器。根据用户的提问，从以下意图列表中选择最匹配的一个意图。

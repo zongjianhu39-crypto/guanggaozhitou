@@ -38,12 +38,12 @@ const DASHBOARD_FEATURE_SCRIPTS = {
     export: {
         namespace: 'DashboardExport',
         label: '导出',
-        url: 'assets/js/dashboard-export.js?v=202604290354',
+        url: 'assets/js/dashboard-export.js?v=202604290442',
     },
     ai: {
         namespace: 'DashboardAi',
         label: 'AI 分析',
-        url: 'assets/js/dashboard-ai.js?v=202604290354',
+        url: 'assets/js/dashboard-ai.js?v=202604290442',
     },
 };
 const dashboardFeatureScriptPromises = new Map();
