@@ -220,11 +220,24 @@ npm run check:release
 npm run check:release:online
 ```
 
-当前统一检查会覆盖：
+当前发布检查分为两个阶段：
+
+**本地检查** (`npm run check:release`)：
 - 关键静态文件存在性
+- 密钥扫描
 - GenBI regression
 - GenBI contract
-- 数据看板单日 smoke 检查
+- GenBI dynamic rule
+- Plan dashboard regression
+- Plan dashboard contract
+- Plan dashboard UI check
+- Security contract checks
+- ⊘ Dashboard smoke（默认跳过）
+
+**线上冒烟检查** (`npm run check:release:online`)：
+- 包含所有本地检查
+- ✓ Dashboard smoke test
+- ✓ 线上关键路径可访问性验证
 
 ## 密码保护
 - 通用密码：**已从文档中移除，请在 CI Secrets 或密钥管理工具中查看**
