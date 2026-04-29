@@ -3,7 +3,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 
 import { detectDateRange, getLastMonthRange, getLastWeekRange, getYesterdayRange } from '../functions/_shared/genbi-time.ts';
-import { detectIntent } from '../functions/_shared/genbi-intent.ts';
+// 意图识别已完全动态化（仅依赖 MiniMax + 数据库），此回归测试不再直接验证意图。
 
 type DateRangeCase = {
   name: string;
@@ -23,7 +23,8 @@ type IntentCase = {
 
 type RegressionCases = {
   dateRangeCases: DateRangeCase[];
-  intentCases: IntentCase[];
+  // intentCases 已废弃：意图识别动态化后无法在离线回归中验证，保留字段仅为向后兼容
+  intentCases?: IntentCase[];
 };
 
 type SemanticConfig = {
@@ -61,27 +62,9 @@ function validateDateRangeCases(cases: DateRangeCase[]) {
   });
 }
 
-function validateIntentCases(cases: IntentCase[]) {
-  cases.forEach((testCase) => {
-    const actual = detectIntent(testCase.question);
-    assert.equal(actual, testCase.expectedIntent, `[intent:${testCase.name}] intent mismatch`);
-  });
-}
-
-function validateSemanticExamples(semantic: SemanticConfig) {
-  const groups = semantic.intentGroups ?? [];
-  groups.forEach((group) => {
-    const key = group.key ?? '';
-    const examples = group.examples ?? [];
-    examples.forEach((example, index) => {
-      const actual = detectIntent(example);
-      assert.equal(
-        actual,
-        key,
-        `[semantic:intentGroups:${key}:${index}] example intent mismatch for "${example}"`,
-      );
-    });
-  });
+function validateSemanticExamples(_semantic: SemanticConfig) {
+  // 意图识别已完全动态化，离线回归不再断言 example 预期意图。
+  // 如需验证意图识别，请在联调环境直接调用 detectIntentByAI 。
 }
 
 function validateRuleConfig(semantic: SemanticConfig) {
@@ -98,14 +81,13 @@ async function main() {
   const semantic = await readJson<SemanticConfig>(SEMANTIC_PATH);
 
   validateDateRangeCases(cases.dateRangeCases);
-  validateIntentCases(cases.intentCases);
   validateSemanticExamples(semantic);
   validateRuleConfig(semantic);
 
   const summary = {
     dateRangeCases: cases.dateRangeCases.length,
-    intentCases: cases.intentCases.length,
-    semanticExampleCases: (semantic.intentGroups ?? []).reduce((sum, group) => sum + (group.examples?.length ?? 0), 0),
+    intentCases: 'skipped (dynamic AI intent recognition)',
+    semanticExampleCases: 'skipped (dynamic AI intent recognition)',
     ruleSections: Object.keys(semantic.rules ?? {}).length,
   };
 

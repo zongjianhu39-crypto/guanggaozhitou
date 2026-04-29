@@ -1,11 +1,11 @@
 /**
  * GenBI 意图识别
  *
- * 完全动态化架构：
+ * 完全动态化架构（动态规则为唯一真相源）：
  * 1. 所有意图都从数据库 genbi_rule_configs 表读取
- * 2. 不再有任何硬编码的意图定义
+ * 2. 不再有任何硬编码的意图定义、正则兜底或关键字纠偏
  * 3. AI 语义分类：调用 MiniMax 理解用户语义，匹配到意图列表
- * 4. 正则回退：AI 调用失败或返回无效意图时，回退到关键词正则匹配
+ * 4. AI 调用失败或返回无效意图时，统一返回 { intent: 'unknown', source: 'unsupported' }
  */
 
 import { callMiniMax } from './minimax-client.ts';
@@ -88,39 +88,6 @@ function stripThinkBlocks(text: string): string {
     .trim();
 }
 
-// ============ AI 常见误判纠正 ============
-
-/**
- * AI 常见误判纠正：
- * 1) budget_plan → crowd_budget：问题明确带"人群 + 预算增减"维度时。
- * 2) unknown → 正则兜底：AI 误判为 unknown 但正则能识别，以正则结果为准。
- * 3) 已知 AI 爱用但不在白名单的近似意图名（如 crowd_budget_advice）。
- */
-function correctMisclassification(intent: string, question: string): string {
-  const normalized = question.replace(/\s+/g, '');
-  const looksLikeCrowdBudget = /哪些.*人群.*(增加预算|降低预算|预算|加预算|降预算)/.test(normalized);
-
-  if ((intent === 'budget_plan' || intent === 'unknown') && looksLikeCrowdBudget) {
-    console.log(`[genbi-intent] 纠正 AI 误判: ${intent} → crowd_budget`);
-    return 'crowd_budget';
-  }
-
-  // AI 可能吐出近似但非白名单的 intent，做前缀/关键字规则纠偏
-  if (typeof intent === 'string' && intent !== 'unknown') {
-    if (intent.includes('crowd') && intent.includes('budget')) return 'crowd_budget';
-    if (intent.includes('weak') || intent.includes('low_roi')) return 'weak_products';
-    if (intent.includes('crowd') && (intent.includes('mix') || intent.includes('structure'))) return 'crowd_mix';
-    if (intent.includes('potential') || intent.includes('gmv_boost')) return 'product_potential';
-    if (intent.includes('product_sales') || intent.includes('sku_sales')) return 'product_sales';
-    if (intent.includes('weekly') || intent.includes('week_report')) return 'weekly_report';
-    if (intent.includes('monthly') || intent.includes('month_report')) return 'monthly_report';
-    if (intent.includes('drop') || intent.includes('daily_')) return 'daily_drop_reason';
-    if (intent.includes('loss') || intent.includes('roi_below')) return 'loss_reason';
-    if (intent.includes('budget')) return 'budget_plan';
-  }
-  return intent;
-}
-
 // ============ AI 语义分类 ============
 
 export async function detectIntentByAI(question: string): Promise<{ intent: string; source: 'ai' | 'unsupported' }> {
@@ -138,57 +105,24 @@ export async function detectIntentByAI(question: string): Promise<{ intent: stri
     const stripped = stripThinkBlocks(result);
     const cleaned = stripped.split('\n').filter((line) => line.trim()).pop()?.trim().toLowerCase() ?? '';
 
+    // 直接命中数据库中的意图
     if (allIntentKeys.has(cleaned)) {
-      const corrected = correctMisclassification(cleaned, question);
-      console.log(`[genbi-intent] AI: "${question.slice(0, 40)}" → ${corrected}${corrected !== cleaned ? ` (纠正自 ${cleaned})` : ''}`);
-      return { intent: corrected, source: 'ai' };
+      console.log(`[genbi-intent] AI: "${question.slice(0, 40)}" → ${cleaned}`);
+      return { intent: cleaned, source: 'ai' };
     }
 
+    // 清洗非法字符后再次尝试命中（例如 AI 输出带引号、冒号、空格）
     const extracted = cleaned.replace(/[^a-z0-9_]/g, '');
-    if (allIntentKeys.has(extracted)) {
-      const corrected = correctMisclassification(extracted, question);
-      console.log(`[genbi-intent] AI(提取): "${question.slice(0, 40)}" → ${corrected}${corrected !== extracted ? ` (纠正自 ${extracted})` : ''}`);
-      return { intent: corrected, source: 'ai' };
+    if (extracted && allIntentKeys.has(extracted)) {
+      console.log(`[genbi-intent] AI(提取): "${question.slice(0, 40)}" → ${extracted}`);
+      return { intent: extracted, source: 'ai' };
     }
 
-    // 仅当 AI 吐出的 snake_case 意图经纠偏后命中数据库中的意图，才接受；
-    // 否则直接返回 unknown，不再回退到正则匹配。
-    if (extracted && /^[a-z][a-z0-9_]{1,63}$/.test(extracted)) {
-      const corrected = correctMisclassification(extracted, question);
-      if (typeof corrected === 'string' && allIntentKeys.has(corrected)) {
-        console.log(`[genbi-intent] AI 近似意图纠偏: "${question.slice(0, 40)}" → ${corrected} (原始 ${extracted})`);
-        return { intent: corrected, source: 'ai' };
-      }
-      console.warn(`[genbi-intent] AI 自定义意图 "${extracted}" 不在数据库中，返回 unknown`);
-      return { intent: 'unknown', source: 'unsupported' };
-    }
-
+    // 完全动态化：AI 输出任何不在数据库中的意图，一律返回 unknown，不做任何正则/关键字兜底
     console.warn(`[genbi-intent] AI 返回无效意图 "${cleaned}"，返回 unknown`);
     return { intent: 'unknown', source: 'unsupported' };
   } catch (error) {
     console.warn('[genbi-intent] AI 调用失败，返回 unknown:', error instanceof Error ? error.message : String(error));
     return { intent: 'unknown', source: 'unsupported' };
   }
-}
-
-// ============ 正则匹配（回退方案） ============
-
-export function detectIntentByRegex(question: string): string {
-  const normalized = question.replace(/\s+/g, '');
-  if (/哪些.*人群.*(增加预算|降低预算|预算|加预算|降预算)/.test(normalized)) return 'crowd_budget';
-  if (/单品广告.*哪些.*商品.*花费.*(回报差|差|低)/.test(normalized)) return 'weak_products';
-  if (/老客.*新客.*占比/.test(normalized)) return 'crowd_mix';
-  if (/哪些.*商品.*适合.*冲销售额/.test(normalized)) return 'product_potential';
-  if (/商品.*(销售数据|表现如何|近期.*如何)/.test(normalized)) return 'product_sales';
-  if (/上周.*周报|周报/.test(normalized)) return 'weekly_report';
-  if (/上月.*月报|月报/.test(normalized)) return 'monthly_report';
-  if (/(昨日|昨天).*花费.*下降/.test(normalized)) return 'daily_drop_reason';
-  if (/盈亏.*ROI.*低于?1|亏钱.*亏在了哪里/.test(normalized)) return 'loss_reason';
-  if (/(100万|预算).*(怎么花|怎么分配|如何花)/.test(normalized)) return 'budget_plan';
-  return 'unknown';
-}
-
-/** 向后兼容：同步正则匹配（保留给不需要 AI 的场景） */
-export function detectIntent(question: string): GenbiIntent {
-  return detectIntentByRegex(question);
 }
