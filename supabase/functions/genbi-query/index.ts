@@ -179,13 +179,10 @@ async function buildSystemPromptFromTemplates(): Promise<string> {
 // ============ 主处理逻辑 ============
 
 // 按 intent 给 maxTokens 做自适应：
-// - 周报/月报/亏损归因类需要更长篇幅；
-// - 简单问数保持 2048 降低拖延。
+// - MiniMax-M2.7 的思考过程（<think>）会占用大量 token；
+// - 统一返回 32768，避免正式回答被截断或偏短。
 function resolveAnswerMaxTokens(intent: string): number {
-  if (intent === 'weekly_report' || intent === 'monthly_report' || intent === 'loss_reason') {
-    return 4096;
-  }
-  return 2048;
+  return 32768;
 }
 
 async function handleIntent(question: string) {
