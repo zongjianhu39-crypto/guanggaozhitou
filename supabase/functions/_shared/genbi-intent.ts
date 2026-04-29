@@ -123,7 +123,7 @@ function correctMisclassification(intent: string, question: string): string {
 
 // ============ AI 语义分类 ============
 
-export async function detectIntentByAI(question: string): Promise<{ intent: string; source: 'ai' | 'regex' }> {
+export async function detectIntentByAI(question: string): Promise<{ intent: string; source: 'ai' | 'unsupported' }> {
   try {
     // 完全动态：所有意图都从数据库加载
     const intentDefs = await loadAllIntentDefinitions();
@@ -137,9 +137,6 @@ export async function detectIntentByAI(question: string): Promise<{ intent: stri
     // 先剥离 <think> 思考块，再取最后一行做意图结论
     const stripped = stripThinkBlocks(result);
     const cleaned = stripped.split('\n').filter((line) => line.trim()).pop()?.trim().toLowerCase() ?? '';
-
-    // 正则兜底结果，用于不可信 AI 输出时作为可靠 fallback
-    const regexIntent = detectIntentByRegex(question);
 
     if (allIntentKeys.has(cleaned)) {
       const corrected = correctMisclassification(cleaned, question);
@@ -155,22 +152,22 @@ export async function detectIntentByAI(question: string): Promise<{ intent: stri
     }
 
     // 仅当 AI 吐出的 snake_case 意图经纠偏后命中数据库中的意图，才接受；
-    // 否则回退到正则兜底，避免凭空产生不支持的自定义意图。
+    // 否则直接返回 unknown，不再回退到正则匹配。
     if (extracted && /^[a-z][a-z0-9_]{1,63}$/.test(extracted)) {
       const corrected = correctMisclassification(extracted, question);
       if (typeof corrected === 'string' && allIntentKeys.has(corrected)) {
         console.log(`[genbi-intent] AI 近似意图纠偏: "${question.slice(0, 40)}" → ${corrected} (原始 ${extracted})`);
         return { intent: corrected, source: 'ai' };
       }
-      console.warn(`[genbi-intent] AI 自定义意图 "${extracted}" 不在数据库中，回退正则 → ${regexIntent}`);
-      return { intent: regexIntent, source: 'regex' };
+      console.warn(`[genbi-intent] AI 自定义意图 "${extracted}" 不在数据库中，返回 unknown`);
+      return { intent: 'unknown', source: 'unsupported' };
     }
 
-    console.warn(`[genbi-intent] AI 返回无效意图 "${cleaned}"，回退正则 → ${regexIntent}`);
-    return { intent: regexIntent, source: 'regex' };
+    console.warn(`[genbi-intent] AI 返回无效意图 "${cleaned}"，返回 unknown`);
+    return { intent: 'unknown', source: 'unsupported' };
   } catch (error) {
-    console.warn('[genbi-intent] AI 调用失败，回退正则:', error instanceof Error ? error.message : String(error));
-    return { intent: detectIntentByRegex(question), source: 'regex' };
+    console.warn('[genbi-intent] AI 调用失败，返回 unknown:', error instanceof Error ? error.message : String(error));
+    return { intent: 'unknown', source: 'unsupported' };
   }
 }
 
