@@ -361,3 +361,57 @@ supabase functions deploy dashboard-data
 supabase functions deploy ai-reports
 supabase functions deploy ai-analysis
 ```
+
+## 发布检查流程
+
+> **背景**：当前 `check:release` 已包含线上 smoke check 的能力，但默认跳过，容易让人误解为所有发布检查都已完成。通过两个命令把"代码可发布"和"线上已验证"区分开，降低发布风险。
+
+### 发布前：本地检查
+
+```bash
+npm run check:release
+```
+
+执行稳定的本地发布前检查，包括：
+- ✓ 静态文件完整性检查
+- ✓ 密钥扫描
+- ✓ GenBI 测试（回归、合约、动态规则）
+- ✓ 计划看板测试（回归、合约、UI）
+- ✓ 安全合约测试
+
+**特点**：完全离线可运行，不依赖网络
+
+### 部署后：线上冒烟检查
+
+```bash
+npm run check:release:online
+```
+
+在完整执行本地发布检查后，再开启线上冒烟检查：
+- ✓ 所有本地检查
+- ✓ Dashboard smoke test
+- ✓ 线上关键页面和接口可访问性验证
+
+**特点**：用于部署后验证线上站点，需要网络连接
+
+### 输出说明
+
+- **本地检查通过**：`[done] local release checks passed`
+- **线上冒烟检查通过**：`[done] online smoke checks passed`
+
+### CI/CD 集成
+
+两个命令失败时都会返回非 0 exit code，方便接入 CI/CD 流程：
+
+```yaml
+- name: Release Check
+  run: npm run check:release
+
+- name: Deploy
+  run: ./deploy.sh
+
+- name: Online Smoke Check
+  run: npm run check:release:online
+```
+
+详细说明请参考：[release-check-guide.md](./release-check-guide.md)

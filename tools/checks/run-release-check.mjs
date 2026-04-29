@@ -139,6 +139,7 @@ async function main() {
 
   const shouldRunDashboardSmoke = args.dashboardSmoke || args.online || process.env.RELEASE_CHECK_DASHBOARD_SMOKE === '1';
   if (shouldRunDashboardSmoke) {
+    console.log('\n[check] dashboard smoke test');
     await runCommand(
       'Dashboard smoke',
       'node',
@@ -155,7 +156,12 @@ async function main() {
   }
 
   if (args.online) {
+    console.log('\n[check] online smoke test');
     await checkOnlinePaths(args.siteUrl, config.onlinePaths || []);
+    console.log('\n[done] online smoke checks passed');
+  } else {
+    console.log('\n[done] local release checks passed');
+    console.log('[info] run `npm run check:release:online` after deployment to verify online site');
   }
 
   console.log('\n[done] release checks passed');
