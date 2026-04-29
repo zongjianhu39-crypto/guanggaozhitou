@@ -236,10 +236,6 @@
         return Array.from(new Set([...selected, ...primary, ...secondary].filter(Boolean)));
     }
 
-    function syncJsonTextarea() {
-        // JSON 编辑区已移除，所有配置通过可视化表单编辑
-    }
-
     function renderRuleList() {
         const el = document.getElementById('rule-list');
         if (!el) return;
@@ -316,7 +312,6 @@
         el.querySelectorAll('input').forEach((input) => {
             input.addEventListener('change', () => {
                 currentConfig.dataScope = Array.from(el.querySelectorAll('input:checked')).map((item) => item.value);
-                syncJsonTextarea();
             });
         });
     }
@@ -335,7 +330,6 @@
             input.addEventListener('change', () => {
                 if (!currentConfig.strategy || typeof currentConfig.strategy !== 'object') currentConfig.strategy = {};
                 currentConfig.strategy.metrics = Array.from(el.querySelectorAll('input:checked')).map((item) => item.value);
-                syncJsonTextarea();
             });
         });
     }
@@ -362,7 +356,6 @@
                 const value = input.value.trim();
                 const numericValue = Number(value || 0);
                 output[key] = typeof original === 'number' && Number.isFinite(numericValue) ? numericValue : value;
-                syncJsonTextarea();
             });
         });
     }
@@ -378,7 +371,6 @@
                 currentConfig.strategy = currentConfig.strategy || {};
                 currentConfig.strategy.primaryMetric = primarySelect.value || undefined;
                 if (!currentConfig.strategy.primaryMetric) delete currentConfig.strategy.primaryMetric;
-                syncJsonTextarea();
             });
         }
         
@@ -389,7 +381,6 @@
                 currentConfig.strategy = currentConfig.strategy || {};
                 currentConfig.strategy.secondaryMetric = secondarySelect.value || undefined;
                 if (!currentConfig.strategy.secondaryMetric) delete currentConfig.strategy.secondaryMetric;
-                syncJsonTextarea();
             });
         }
         
@@ -400,7 +391,6 @@
                 currentConfig.strategy = currentConfig.strategy || {};
                 currentConfig.strategy.increaseSort = increaseSelect.value || undefined;
                 if (!currentConfig.strategy.increaseSort) delete currentConfig.strategy.increaseSort;
-                syncJsonTextarea();
             });
         }
         
@@ -411,7 +401,6 @@
                 currentConfig.strategy = currentConfig.strategy || {};
                 currentConfig.strategy.decreaseSort = decreaseSelect.value || undefined;
                 if (!currentConfig.strategy.decreaseSort) delete currentConfig.strategy.decreaseSort;
-                syncJsonTextarea();
             });
         }
         
@@ -440,7 +429,6 @@
                 } else {
                     delete currentConfig.strategy.sort;
                 }
-                syncJsonTextarea();
             });
         }
 
@@ -457,7 +445,6 @@
                 } else {
                     delete currentConfig.strategy.comparisonLayers;
                 }
-                syncJsonTextarea();
             });
         }
 
@@ -469,7 +456,6 @@
                 currentConfig.strategy = currentConfig.strategy || {};
                 currentConfig.strategy.comparisonMode = comparisonModeSelect.value || undefined;
                 if (!currentConfig.strategy.comparisonMode) delete currentConfig.strategy.comparisonMode;
-                syncJsonTextarea();
             });
         }
 
@@ -481,7 +467,6 @@
                 currentConfig.strategy = currentConfig.strategy || {};
                 currentConfig.strategy.matchMode = matchModeSelect.value || undefined;
                 if (!currentConfig.strategy.matchMode) delete currentConfig.strategy.matchMode;
-                syncJsonTextarea();
             });
         }
 
@@ -493,7 +478,6 @@
                 currentConfig.strategy = currentConfig.strategy || {};
                 currentConfig.strategy.crowdSort = crowdSortSelect.value || undefined;
                 if (!currentConfig.strategy.crowdSort) delete currentConfig.strategy.crowdSort;
-                syncJsonTextarea();
             });
         }
 
@@ -505,7 +489,6 @@
                 currentConfig.strategy = currentConfig.strategy || {};
                 currentConfig.strategy.productSort = productSortSelect.value || undefined;
                 if (!currentConfig.strategy.productSort) delete currentConfig.strategy.productSort;
-                syncJsonTextarea();
             });
         }
     }
@@ -525,7 +508,6 @@
                 } else {
                     delete currentConfig.filters.minCostShare;
                 }
-                syncJsonTextarea();
             });
         }
         
@@ -541,7 +523,6 @@
                 } else {
                     delete currentConfig.filters.excludeLayers;
                 }
-                syncJsonTextarea();
             });
         }
         
@@ -555,7 +536,6 @@
                 } else {
                     delete currentConfig.filters.requireFinitePrimaryMetric;
                 }
-                syncJsonTextarea();
             });
         }
         
@@ -571,7 +551,6 @@
                 } else {
                     delete currentConfig.filters.minFocusPoolSize;
                 }
-                syncJsonTextarea();
             });
         }
         
@@ -586,7 +565,6 @@
                 } else {
                     delete currentConfig.filters.focusPoolCostCoverage;
                 }
-                syncJsonTextarea();
             });
         }
         
@@ -600,7 +578,6 @@
                 } else {
                     delete currentConfig.filters.requirePositiveCost;
                 }
-                syncJsonTextarea();
             });
         }
         
@@ -614,7 +591,6 @@
                 } else {
                     delete currentConfig.filters.requirePositiveOrders;
                 }
-                syncJsonTextarea();
             });
         }
     }
@@ -647,7 +623,6 @@
         renderOutputFields();
         renderStrategyFields();  // 新增：渲染策略配置
         renderFilterFields();    // 新增：渲染过滤条件
-        syncJsonTextarea();
         setStatus('');
         renderRuleList();
     }
@@ -708,19 +683,16 @@
         const labelEl = document.getElementById('rule-label');
         labelEl.addEventListener('input', () => {
             currentConfig.label = labelEl.value.trim();
-            syncJsonTextarea();
         });
 
         const intentEl = document.getElementById('rule-intent');
         intentEl.addEventListener('input', () => {
             currentConfig.intentKey = intentEl.value.trim();
-            syncJsonTextarea();
         });
 
         const descEl = document.getElementById('rule-description');
         descEl.addEventListener('input', () => {
             currentConfig.description = descEl.value.trim();
-            syncJsonTextarea();
         });
 
         const examplesEl = document.getElementById('rule-examples');
@@ -729,7 +701,6 @@
             currentConfig.examples = examplesText
                 ? examplesText.split('\n').map(line => line.trim()).filter(Boolean)
                 : [];
-            syncJsonTextarea();
         });
 
         document.getElementById('rule-form').addEventListener('submit', async (event) => {

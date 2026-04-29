@@ -358,15 +358,12 @@
 
     function updateAttachUI(fileName) {
         var btn = document.getElementById('genbi-attach-btn');
-        var nameEl = document.getElementById('genbi-attach-name');
         var clearBtn = document.getElementById('genbi-attach-clear');
         if (fileName) {
             if (btn) { btn.textContent = '📄 ' + (fileName.length > 18 ? fileName.slice(0, 18) + '...' : fileName); btn.classList.add('has-file'); }
-            if (nameEl) nameEl.textContent = '';
             if (clearBtn) clearBtn.style.display = 'inline';
         } else {
             if (btn) { btn.textContent = '📎 上传货盘CSV'; btn.classList.remove('has-file'); }
-            if (nameEl) nameEl.textContent = '';
             if (clearBtn) clearBtn.style.display = 'none';
         }
     }
