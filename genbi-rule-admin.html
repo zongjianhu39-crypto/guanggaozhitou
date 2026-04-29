@@ -125,12 +125,6 @@
             padding:12px 24px; font-size:14px; font-weight:700; cursor:pointer;
         }
         .ra-save-btn:disabled { opacity:.65; cursor:wait; }
-        .ra-delete-btn {
-            border:1px solid var(--bad); border-radius:12px; background:#fff; color:var(--bad);
-            padding:12px 24px; font-size:14px; font-weight:700; cursor:pointer;
-        }
-        .ra-delete-btn:hover { background:#fef2f2; }
-        .ra-delete-btn:disabled { opacity:.65; cursor:wait; }
         .ra-preview-btn {
             border:1px solid var(--accent); border-radius:12px; background:#fff; color:var(--accent);
             padding:12px 20px; font-size:14px; font-weight:700; cursor:pointer;
@@ -490,7 +484,6 @@
                             <input id="preview-end" type="date" class="ra-preview-date">
                         </label>
                         <button id="preview-btn" class="ra-preview-btn" type="button">试跑预览</button>
-                        <button id="delete-btn" class="ra-delete-btn" type="button" style="display:none">删除规则</button>
                         <button id="save-btn" class="ra-save-btn" type="submit">保存规则</button>
                     </div>
                     <div id="preview-panel" class="ra-preview-panel" aria-live="polite"></div>
