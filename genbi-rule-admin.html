@@ -221,40 +221,71 @@
                     <div class="ra-field">
                         <label for="rule-label">规则名称</label>
                         <input id="rule-label" class="ra-input" type="text" maxlength="60">
+                        <div class="ra-small-note">💡 <strong>作用：</strong>规则的人机可读名称，用于在规则列表和 AI 意图识别时展示。<br>
+                        📌 <strong>场景：</strong>所有规则都需要设置，建议用简短的业务语言描述，如"人群预算建议"、"高花费低回报商品"。<br>
+                        ⚡ <strong>影响：</strong>AI 会使用规则名称来理解这个规则的用途，名称越清晰，意图识别越准确。</div>
                     </div>
 
                     <div class="ra-field">
                         <label for="rule-intent">关联意图（可选）</label>
                         <input id="rule-intent" class="ra-input" type="text" maxlength="60" placeholder="例如：custom_analysis">
-                        <div class="ra-small-note">填写后，当 AI 识别到该意图时会自动使用此规则。留空则仅作为配置模板。</div>
+                        <div class="ra-small-note">💡 <strong>作用：</strong>内部标识符，用于将用户问题路由到本规则。<br>
+                        📌 <strong>场景：</strong>当您希望 AI 识别到特定意图时自动使用此规则，如填写"crowd_budget"后，用户问"哪些人群该加预算"就会触发此规则。<br>
+                        ⚡ <strong>影响：</strong>留空时该规则仅作为配置模板，不会被 AI 自动调用；填写后必须保证唯一性，不能与其他规则重复。<br>
+                        💡 <strong>最佳实践：</strong>使用英文蛇形命名（如 crowd_budget、weak_products），避免使用中文或特殊字符。</div>
                     </div>
 
                     <div class="ra-field">
                         <label for="rule-description">意图描述（可选）</label>
                         <textarea id="rule-description" class="ra-textarea" style="min-height:80px" placeholder="例如：用户上传货盘 CSV 后，AI 分析商品特征并推荐最适合投放的超级直播人群分层"></textarea>
-                        <div class="ra-small-note">详细描述该意图的使用场景，帮助 AI 更准确地识别用户问题。留空则使用规则名称作为描述。</div>
+                        <div class="ra-small-note">💡 <strong>作用：</strong>详细描述该意图的使用场景，是 AI 意图识别的主要匹配依据。<br>
+                        📌 <strong>场景：</strong>当规则名称不足以完整表达意图时使用，如"用户想了解哪些人群投放效率好应该加预算，哪些人群效率差应该减预算"。<br>
+                        ⚡ <strong>影响：</strong>描述越详细，AI 越能准确理解用户问题的意图，减少误判。<br>
+                        💡 <strong>最佳实践：</strong>用 1-2 句话描述：① 用户想知道什么 ② 什么场景下会问这个问题 ③ 期望得到什么类型的回答。留空则使用规则名称作为描述。</div>
                     </div>
 
                     <div class="ra-field">
                         <label for="rule-examples">示例问题（可选）</label>
                         <textarea id="rule-examples" class="ra-textarea" style="min-height:100px" placeholder="每行一个问题，例如：&#10;帮我根据货盘推荐合适的超级直播投放人群&#10;这个货盘适合哪些人群投放&#10;根据商品特征推荐投放人群"></textarea>
-                        <div class="ra-small-note">提供多样化的示例问题（每行一个），帮助 AI 理解不同说法。留空则使用规则名称作为唯一示例。</div>
+                        <div class="ra-small-note">💡 <strong>作用：</strong>提供多样化的用户提问方式，帮助 AI 学习不同说法的同一个意图。<br>
+                        📌 <strong>场景：</strong>用户可能用多种方式问同一个问题，如"哪些人群该加预算"、"人群效率排名"、"哪些人群在浪费钱"都是同一个意图。<br>
+                        ⚡ <strong>影响：</strong>示例问题越多、越贴近真实用户提问，AI 识别准确率越高。建议提供 3-5 个典型示例。<br>
+                        💡 <strong>最佳实践：</strong>① 每行一个问题 ② 覆盖口语化表达和专业表达 ③ 包含常见的提问方式变体。留空则使用规则名称作为唯一示例。</div>
                     </div>
 
                     <div class="ra-field">
                         <label>使用哪些表</label>
                         <div id="scope-fields" class="ra-check-grid"></div>
+                        <div class="ra-small-note">💡 <strong>作用：</strong>指定该规则需要查询哪些数据源，决定底层查询哪些业务表。<br>
+                        📌 <strong>场景：</strong><br>
+                        &nbsp;&nbsp;• <strong>整体广告</strong>：查询直播间整体投放数据（总花费、总 GMV、整体 ROI）<br>
+                        &nbsp;&nbsp;• <strong>人群数据</strong>：查询超级直播人群分层数据（各人群的花费、GMV、ROI）<br>
+                        &nbsp;&nbsp;• <strong>单品广告</strong>：查询单品推广数据（各商品的花费、订单成本、商品 ROI）<br>
+                        ⚡ <strong>影响：</strong>选择错误的数据源会导致查询失败或返回不相关的数据。例如"人群预算建议"必须选择"人群数据"。<br>
+                        💡 <strong>最佳实践：</strong>根据规则的业务需求选择，可以多选。如"月度报表"可能需要同时选择"整体广告"和"单品广告"。</div>
                     </div>
 
                     <div class="ra-field">
                         <label>使用哪些指标</label>
                         <div id="metric-fields" class="ra-check-grid"></div>
-                        <div class="ra-small-note">指标会写入规则配置，并影响结果表可见列与 AI 可读的数据口径说明。</div>
+                        <div class="ra-small-note">💡 <strong>作用：</strong>指定该规则需要计算和展示哪些指标，影响结果表的可见列和 AI 分析的数据口径。<br>
+                        📌 <strong>场景：</strong><br>
+                        &nbsp;&nbsp;• 分析人群效率：选择花费、GMV、ROI、订单成本<br>
+                        &nbsp;&nbsp;• 分析商品表现：选择商品直接花费、商品直接 GMV、商品直接 ROI、订单数<br>
+                        &nbsp;&nbsp;• 分析趋势：选择周环比、月环比<br>
+                        ⚡ <strong>影响：</strong>未选择的指标不会出现在结果表格中，AI 也无法基于这些指标进行分析。<br>
+                        💡 <strong>最佳实践：</strong>① 选择所有可能用到的指标 ② 不要遗漏主要指标和次要指标 ③ 指标过多会增加查询时间，只选必要的。</div>
                     </div>
 
                     <div class="ra-field">
                         <label>输出参数</label>
                         <div id="output-fields" class="ra-output-grid"></div>
+                        <div class="ra-small-note">💡 <strong>作用：</strong>控制结果展示的细节，如表格显示多少行数据、高亮显示前几名等。<br>
+                        📌 <strong>场景：</strong><br>
+                        &nbsp;&nbsp;• <strong>表格行数（topCount）</strong>：控制返回多少条数据，如"人群预算建议"显示 Top 10 人群<br>
+                        &nbsp;&nbsp;• <strong>高亮数量（highlightCount）</strong>：突出显示最优/最差的前几名，如高亮 ROI 最高的 3 个人群<br>
+                        ⚡ <strong>影响：</strong>行数过多会导致信息过载，过少可能遗漏重要数据。建议 5-20 条。<br>
+                        💡 <strong>最佳实践：</strong>① 根据业务场景设置合理的行数 ② 高亮数量不要超过表格行数的 1/3 ③ 这些参数可以在策略配置后统一调整。</div>
                     </div>
 
                     <div class="ra-field">
@@ -270,6 +301,9 @@
                                     <option value="ad_cost">花费</option>
                                     <option value="breakeven_roi">盈亏平衡ROI</option>
                                 </select>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>决定数据按什么核心指标排序和分析，是规则的最重要配置。<br>
+                                📌 <strong>场景：</strong>"人群预算建议"选 ROI（找效率好的人群），"高花费低回报"选花费（找花钱多的商品）。<br>
+                                ⚡ <strong>影响：</strong>直接影响结果的排序顺序和 AI 分析的侧重点。</div>
                             </div>
                             <div class="ra-strategy-item">
                                 <label for="strategy-secondary">次要指标</label>
@@ -282,6 +316,8 @@
                                     <option value="ad_cost">花费</option>
                                     <option value="wow_or_mom">周/月环比</option>
                                 </select>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>辅助排序指标，当主要指标相同时用次要指标做二次排序。<br>
+                                📌 <strong>场景：</strong>两个人群 ROI 相同，按花费降序排（花费多的优先调整）。</div>
                             </div>
                             <div class="ra-strategy-item">
                                 <label for="strategy-increase">加预算排序</label>
@@ -290,6 +326,9 @@
                                     <option value="primary_asc">主要指标升序（低→高）</option>
                                     <option value="primary_desc">主要指标降序（高→低）</option>
                                 </select>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>决定哪些数据应该增加预算的排序逻辑。<br>
+                                📌 <strong>场景：</strong>找应该加预算的人群/商品：ROI 降序（效率高的优先加预算）。<br>
+                                ⚡ <strong>影响：</strong>直接影响 AI 给出的"建议增加预算"的排序顺序。</div>
                             </div>
                             <div class="ra-strategy-item">
                                 <label for="strategy-decrease">减预算排序</label>
@@ -298,6 +337,9 @@
                                     <option value="primary_asc">主要指标升序（低→高）</option>
                                     <option value="primary_desc">主要指标降序（高→低）</option>
                                 </select>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>决定哪些数据应该减少预算的排序逻辑。<br>
+                                📌 <strong>场景：</strong>找应该减预算的人群/商品：ROI 升序（效率低的优先减预算）。<br>
+                                ⚡ <strong>影响：</strong>直接影响 AI 给出的"建议减少预算"的排序顺序。</div>
                             </div>
                             <div class="ra-strategy-item">
                                 <label for="strategy-sort-mode">高级排序模式</label>
@@ -306,12 +348,19 @@
                                     <option value="primary_asc_secondary_desc_cost_desc">ROI升序 + 成本降序 + 花费降序</option>
                                     <option value="roi_x_gmv_desc">ROI × GMV 降序（潜力指标）</option>
                                 </select>
-                                <div class="ra-small-note">选择复杂排序逻辑时，上述简单排序配置将被忽略</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>提供复杂的多字段排序逻辑，适用于需要综合多个指标判断的场景。<br>
+                                📌 <strong>场景：</strong><br>
+                                &nbsp;&nbsp;• <strong>ROI升序+成本降序</strong>：找低 ROI 但高成本的商品（急需优化）<br>
+                                &nbsp;&nbsp;• <strong>ROI×GMV降序</strong>：找既有高 ROI 又有高 GMV 的潜力商品<br>
+                                ⚡ <strong>影响：</strong>选择高级模式后，上述简单排序配置将被忽略。</div>
                             </div>
                             <div class="ra-strategy-item">
                                 <label for="strategy-comparison-layers">对比人群分层</label>
                                 <input id="strategy-comparison-layers" class="ra-input" type="text" placeholder="老客,新客,兴趣新客">
-                                <div class="ra-small-note">多个值用逗号分隔，用于老客新客结构分析等场景</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>指定需要对比分析的特定人群分层。<br>
+                                📌 <strong>场景：</strong>老客新客结构分析时，指定"老客,新客,兴趣新客"进行对比。<br>
+                                ⚡ <strong>影响：</strong>只分析指定的人群，忽略其他人群数据。<br>
+                                💡 <strong>最佳实践：</strong>多个值用逗号分隔，确保填写的人群名称与数据库中的名称完全一致。</div>
                             </div>
                             <div class="ra-strategy-item">
                                 <label for="strategy-comparison-mode">对比模式</label>
@@ -319,7 +368,9 @@
                                     <option value="">不设置</option>
                                     <option value="current_vs_previous">当前周期 vs 上一周期</option>
                                 </select>
-                                <div class="ra-small-note">用于花费波动归因等对比分析场景</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>启用周期对比分析，自动计算环比变化。<br>
+                                📌 <strong>场景：</strong>花费波动归因分析，对比本周 vs 上周的数据变化。<br>
+                                ⚡ <strong>影响：</strong>启用后会查询两个周期的数据，并计算变化率和归因分析。</div>
                             </div>
                             <div class="ra-strategy-item">
                                 <label for="strategy-match-mode">匹配模式</label>
@@ -327,7 +378,9 @@
                                     <option value="">不设置</option>
                                     <option value="product_name_contains">商品名模糊匹配</option>
                                 </select>
-                                <div class="ra-small-note">用于单商品销售查询等场景</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>决定如何匹配用户查询中的商品名称。<br>
+                                📌 <strong>场景：</strong>单商品销售查询时，用户说"兰蔻小黑瓶"，模糊匹配可以找到包含该关键词的所有商品。<br>
+                                ⚡ <strong>影响：</strong>模糊匹配会返回更多结果，精确匹配只返回完全匹配的商品。</div>
                             </div>
                             <div class="ra-strategy-item">
                                 <label for="strategy-crowd-sort">人群排序</label>
@@ -338,6 +391,9 @@
                                     <option value="cost_share_asc">花费占比升序</option>
                                     <option value="cost_share_desc">花费占比降序</option>
                                 </select>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>针对人群数据的专用排序方式。<br>
+                                📌 <strong>场景：</strong>老客新客结构分析时，按订单成本升序（找获客成本低的人群）。<br>
+                                ⚡ <strong>影响：</strong>覆盖主要指标的排序，仅对人群数据生效。</div>
                             </div>
                             <div class="ra-strategy-item">
                                 <label for="strategy-product-sort">商品排序</label>
@@ -348,6 +404,9 @@
                                     <option value="roi_asc">ROI升序</option>
                                     <option value="roi_desc">ROI降序</option>
                                 </select>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>针对商品数据的专用排序方式。<br>
+                                📌 <strong>场景：</strong>冲销售额商品识别时，按 ROI 降序（找效率高且能冲量的商品）。<br>
+                                ⚡ <strong>影响：</strong>覆盖主要指标的排序，仅对商品数据生效。</div>
                             </div>
                         </div>
                         <div class="ra-small-note">策略配置决定数据如何排序和筛选，所有字段均已可视化，无需手动编辑 JSON。</div>
@@ -359,46 +418,67 @@
                             <div class="ra-filter-item">
                                 <label for="filter-min-cost-share">最小花费占比</label>
                                 <input id="filter-min-cost-share" class="ra-input" type="number" step="0.01" min="0" max="1" placeholder="0.05">
-                                <div class="ra-small-note">例如：0.05 表示过滤掉花费占比 < 5% 的数据</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>过滤掉花费占比过低的数据，聚焦主要投放对象。<br>
+                                📌 <strong>场景：</strong>人群预算建议时，过滤掉花费占比 < 5% 的人群（数据样本太小，不具代表性）。<br>
+                                ⚡ <strong>影响：</strong>值越大，过滤越严格，返回的数据越少。建议 0.03-0.10（3%-10%）。<br>
+                                💡 <strong>最佳实践：</strong>不要设置过高，否则会过滤掉有潜力的新人群。</div>
                             </div>
                             <div class="ra-filter-item">
                                 <label for="filter-exclude-layers">排除分层</label>
                                 <input id="filter-exclude-layers" class="ra-input" type="text" placeholder="未知,测试">
-                                <div class="ra-small-note">多个值用逗号分隔，例如：未知,测试</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>排除不需要分析的人群分层，避免干扰结果。<br>
+                                📌 <strong>场景：</strong>排除"未知"、"测试"等非正式人群，只分析真实投放的人群。<br>
+                                ⚡ <strong>影响：</strong>被排除的人群不会出现在结果中。<br>
+                                💡 <strong>最佳实践：</strong>多个值用逗号分隔，定期更新排除列表，清理无效人群。</div>
                             </div>
                             <div class="ra-filter-item">
                                 <label class="ra-checkbox-label">
                                     <input id="filter-require-finite" type="checkbox">
                                     <span>要求主要指标有效</span>
                                 </label>
-                                <div class="ra-small-note">过滤掉主要指标为无效值的数据</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>过滤掉主要指标为 0 或无效值的数据，保证结果质量。<br>
+                                📌 <strong>场景：</strong>按 ROI 排序时，过滤掉 ROI=0 的人群（无转化数据，排序无意义）。<br>
+                                ⚡ <strong>影响：</strong>开启后会过滤掉主要指标无效的行，避免 Top N 全是 0 值。<br>
+                                💡 <strong>最佳实践：</strong>默认开启，只有当您需要分析全量数据（包括 0 值）时才关闭。</div>
                             </div>
                             <div class="ra-filter-item">
                                 <label for="filter-min-focus-pool">FocusPool 最小商品数</label>
                                 <input id="filter-min-focus-pool" class="ra-input" type="number" min="1" placeholder="20">
-                                <div class="ra-small-note">用于商品分析，按花费取 Top N 商品</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>在商品分析中，按花费排序取 Top N 个商品作为重点关注池。<br>
+                                📌 <strong>场景：</strong>高花费低回报商品分析时，取花费最高的 20 个商品进行深度分析。<br>
+                                ⚡ <strong>影响：</strong>只保留 FocusPool 中的商品，其他商品被过滤掉。<br>
+                                💡 <strong>最佳实践：</strong>根据实际投放商品数设置，通常 10-50 个，不要超过总商品数的 20%。</div>
                             </div>
                             <div class="ra-filter-item">
                                 <label for="filter-focus-pool-coverage">FocusPool 花费覆盖率</label>
                                 <input id="filter-focus-pool-coverage" class="ra-input" type="number" step="0.01" min="0" max="1" placeholder="0.85">
-                                <div class="ra-small-note">例如：0.85 表示覆盖 85% 总花费的商品</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>确保 FocusPool 覆盖一定比例的总花费，避免遗漏重要商品。<br>
+                                📌 <strong>场景：</strong>Top 20 商品可能只覆盖 60% 花费，设置 0.85 会自动扩展到覆盖 85% 花费的商品数。<br>
+                                ⚡ <strong>影响：</strong>值越大，FocusPool 包含的商品越多。建议 0.80-0.95（80%-95%）。<br>
+                                💡 <strong>最佳实践：</strong>与最小商品数配合使用，两者取较大值作为最终 FocusPool 大小。</div>
                             </div>
                             <div class="ra-filter-item">
                                 <label class="ra-checkbox-label">
                                     <input id="filter-require-positive-cost" type="checkbox">
                                     <span>要求正花费</span>
                                 </label>
-                                <div class="ra-small-note">只保留花费 > 0 的数据</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>只保留有实际花费的数据，过滤掉未投放的商品/人群。<br>
+                                📌 <strong>场景：</strong>商品分析时，过滤掉花费=0 的商品（未投放，分析无意义）。<br>
+                                ⚡ <strong>影响：</strong>开启后只保留花费 > 0 的数据。<br>
+                                💡 <strong>最佳实践：</strong>分析投放效果时建议开启，分析全量商品时关闭。</div>
                             </div>
                             <div class="ra-filter-item">
                                 <label class="ra-checkbox-label">
                                     <input id="filter-require-positive-orders" type="checkbox">
                                     <span>要求正订单数</span>
                                 </label>
-                                <div class="ra-small-note">只保留订单数 > 0 的数据</div>
+                                <div class="ra-small-note">💡 <strong>作用：</strong>只保留有实际订单的数据，过滤掉无转化的商品/人群。<br>
+                                📌 <strong>场景：</strong>冲销售额商品识别时，只分析有订单的商品（无订单无法冲量）。<br>
+                                ⚡ <strong>影响：</strong>开启后只保留订单数 > 0 的数据。<br>
+                                💡 <strong>最佳实践：</strong>分析转化效果时建议开启，分析流量潜力时关闭。</div>
                             </div>
                         </div>
-                        <div class="ra-small-note">过滤条件决定哪些数据被排除。</div>
+                        <div class="ra-small-note">💡 <strong>过滤条件的总体作用：</strong>在查询数据时自动排除不符合条件的记录，保证分析结果的质量和准确性。合理配置过滤条件可以避免 AI 分析无效数据，提升回答质量。</div>
                     </div>
 
                     <div class="ra-actions">
