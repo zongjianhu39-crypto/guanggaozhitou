@@ -97,9 +97,9 @@ export async function detectIntentByAI(question: string): Promise<{ intent: stri
     const allIntentKeys = new Set<string>(intentDefs.map((d) => String(d.intent)));
 
     const prompt = buildIntentDetectionPrompt(intentDefs, question);
-    // maxTokens 提到 128：MiniMax-M2.7 需要为 <think> 留足预算，
-    // 否则极易截断导致最后一行不是真正的意图结论。
-    const result = await callMiniMax(prompt, undefined, { maxTokens: 128 });
+    // maxTokens 设为 32768（MiniMax 2.7 上限）：意图识别虽只需输出一个词，
+    // 但模型是推理型，会先输出长思考块。给足预算可避免截断导致最后一行非意图结论。
+    const result = await callMiniMax(prompt, undefined, { maxTokens: 32768 });
 
     // 先剥离 <think> 思考块，再取最后一行做意图结论
     const stripped = stripThinkBlocks(result);
