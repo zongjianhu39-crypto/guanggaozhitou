@@ -44,6 +44,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  document.querySelectorAll('.nav-item-dropdown').forEach(function(dropdown) {
+    const trigger = dropdown.querySelector('button.nav-link[aria-expanded]');
+    if (!trigger) return;
+
+    function setExpanded(expanded) {
+      trigger.setAttribute('aria-expanded', String(expanded));
+    }
+
+    dropdown.addEventListener('mouseenter', function() {
+      setExpanded(true);
+    });
+    dropdown.addEventListener('mouseleave', function() {
+      setExpanded(false);
+    });
+    dropdown.addEventListener('focusin', function() {
+      setExpanded(true);
+    });
+    dropdown.addEventListener('focusout', function(event) {
+      if (!dropdown.contains(event.relatedTarget)) {
+        setExpanded(false);
+      }
+    });
+  });
+
   document.querySelectorAll('[data-action="logout"]').forEach(function(link) {
     link.addEventListener('click', function(event) {
       event.preventDefault();

@@ -12,6 +12,7 @@
     let currentRuleKey = '';
     let currentConfig = {};
     let authRedirectScheduled = false;
+    let isDirty = false;
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -46,12 +47,27 @@
         el.className = 'ra-status' + (kind ? ` ${kind}` : '');
     }
 
+    function markDirty() {
+        isDirty = true;
+    }
+
+    function confirmDiscardChanges() {
+        if (!isDirty) return true;
+        return window.confirm('当前规则有未保存的修改，离开后这些修改会丢失。是否继续？');
+    }
+
+    function formatLocalDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     function getDefaultPreviewRange() {
         const end = new Date();
         const start = new Date();
         start.setDate(end.getDate() - 6);
-        const fmt = (d) => d.toISOString().slice(0, 10);
-        return { start: fmt(start), end: fmt(end) };
+        return { start: formatLocalDate(start), end: formatLocalDate(end) };
     }
 
     function ensurePreviewDateDefaults() {
@@ -150,6 +166,11 @@
             setStatus('请设定试跑日期范围', 'warn');
             return;
         }
+        if (range.start > range.end) {
+            setStatus('试跑开始日期不能晚于结束日期', 'warn');
+            renderPreviewPanel({ rule_key: currentRuleKey, range }, null, '试跑开始日期不能晚于结束日期，请重新选择。');
+            return;
+        }
 
         previewBtn.disabled = true;
         setStatus('试跑中…', 'warn');
@@ -228,6 +249,51 @@
         return String(item.label || key);
     }
 
+    function isKnownMetric(key) {
+        return Boolean(key && Object.prototype.hasOwnProperty.call(metrics, key));
+    }
+
+    function renderMetricOptions(select, selectedValue) {
+        if (!select) return;
+        const selected = String(selectedValue || '');
+        const entries = Object.entries(metrics);
+        const options = ['<option value="">不设置</option>'];
+        if (selected && !isKnownMetric(selected)) {
+            options.push(`<option value="${escapeHtml(selected)}">${escapeHtml(selected)}（不支持，请重新选择）</option>`);
+        }
+        entries.forEach(([key]) => {
+            options.push(`<option value="${escapeHtml(key)}">${escapeHtml(getMetricLabel(key))}</option>`);
+        });
+        select.innerHTML = options.join('');
+        select.value = selected;
+    }
+
+    function validateCurrentConfig(rule) {
+        const label = String(currentConfig.label || rule?.label || '').trim();
+        if (!label) return '规则名称不能为空';
+
+        const intentKey = String(currentConfig.intentKey || '').trim();
+        if (intentKey) {
+            const duplicate = rules.find((item) => {
+                if (item.rule_key === currentRuleKey) return false;
+                const config = item.config && typeof item.config === 'object' ? item.config : {};
+                return String(config.intentKey || '').trim() === intentKey;
+            });
+            if (duplicate) return `关联意图 ${intentKey} 已被规则「${duplicate.label || duplicate.rule_key}」使用`;
+        }
+
+        const strategy = currentConfig.strategy && typeof currentConfig.strategy === 'object' ? currentConfig.strategy : {};
+        const metricKeys = [
+            String(strategy.primaryMetric || '').trim(),
+            String(strategy.secondaryMetric || '').trim(),
+            ...(Array.isArray(strategy.metrics) ? strategy.metrics.map((item) => String(item || '').trim()) : []),
+        ].filter(Boolean);
+        const invalidMetric = metricKeys.find((key) => !isKnownMetric(key));
+        if (invalidMetric) return `指标 ${invalidMetric} 不在当前后端指标表中，请重新选择`;
+
+        return '';
+    }
+
     function getSelectedMetrics(config = currentConfig) {
         const strategy = config.strategy && typeof config.strategy === 'object' ? config.strategy : {};
         const selected = Array.isArray(strategy.metrics) ? strategy.metrics.map(String) : [];
@@ -243,16 +309,16 @@
             const intentText = Array.isArray(rule.intents) && rule.intents.length
                 ? rule.intents.map((item) => item.label || item.intent).join('、')
                 : rule.rule_key;
-            
+
             // 所有规则都是动态规则（已完全迁移）
             const typeLabel = '动态规则';
             const typeColor = '#18794e';
-            
+
             return `
                 <button class="ra-rule-btn${rule.rule_key === currentRuleKey ? ' active' : ''}" type="button" data-rule-key="${escapeHtml(rule.rule_key)}">
                     ${escapeHtml(rule.label || rule.rule_key)}
                     <span class="ra-rule-source">
-                        ${escapeHtml(intentText)} · 
+                        ${escapeHtml(intentText)} ·
                         <span style="color:${typeColor};font-weight:600;">${typeLabel}</span>
                     </span>
                 </button>
@@ -264,6 +330,7 @@
     }
 
     async function createNewRule() {
+        if (!confirmDiscardChanges()) return;
         const label = prompt('请输入新规则的名称：');
         if (!label || !label.trim()) return;
 
@@ -291,6 +358,7 @@
             currentRuleKey = ruleKey;
             renderRuleList();
             renderCurrentRule();
+            isDirty = false;
             setStatus('新规则已创建，请继续编辑', 'good');
         } catch (error) {
             const errorState = authHelpers.describeFetchError
@@ -312,6 +380,7 @@
         el.querySelectorAll('input').forEach((input) => {
             input.addEventListener('change', () => {
                 currentConfig.dataScope = Array.from(el.querySelectorAll('input:checked')).map((item) => item.value);
+                markDirty();
             });
         });
     }
@@ -330,6 +399,7 @@
             input.addEventListener('change', () => {
                 if (!currentConfig.strategy || typeof currentConfig.strategy !== 'object') currentConfig.strategy = {};
                 currentConfig.strategy.metrics = Array.from(el.querySelectorAll('input:checked')).map((item) => item.value);
+                markDirty();
             });
         });
     }
@@ -356,6 +426,7 @@
                 const value = input.value.trim();
                 const numericValue = Number(value || 0);
                 output[key] = typeof original === 'number' && Number.isFinite(numericValue) ? numericValue : value;
+                markDirty();
             });
         });
     }
@@ -363,73 +434,37 @@
     // 新增：渲染策略配置（可视化）
     function renderStrategyFields() {
         const strategy = currentConfig.strategy || {};
-        
+
         const primarySelect = document.getElementById('strategy-primary');
-        if (primarySelect) {
-            primarySelect.value = strategy.primaryMetric || '';
-            primarySelect.addEventListener('change', () => {
-                currentConfig.strategy = currentConfig.strategy || {};
-                currentConfig.strategy.primaryMetric = primarySelect.value || undefined;
-                if (!currentConfig.strategy.primaryMetric) delete currentConfig.strategy.primaryMetric;
-            });
-        }
-        
+        renderMetricOptions(primarySelect, strategy.primaryMetric || '');
+
         const secondarySelect = document.getElementById('strategy-secondary');
-        if (secondarySelect) {
-            secondarySelect.value = strategy.secondaryMetric || '';
-            secondarySelect.addEventListener('change', () => {
-                currentConfig.strategy = currentConfig.strategy || {};
-                currentConfig.strategy.secondaryMetric = secondarySelect.value || undefined;
-                if (!currentConfig.strategy.secondaryMetric) delete currentConfig.strategy.secondaryMetric;
-            });
-        }
-        
+        renderMetricOptions(secondarySelect, strategy.secondaryMetric || '');
+
         const increaseSelect = document.getElementById('strategy-increase');
         if (increaseSelect) {
             increaseSelect.value = strategy.increaseSort || '';
-            increaseSelect.addEventListener('change', () => {
-                currentConfig.strategy = currentConfig.strategy || {};
-                currentConfig.strategy.increaseSort = increaseSelect.value || undefined;
-                if (!currentConfig.strategy.increaseSort) delete currentConfig.strategy.increaseSort;
-            });
         }
-        
+
         const decreaseSelect = document.getElementById('strategy-decrease');
         if (decreaseSelect) {
             decreaseSelect.value = strategy.decreaseSort || '';
-            decreaseSelect.addEventListener('change', () => {
-                currentConfig.strategy = currentConfig.strategy || {};
-                currentConfig.strategy.decreaseSort = decreaseSelect.value || undefined;
-                if (!currentConfig.strategy.decreaseSort) delete currentConfig.strategy.decreaseSort;
-            });
         }
-        
+
         // 高级排序模式
         const sortModeSelect = document.getElementById('strategy-sort-mode');
         if (sortModeSelect) {
             // 根据现有的 sort 数组判断使用哪种模式
             const sortArray = Array.isArray(strategy.sort) ? strategy.sort : [];
             let currentMode = '';
-            
+
             if (sortArray.includes('roi_x_gmv_desc')) {
                 currentMode = 'roi_x_gmv_desc';
             } else if (sortArray.includes('primary_asc') && sortArray.includes('secondary_desc') && sortArray.includes('cost_desc')) {
                 currentMode = 'primary_asc_secondary_desc_cost_desc';
             }
-            
+
             sortModeSelect.value = currentMode;
-            sortModeSelect.addEventListener('change', () => {
-                currentConfig.strategy = currentConfig.strategy || {};
-                const mode = sortModeSelect.value;
-                
-                if (mode === 'roi_x_gmv_desc') {
-                    currentConfig.strategy.sort = ['roi_x_gmv_desc'];
-                } else if (mode === 'primary_asc_secondary_desc_cost_desc') {
-                    currentConfig.strategy.sort = ['primary_asc', 'secondary_desc', 'cost_desc'];
-                } else {
-                    delete currentConfig.strategy.sort;
-                }
-            });
         }
 
         // 对比人群分层
@@ -437,6 +472,116 @@
         if (comparisonLayersInput) {
             const layers = Array.isArray(strategy.comparisonLayers) ? strategy.comparisonLayers.join(',') : '';
             comparisonLayersInput.value = layers;
+        }
+
+        // 对比模式
+        const comparisonModeSelect = document.getElementById('strategy-comparison-mode');
+        if (comparisonModeSelect) {
+            comparisonModeSelect.value = strategy.comparisonMode || '';
+        }
+
+        // 匹配模式
+        const matchModeSelect = document.getElementById('strategy-match-mode');
+        if (matchModeSelect) {
+            matchModeSelect.value = strategy.matchMode || '';
+        }
+
+        // 人群排序
+        const crowdSortSelect = document.getElementById('strategy-crowd-sort');
+        if (crowdSortSelect) {
+            crowdSortSelect.value = strategy.crowdSort || '';
+        }
+
+        // 商品排序
+        const productSortSelect = document.getElementById('strategy-product-sort');
+        if (productSortSelect) {
+            productSortSelect.value = strategy.productSort || '';
+        }
+    }
+
+    // 新增：渲染过滤条件（可视化）
+    function renderFilterFields() {
+        const filters = currentConfig.filters || {};
+
+        const minCostShareInput = document.getElementById('filter-min-cost-share');
+        if (minCostShareInput) {
+            minCostShareInput.value = filters.minCostShare ?? '';
+        }
+
+        const excludeLayersInput = document.getElementById('filter-exclude-layers');
+        if (excludeLayersInput) {
+            const layers = Array.isArray(filters.excludeLayers) ? filters.excludeLayers.join(',') : '';
+            excludeLayersInput.value = layers;
+        }
+
+        const requireFiniteCheckbox = document.getElementById('filter-require-finite');
+        if (requireFiniteCheckbox) {
+            requireFiniteCheckbox.checked = filters.requireFinitePrimaryMetric === false ? false : true;
+        }
+
+        // FocusPool 配置
+        const minFocusPoolInput = document.getElementById('filter-min-focus-pool');
+        if (minFocusPoolInput) {
+            minFocusPoolInput.value = filters.minFocusPoolSize ?? '';
+        }
+
+        const focusPoolCoverageInput = document.getElementById('filter-focus-pool-coverage');
+        if (focusPoolCoverageInput) {
+            focusPoolCoverageInput.value = filters.focusPoolCostCoverage ?? '';
+        }
+
+        const requirePositiveCostCheckbox = document.getElementById('filter-require-positive-cost');
+        if (requirePositiveCostCheckbox) {
+            requirePositiveCostCheckbox.checked = !!filters.requirePositiveCost;
+        }
+
+        const requirePositiveOrdersCheckbox = document.getElementById('filter-require-positive-orders');
+        if (requirePositiveOrdersCheckbox) {
+            requirePositiveOrdersCheckbox.checked = !!filters.requirePositiveOrders;
+        }
+    }
+
+    function bindStrategyAndFilterEvents() {
+        const strategySelects = [
+            ['strategy-primary', 'primaryMetric'],
+            ['strategy-secondary', 'secondaryMetric'],
+            ['strategy-increase', 'increaseSort'],
+            ['strategy-decrease', 'decreaseSort'],
+            ['strategy-comparison-mode', 'comparisonMode'],
+            ['strategy-match-mode', 'matchMode'],
+            ['strategy-crowd-sort', 'crowdSort'],
+            ['strategy-product-sort', 'productSort'],
+        ];
+
+        strategySelects.forEach(([id, key]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                currentConfig.strategy[key] = el.value || undefined;
+                if (!currentConfig.strategy[key]) delete currentConfig.strategy[key];
+                markDirty();
+            });
+        });
+
+        const sortModeSelect = document.getElementById('strategy-sort-mode');
+        if (sortModeSelect) {
+            sortModeSelect.addEventListener('change', () => {
+                currentConfig.strategy = currentConfig.strategy || {};
+                const mode = sortModeSelect.value;
+                if (mode === 'roi_x_gmv_desc') {
+                    currentConfig.strategy.sort = ['roi_x_gmv_desc'];
+                } else if (mode === 'primary_asc_secondary_desc_cost_desc') {
+                    currentConfig.strategy.sort = ['primary_asc', 'secondary_desc', 'cost_desc'];
+                } else {
+                    delete currentConfig.strategy.sort;
+                }
+                markDirty();
+            });
+        }
+
+        const comparisonLayersInput = document.getElementById('strategy-comparison-layers');
+        if (comparisonLayersInput) {
             comparisonLayersInput.addEventListener('input', () => {
                 currentConfig.strategy = currentConfig.strategy || {};
                 const value = comparisonLayersInput.value.trim();
@@ -445,61 +590,12 @@
                 } else {
                     delete currentConfig.strategy.comparisonLayers;
                 }
+                markDirty();
             });
         }
 
-        // 对比模式
-        const comparisonModeSelect = document.getElementById('strategy-comparison-mode');
-        if (comparisonModeSelect) {
-            comparisonModeSelect.value = strategy.comparisonMode || '';
-            comparisonModeSelect.addEventListener('change', () => {
-                currentConfig.strategy = currentConfig.strategy || {};
-                currentConfig.strategy.comparisonMode = comparisonModeSelect.value || undefined;
-                if (!currentConfig.strategy.comparisonMode) delete currentConfig.strategy.comparisonMode;
-            });
-        }
-
-        // 匹配模式
-        const matchModeSelect = document.getElementById('strategy-match-mode');
-        if (matchModeSelect) {
-            matchModeSelect.value = strategy.matchMode || '';
-            matchModeSelect.addEventListener('change', () => {
-                currentConfig.strategy = currentConfig.strategy || {};
-                currentConfig.strategy.matchMode = matchModeSelect.value || undefined;
-                if (!currentConfig.strategy.matchMode) delete currentConfig.strategy.matchMode;
-            });
-        }
-
-        // 人群排序
-        const crowdSortSelect = document.getElementById('strategy-crowd-sort');
-        if (crowdSortSelect) {
-            crowdSortSelect.value = strategy.crowdSort || '';
-            crowdSortSelect.addEventListener('change', () => {
-                currentConfig.strategy = currentConfig.strategy || {};
-                currentConfig.strategy.crowdSort = crowdSortSelect.value || undefined;
-                if (!currentConfig.strategy.crowdSort) delete currentConfig.strategy.crowdSort;
-            });
-        }
-
-        // 商品排序
-        const productSortSelect = document.getElementById('strategy-product-sort');
-        if (productSortSelect) {
-            productSortSelect.value = strategy.productSort || '';
-            productSortSelect.addEventListener('change', () => {
-                currentConfig.strategy = currentConfig.strategy || {};
-                currentConfig.strategy.productSort = productSortSelect.value || undefined;
-                if (!currentConfig.strategy.productSort) delete currentConfig.strategy.productSort;
-            });
-        }
-    }
-
-    // 新增：渲染过滤条件（可视化）
-    function renderFilterFields() {
-        const filters = currentConfig.filters || {};
-        
         const minCostShareInput = document.getElementById('filter-min-cost-share');
         if (minCostShareInput) {
-            minCostShareInput.value = filters.minCostShare ?? '';
             minCostShareInput.addEventListener('input', () => {
                 currentConfig.filters = currentConfig.filters || {};
                 const value = parseFloat(minCostShareInput.value);
@@ -508,13 +604,12 @@
                 } else {
                     delete currentConfig.filters.minCostShare;
                 }
+                markDirty();
             });
         }
-        
+
         const excludeLayersInput = document.getElementById('filter-exclude-layers');
         if (excludeLayersInput) {
-            const layers = Array.isArray(filters.excludeLayers) ? filters.excludeLayers.join(',') : '';
-            excludeLayersInput.value = layers;
             excludeLayersInput.addEventListener('input', () => {
                 currentConfig.filters = currentConfig.filters || {};
                 const value = excludeLayersInput.value.trim();
@@ -523,40 +618,39 @@
                 } else {
                     delete currentConfig.filters.excludeLayers;
                 }
+                markDirty();
             });
         }
-        
+
         const requireFiniteCheckbox = document.getElementById('filter-require-finite');
         if (requireFiniteCheckbox) {
-            requireFiniteCheckbox.checked = !!filters.requireFinitePrimaryMetric;
             requireFiniteCheckbox.addEventListener('change', () => {
                 currentConfig.filters = currentConfig.filters || {};
                 if (requireFiniteCheckbox.checked) {
                     currentConfig.filters.requireFinitePrimaryMetric = true;
                 } else {
-                    delete currentConfig.filters.requireFinitePrimaryMetric;
+                    currentConfig.filters.requireFinitePrimaryMetric = false;
                 }
+                markDirty();
             });
         }
-        
-        // FocusPool 配置
+
         const minFocusPoolInput = document.getElementById('filter-min-focus-pool');
         if (minFocusPoolInput) {
-            minFocusPoolInput.value = filters.minFocusPoolSize ?? '';
             minFocusPoolInput.addEventListener('input', () => {
                 currentConfig.filters = currentConfig.filters || {};
-                const value = parseInt(minFocusPoolInput.value);
+                const value = parseInt(minFocusPoolInput.value, 10);
                 if (Number.isFinite(value) && value > 0) {
                     currentConfig.filters.minFocusPoolSize = value;
                 } else {
                     delete currentConfig.filters.minFocusPoolSize;
                 }
+                markDirty();
             });
         }
-        
+
         const focusPoolCoverageInput = document.getElementById('filter-focus-pool-coverage');
         if (focusPoolCoverageInput) {
-            focusPoolCoverageInput.value = filters.focusPoolCostCoverage ?? '';
             focusPoolCoverageInput.addEventListener('input', () => {
                 currentConfig.filters = currentConfig.filters || {};
                 const value = parseFloat(focusPoolCoverageInput.value);
@@ -565,12 +659,12 @@
                 } else {
                     delete currentConfig.filters.focusPoolCostCoverage;
                 }
+                markDirty();
             });
         }
-        
+
         const requirePositiveCostCheckbox = document.getElementById('filter-require-positive-cost');
         if (requirePositiveCostCheckbox) {
-            requirePositiveCostCheckbox.checked = !!filters.requirePositiveCost;
             requirePositiveCostCheckbox.addEventListener('change', () => {
                 currentConfig.filters = currentConfig.filters || {};
                 if (requirePositiveCostCheckbox.checked) {
@@ -578,12 +672,12 @@
                 } else {
                     delete currentConfig.filters.requirePositiveCost;
                 }
+                markDirty();
             });
         }
-        
+
         const requirePositiveOrdersCheckbox = document.getElementById('filter-require-positive-orders');
         if (requirePositiveOrdersCheckbox) {
-            requirePositiveOrdersCheckbox.checked = !!filters.requirePositiveOrders;
             requirePositiveOrdersCheckbox.addEventListener('change', () => {
                 currentConfig.filters = currentConfig.filters || {};
                 if (requirePositiveOrdersCheckbox.checked) {
@@ -591,6 +685,7 @@
                 } else {
                     delete currentConfig.filters.requirePositiveOrders;
                 }
+                markDirty();
             });
         }
     }
@@ -603,16 +698,16 @@
         const intentText = Array.isArray(rule.intents) && rule.intents.length
             ? rule.intents.map((item) => item.label || item.intent).join('、')
             : rule.rule_key;
-        
+
         // 所有规则都是动态规则（已完全迁移）
         const typeBadge = '<span style="background:#dcfce7;color:#18794e;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">动态规则</span>';
-        
+
         document.getElementById('rule-title').textContent = rule.label || rule.rule_key;
         document.getElementById('rule-desc').innerHTML = `对应意图：${escapeHtml(intentText)}。类型：${typeBadge}`;
         document.getElementById('rule-label').value = String(currentConfig.label || rule.label || '');
         document.getElementById('rule-intent').value = String(currentConfig.intentKey || '');
         document.getElementById('rule-description').value = String(currentConfig.description || '');
-        
+
         // 渲染示例问题（每行一个）
         const examplesArray = Array.isArray(currentConfig.examples) ? currentConfig.examples : [];
         document.getElementById('rule-examples').value = examplesArray.join('\n');
@@ -624,11 +719,13 @@
         renderStrategyFields();  // 新增：渲染策略配置
         renderFilterFields();    // 新增：渲染过滤条件
         setStatus('');
+        isDirty = false;
         renderRuleList();
     }
 
     function selectRule(ruleKey) {
         if (!ruleKey || ruleKey === currentRuleKey) return;
+        if (!confirmDiscardChanges()) return;
         currentRuleKey = ruleKey;
         renderCurrentRule();
         const url = new URL(window.location.href);
@@ -683,16 +780,19 @@
         const labelEl = document.getElementById('rule-label');
         labelEl.addEventListener('input', () => {
             currentConfig.label = labelEl.value.trim();
+            markDirty();
         });
 
         const intentEl = document.getElementById('rule-intent');
         intentEl.addEventListener('input', () => {
             currentConfig.intentKey = intentEl.value.trim();
+            markDirty();
         });
 
         const descEl = document.getElementById('rule-description');
         descEl.addEventListener('input', () => {
             currentConfig.description = descEl.value.trim();
+            markDirty();
         });
 
         const examplesEl = document.getElementById('rule-examples');
@@ -701,6 +801,7 @@
             currentConfig.examples = examplesText
                 ? examplesText.split('\n').map(line => line.trim()).filter(Boolean)
                 : [];
+            markDirty();
         });
 
         document.getElementById('rule-form').addEventListener('submit', async (event) => {
@@ -709,6 +810,11 @@
 
             const rule = rules.find((item) => item.rule_key === currentRuleKey);
             if (!rule) return;
+            const validationError = validateCurrentConfig(rule);
+            if (validationError) {
+                setStatus(validationError, 'bad');
+                return;
+            }
             saveButton.disabled = true;
             setStatus('保存中…', 'warn');
 
@@ -724,6 +830,7 @@
                 const nextRule = rules.find((item) => item.rule_key === currentRuleKey);
                 if (nextRule) currentConfig = cloneConfig(nextRule.config);
                 renderCurrentRule();
+                isDirty = false;
                 setStatus('已保存，问数接口会在短时间内使用新规则', 'good');
             } catch (error) {
                 const errorState = authHelpers.describeFetchError
@@ -733,6 +840,13 @@
             } finally {
                 saveButton.disabled = false;
             }
+        });
+
+        bindStrategyAndFilterEvents();
+        window.addEventListener('beforeunload', (event) => {
+            if (!isDirty) return;
+            event.preventDefault();
+            event.returnValue = '';
         });
     }
 

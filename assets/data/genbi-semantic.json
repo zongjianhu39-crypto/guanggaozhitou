@@ -163,7 +163,7 @@
       "strategy": {
         "metrics": ["breakeven_roi", "ad_cost", "order_cost", "product_direct_gmv", "product_direct_roi", "wow", "mom"],
         "primaryMetric": "breakeven_roi",
-        "secondaryMetric": "wow_or_mom"
+        "secondaryMetric": "wow"
       },
       "output": {
         "topCrowdCount": 5,

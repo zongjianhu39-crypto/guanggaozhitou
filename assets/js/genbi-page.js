@@ -2,10 +2,14 @@
     const authHelpers = window.authHelpers || {};
     let lastResultPayload = null;
     let lastSavedReportSlug = '';
+    let isSubmitting = false;
 
     var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
     var EXAMPLE_LS_KEY = 'genbi_example_questions';
+    var MAX_CSV_BYTES = 512 * 1024;
+    var MAX_CSV_ROWS = 200;
+    var MAX_CSV_COLUMNS = 40;
     var DEFAULT_EXAMPLES = [
         '哪些具体人群效果好需要增加预算，哪些人群差需要降低预算',
         '单品广告里哪些商品花费高但回报差',
@@ -132,9 +136,9 @@
     function sanitizeReportText(text) {
         return String(text || '')
             .replace(/\r\n/g, '\n')
-            .replace(/ think[\s\S]*?<\/think>/gi, '')
-            .replace(/<\/?think>/gi, '')
+            .replace(/<think[\s\S]*?<\/think>/gi, '')
             .replace(/```think[\s\S]*?```/gi, '')
+            .replace(/<\/?think>/gi, '')
             .replace(/\n{3,}/g, '\n\n')
             .trim();
     }
@@ -334,13 +338,25 @@
                 cell = '';
             } else { cell += ch; }
         }
+        if (inQuotes) throw new Error('CSV 存在未闭合的引号，请检查文件格式');
         row.push(cell);
         if (row.some(function(v) { return v.trim() !== ''; })) rows.push(row);
         if (rows.length < 2) throw new Error('CSV 至少需要表头和一行数据');
         var headers = rows[0].map(function(h) { return h.replace(/^\uFEFF/, '').trim(); });
+        if (headers.length > MAX_CSV_COLUMNS) throw new Error('CSV 列数过多，请保留必要字段后再上传');
+        if (rows.length - 1 > MAX_CSV_ROWS) throw new Error('CSV 商品行数过多，最多支持 ' + MAX_CSV_ROWS + ' 行');
+        var seenHeaders = new Set();
+        headers.forEach(function(header, index) {
+            if (!header) throw new Error('CSV 第 ' + (index + 1) + ' 列表头为空');
+            if (seenHeaders.has(header)) throw new Error('CSV 存在重复表头：' + header);
+            seenHeaders.add(header);
+        });
         return {
             headers: headers,
-            items: rows.slice(1).map(function(values) {
+            items: rows.slice(1).map(function(values, rowIndex) {
+                if (values.length > headers.length) {
+                    throw new Error('CSV 第 ' + (rowIndex + 2) + ' 行列数超过表头，请检查逗号或引号');
+                }
                 var item = {};
                 headers.forEach(function(header, index) { item[header] = (values[index] || '').trim(); });
                 return item;
@@ -351,9 +367,14 @@
     async function readCsvFile() {
         var fileInput = document.getElementById('genbi-csv-file');
         if (!fileInput || !fileInput.files || !fileInput.files[0]) return null;
+        if (fileInput.files[0].size > MAX_CSV_BYTES) {
+            throw new Error('CSV 文件过大，最多支持 512KB');
+        }
         var csvText = await fileInput.files[0].text();
         if (!csvText || !csvText.trim()) return null;
-        return parseCsv(csvText);
+        var parsed = parseCsv(csvText);
+        if (!parsed.items.length) throw new Error('CSV 没有可分析的商品行');
+        return parsed;
     }
 
     function updateAttachUI(fileName) {
@@ -379,18 +400,34 @@
     async function submitQuestion() {
         var textarea = document.getElementById('genbi-question');
         var button = document.getElementById('genbi-submit');
+        if (isSubmitting) return;
+        isSubmitting = true;
+        if (button) {
+            button.disabled = true;
+            button.textContent = '分析中...';
+        }
         var question = textarea?.value?.trim() || '';
         var csvResult = null;
         try {
             csvResult = await readCsvFile();
         } catch (e) {
             setStatus('货盘 CSV 解析失败：' + (e.message || '请检查文件格式'), 'error');
+            isSubmitting = false;
+            if (button) {
+                button.disabled = false;
+                button.textContent = '开始分析';
+            }
             return;
         }
         var productItems = csvResult ? csvResult.items : null;
 
         if (!question && !productItems) {
             setStatus('请输入问题或上传货盘 CSV 文件。', 'error');
+            isSubmitting = false;
+            if (button) {
+                button.disabled = false;
+                button.textContent = '开始分析';
+            }
             return;
         }
 
@@ -400,8 +437,6 @@
             if (textarea) textarea.value = question;
         }
 
-        button.disabled = true;
-        button.textContent = '分析中...';
         var statusMsg = productItems
             ? '正在调用 MiniMax 2.7 分析 ' + productItems.length + ' 个商品并推荐人群，预计 20-40 秒...'
             : '正在调用 AI 分析真实数据，预计需要 10-30 秒...';
@@ -445,8 +480,11 @@
         } catch (error) {
             setStatus('分析失败：' + (error.message || '请稍后重试'), 'error');
         } finally {
-            button.disabled = false;
-            button.textContent = '开始分析';
+            isSubmitting = false;
+            if (button) {
+                button.disabled = false;
+                button.textContent = '开始分析';
+            }
         }
     }
 

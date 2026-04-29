@@ -174,7 +174,7 @@ VALUES
       "dataScope": ["ads", "crowd", "single"],
       "strategy": {
         "primaryMetric": "breakeven_roi",
-        "secondaryMetric": "wow_or_mom"
+        "secondaryMetric": "wow"
       },
       "output": {
         "topCrowdCount": 5,

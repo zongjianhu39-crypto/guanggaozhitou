@@ -7,12 +7,22 @@ import { getLastWeekRange } from '../_shared/genbi-time.ts';
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+class BadRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BadRequestError';
+  }
+}
+
 function normalizePreviewRange(raw: unknown): { start: string; end: string; label: string } {
   const safe = asRecord(raw);
   const start = String(safe.start || '').trim();
   const end = String(safe.end || '').trim();
   if (ISO_DATE_RE.test(start) && ISO_DATE_RE.test(end) && start <= end) {
     return { start, end, label: `${start} 至 ${end}` };
+  }
+  if (start || end) {
+    throw new BadRequestError('试跑日期范围无效，请检查开始日期和结束日期');
   }
   return getLastWeekRange();
 }
@@ -47,6 +57,36 @@ function getIntentLabels(semantic: Awaited<ReturnType<typeof getGenbiSemanticCon
     if (key) labels[key] = String(group.label || key);
   }
   return labels;
+}
+
+async function validateRuleConfigInput(ruleKey: string, config: unknown) {
+  const normalizedRuleKey = String(ruleKey || '').trim();
+  const safeConfig = asRecord(config);
+  const semantic = await getGenbiSemanticConfig();
+  const metricKeys = new Set(Object.keys(asRecord(semantic.metrics)));
+  const strategy = asRecord(safeConfig.strategy);
+  const selectedMetrics = [
+    String(strategy.primaryMetric || '').trim(),
+    String(strategy.secondaryMetric || '').trim(),
+    ...(Array.isArray(strategy.metrics) ? strategy.metrics.map((item) => String(item || '').trim()) : []),
+  ].filter(Boolean);
+  const invalidMetric = selectedMetrics.find((metric) => !metricKeys.has(metric));
+  if (invalidMetric) {
+    throw new BadRequestError(`指标 ${invalidMetric} 不在当前指标表中`);
+  }
+
+  const intentKey = String(safeConfig.intentKey || '').trim();
+  if (!intentKey) return;
+
+  const records = await listGenbiRuleConfigRecords();
+  const duplicate = records.find((record) => {
+    if (record.rule_key === normalizedRuleKey) return false;
+    const recordConfig = asRecord(record.config);
+    return String(recordConfig.intentKey || '').trim() === intentKey;
+  });
+  if (duplicate) {
+    throw new BadRequestError(`关联意图 ${intentKey} 已被规则「${duplicate.label || duplicate.rule_key}」使用`);
+  }
 }
 
 async function buildRuleListResponse() {
@@ -135,6 +175,7 @@ Deno.serve(async (req: Request) => {
     const action = String(body.action || '');
 
     if (action === 'save_rule') {
+      await validateRuleConfigInput(String(body.rule_key || ''), body.config);
       const saved = await upsertGenbiRuleConfig({
         ruleKey: String(body.rule_key || ''),
         label: String(body.label || ''),
@@ -173,6 +214,7 @@ Deno.serve(async (req: Request) => {
 
       const label = String(body.label || ruleKey).trim();
       const config = body.config || { label, dataScope: [], strategy: {}, output: {} };
+      await validateRuleConfigInput(ruleKey, config);
 
       const saved = await upsertGenbiRuleConfig({
         ruleKey,
@@ -270,6 +312,12 @@ Deno.serve(async (req: Request) => {
     if (isAuthError) {
       return new Response(JSON.stringify({ success: false, error: '无效或已过期的 Prompt 管理令牌' }), {
         status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+    if (error instanceof BadRequestError) {
+      return new Response(JSON.stringify({ success: false, error: error.message }), {
+        status: 400,
         headers: CORS_HEADERS,
       });
     }

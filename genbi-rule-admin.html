@@ -173,8 +173,8 @@
                 <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
                 <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
                 <li class="nav-item-dropdown">
-                    <span class="nav-link active">更多 <span class="nav-dropdown-arrow">▾</span></span>
-                    <div class="nav-dropdown">
+                    <button type="button" class="nav-link active" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
+                    <div class="nav-dropdown" role="menu">
                         <a href="insights.html">洞察中心</a>
                         <a href="prompt-admin.html">Prompt 管理</a>
                         <a href="genbi-rule-admin.html" class="active">GenBI 规则管理</a>
@@ -288,12 +288,7 @@
                             <div class="ra-strategy-item">
                                 <label for="strategy-primary">主要指标</label>
                                 <select id="strategy-primary" class="ra-select">
-                                    <option value="">不设置</option>
-                                    <option value="order_cost">订单成本</option>
-                                    <option value="crowd_cost_share">人群花费占比</option>
-                                    <option value="product_direct_roi">商品直接ROI</option>
-                                    <option value="ad_cost">花费</option>
-                                    <option value="breakeven_roi">盈亏平衡ROI</option>
+                                    <option value="">加载指标中…</option>
                                 </select>
                                 <div class="ra-small-note">💡 <strong>作用：</strong>决定数据按什么核心指标排序和分析，是规则的最重要配置。<br>
                                 📌 <strong>场景：</strong>"人群预算建议"选 ROI（找效率好的人群），"高花费低回报"选花费（找花钱多的商品）。<br>
@@ -302,13 +297,7 @@
                             <div class="ra-strategy-item">
                                 <label for="strategy-secondary">次要指标</label>
                                 <select id="strategy-secondary" class="ra-select">
-                                    <option value="">不设置</option>
-                                    <option value="order_cost">订单成本</option>
-                                    <option value="crowd_cost_share">人群花费占比</option>
-                                    <option value="product_direct_roi">商品直接ROI</option>
-                                    <option value="product_direct_gmv">商品直接GMV</option>
-                                    <option value="ad_cost">花费</option>
-                                    <option value="wow_or_mom">周/月环比</option>
+                                    <option value="">加载指标中…</option>
                                 </select>
                                 <div class="ra-small-note">💡 <strong>作用：</strong>辅助排序指标，当主要指标相同时用次要指标做二次排序。<br>
                                 📌 <strong>场景：</strong>两个人群 ROI 相同，按花费降序排（花费多的优先调整）。</div>
