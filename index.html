@@ -307,34 +307,34 @@
                 const daily = homeDashboardData.daily || [];
                 const weekly = homeDashboardData.weekly || [];
 
+                // 今日数据：取 daily 最后一行（API 返回按日期倒序，daily[0] = 最近一天）
+                const todayRow = daily.length > 0 ? daily[0] : null;
+                const yesterdayRow = daily.length > 1 ? daily[1] : null;
+
                 // 今日花费
-                const todaySpend = kpi.totalCost;
+                const todaySpend = todayRow ? todayRow.cost : 0;
                 spendEl.textContent = formatCurrency(todaySpend);
 
-                // 计算花费变化：对比最近两天
-                if (daily.length >= 2) {
-                    const latest = daily[0];
-                    const prev = daily[1];
-                    const change = formatChange(latest.cost, prev.cost);
+                // 计算花费变化：对比昨日
+                if (todayRow && yesterdayRow) {
+                    const change = formatChange(todayRow.cost, yesterdayRow.cost);
                     spendChangeEl.textContent = '较昨日 ' + change.text;
                     spendChangeEl.className = 'metric-change ' + change.cls;
                 } else {
-                    spendChangeEl.textContent = '累计 ' + formatCurrency(todaySpend);
+                    spendChangeEl.textContent = todayRow ? '今日数据' : '暂无数据';
                     spendChangeEl.className = 'metric-change neutral';
                 }
 
-                // 实时 ROI
-                const avgRoi = kpi.avgRoi;
-                roiEl.textContent = formatRoi(avgRoi);
+                // 今日 ROI
+                const todayRoi = todayRow ? todayRow.roi : 0;
+                roiEl.textContent = formatRoi(todayRoi);
 
-                if (daily.length >= 2) {
-                    const latestRoi = daily[0].roi;
-                    const prevRoi = daily[1].roi;
-                    const change = formatChange(latestRoi, prevRoi);
+                if (todayRow && yesterdayRow) {
+                    const change = formatChange(todayRow.roi, yesterdayRow.roi);
                     roiChangeEl.textContent = '较昨日 ' + change.text;
                     roiChangeEl.className = 'metric-change ' + change.cls;
                 } else {
-                    roiChangeEl.textContent = '区间均值';
+                    roiChangeEl.textContent = todayRow ? '今日 ROI' : '暂无数据';
                     roiChangeEl.className = 'metric-change neutral';
                 }
 
