@@ -62,7 +62,7 @@
     </div>
 
     <script src="../../assets/js/config.js"></script>
-    <script src="../../assets/js/auth-helpers.js?v=202604300038"></script>
+    <script src="../../assets/js/auth-helpers.js?v=202604301800"></script>
     <script>
         // Load runtime config from assets/js/config.js
         if (typeof CONFIG === 'undefined' || !CONFIG || !CONFIG.SUPABASE_ANON_KEY || !CONFIG.SB_URL) {
@@ -265,6 +265,7 @@
                 
                 // 登录成功！保存用户信息到 localStorage
                 localStorage.setItem('feishu_user', JSON.stringify(normalizedUser));
+                localStorage.removeItem('feishu_login_error');
                 if (promptAdmin && promptAdmin.enabled && promptAdmin.token) {
                     localStorage.setItem('prompt_admin_token', promptAdmin.token);
                     localStorage.setItem('prompt_admin_expires_at', String(promptAdmin.expires_at || ''));

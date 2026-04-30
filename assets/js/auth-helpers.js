@@ -219,8 +219,7 @@ function buildFunctionUrl(name, query = {}) {
 
 function requiresBackendSession(pathname) {
   return pathname === '/prompt-admin.html'
-    || pathname === '/genbi-rule-admin.html'
-    || pathname === '/plan-dashboard.html';
+    || pathname === '/genbi-rule-admin.html';
 }
 
 function clearUserSession() {
