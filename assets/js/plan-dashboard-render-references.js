@@ -14,6 +14,7 @@
     debounce,
     syncCollapsibleSection,
     getYearMonthIndex,
+    shouldShowDouble11Reference,
   } = shared;
 
   function renderTimeline() {

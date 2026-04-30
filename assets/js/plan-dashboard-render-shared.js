@@ -449,6 +449,7 @@
     debounce,
     syncCollapsibleSection,
     getYearMonthIndex,
+    shouldShowDouble11Reference,
     buildEditableCell,
     getEffectiveDay,
     getEffectiveDays,
