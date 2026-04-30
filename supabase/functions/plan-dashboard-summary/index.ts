@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { authenticateEdgeRequest } from '../_shared/request-auth.ts';
 import { SB_SERVICE_ROLE_KEY, SB_URL } from '../_shared/supabase-client.ts';
 import { getSuperLiveTablesForDates } from '../_shared/table-routes.ts';
