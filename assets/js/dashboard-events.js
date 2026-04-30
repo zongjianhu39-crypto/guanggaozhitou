@@ -29,6 +29,12 @@
             }
         });
 
+        document.querySelectorAll('.date-preset-btn[data-range-target][data-range-preset]').forEach((button) => {
+            button.addEventListener('click', () => {
+                app.applyPresetDateRange(button.dataset.rangeTarget, button.dataset.rangePreset);
+            });
+        });
+
         const crowdTableBody = document.querySelector('#crowd-summary-table tbody');
         if (crowdTableBody) {
             crowdTableBody.addEventListener('click', (event) => {
@@ -42,6 +48,13 @@
                 if (!row) return;
                 event.preventDefault();
                 app.toggleCrowdRow(row);
+            });
+        }
+
+        const singleProductSearch = document.getElementById('single-product-search');
+        if (singleProductSearch) {
+            singleProductSearch.addEventListener('input', () => {
+                app.renderCurrentSingleTable();
             });
         }
 

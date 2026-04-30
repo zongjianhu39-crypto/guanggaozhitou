@@ -105,6 +105,18 @@
             font-size: 14px;
         }
 
+        .date-presets {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .date-presets-label {
+            font-size: 13px;
+            color: #86868b;
+        }
+
         .date-range button,
         .ai-analysis-footer button,
         .download-btn {
@@ -118,6 +130,24 @@
         .date-range button {
             background: #0071e3;
             color: #fff;
+        }
+
+        .date-range .date-preset-btn {
+            background: #fff;
+            color: #0071e3;
+            border: 1px solid #b9d7f8;
+            padding: 8px 12px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .date-range .date-preset-btn:hover {
+            background: #f2f8ff;
+            border-color: #0071e3;
+        }
+
+        .single-product-search {
+            min-width: 220px;
         }
 
         .date-range button:disabled,
@@ -631,6 +661,13 @@
                 <div class="date-range">
                     <label>开始日期：</label><input type="date" id="ads-start">
                     <label>结束日期：</label><input type="date" id="ads-end">
+                    <div class="date-presets" aria-label="投放分析预设日期范围">
+                        <span class="date-presets-label">快捷：</span>
+                        <button class="date-preset-btn" type="button" data-range-target="ads" data-range-preset="yesterday">昨天</button>
+                        <button class="date-preset-btn" type="button" data-range-target="ads" data-range-preset="last7">过去7天</button>
+                        <button class="date-preset-btn" type="button" data-range-target="ads" data-range-preset="thisMonth">本月</button>
+                        <button class="date-preset-btn" type="button" data-range-target="ads" data-range-preset="lastMonth">上月</button>
+                    </div>
                     <button id="load-ads-btn" type="button">查询</button>
                     <button id="download-ads-csv-btn" class="download-btn" type="button">下载日报 CSV</button>
                 </div>
@@ -665,6 +702,14 @@
                 <div class="date-range">
                     <label>开始日期：</label><input type="date" id="single-start">
                     <label>结束日期：</label><input type="date" id="single-end">
+                    <div class="date-presets" aria-label="单品广告预设日期范围">
+                        <span class="date-presets-label">快捷：</span>
+                        <button class="date-preset-btn" type="button" data-range-target="single" data-range-preset="yesterday">昨天</button>
+                        <button class="date-preset-btn" type="button" data-range-target="single" data-range-preset="last7">过去7天</button>
+                        <button class="date-preset-btn" type="button" data-range-target="single" data-range-preset="thisMonth">本月</button>
+                        <button class="date-preset-btn" type="button" data-range-target="single" data-range-preset="lastMonth">上月</button>
+                    </div>
+                    <label>商品名称：</label><input class="single-product-search" type="search" id="single-product-search" placeholder="输入商品名称" autocomplete="off">
                     <button id="load-single-btn" type="button">查询</button>
                     <button id="download-single-csv-btn" class="download-btn" type="button">下载 CSV</button>
                 </div>
@@ -696,6 +741,13 @@
                 <div class="date-range">
                     <label>开始日期：</label><input type="date" id="crowd-start">
                     <label>结束日期：</label><input type="date" id="crowd-end">
+                    <div class="date-presets" aria-label="人群维度预设日期范围">
+                        <span class="date-presets-label">快捷：</span>
+                        <button class="date-preset-btn" type="button" data-range-target="crowd" data-range-preset="yesterday">昨天</button>
+                        <button class="date-preset-btn" type="button" data-range-target="crowd" data-range-preset="last7">过去7天</button>
+                        <button class="date-preset-btn" type="button" data-range-target="crowd" data-range-preset="thisMonth">本月</button>
+                        <button class="date-preset-btn" type="button" data-range-target="crowd" data-range-preset="lastMonth">上月</button>
+                    </div>
                     <button id="load-crowd-btn" type="button">查询</button>
                 </div>
             </div>
@@ -755,10 +807,10 @@
     <script src="assets/js/ai-article-markdown.js?v=202604300038"></script>
     <script src="script.js?v=202604300038"></script>
     <script src="assets/js/dashboard-state.js?v=202604300038"></script>
-    <script src="assets/js/dashboard-render.js?v=202604300038"></script>
+    <script src="assets/js/dashboard-render.js?v=202604301630"></script>
     <script src="assets/js/dashboard-api.js?v=202604300038"></script>
     <script src="assets/js/dashboard-loader.js?v=202604300038"></script>
-    <script src="assets/js/dashboard-events.js?v=202604300038"></script>
-    <script src="dashboard.js?v=202604300038"></script>
+    <script src="assets/js/dashboard-events.js?v=202604301630"></script>
+    <script src="dashboard.js?v=202604301630"></script>
 </body>
 </html>

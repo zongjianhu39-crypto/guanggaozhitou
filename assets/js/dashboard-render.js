@@ -540,14 +540,31 @@
         `;
     }
 
+    function getSingleProductName(product) {
+        return String(product?.商品名称 || product?.product_name || product?.name || '未命名商品');
+    }
+
+    function getSingleProductSearchKeyword() {
+        return String(document.getElementById('single-product-search')?.value || '').trim().toLowerCase();
+    }
+
     function renderSingleTable(products) {
         const tbody = document.querySelector('#single-table tbody');
         if (!tbody) return;
-        if (!products.length) {
+        const allProducts = Array.isArray(products) ? products : [];
+        const keyword = getSingleProductSearchKeyword();
+        const visibleProducts = keyword
+            ? allProducts.filter((product) => getSingleProductName(product).toLowerCase().includes(keyword))
+            : allProducts;
+        if (!allProducts.length) {
             tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#86868b;padding:24px">所选时间范围暂无数据</td></tr>';
             return;
         }
-        tbody.innerHTML = products.map((product) => {
+        if (!visibleProducts.length) {
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#86868b;padding:24px">未找到包含“${escapeHtml(keyword)}”的商品</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = visibleProducts.map((product) => {
             const cost = singleToNum(product?.花费);
             const directAmount = singleToNum(product?.直接成交金额);
             const productDirectAmount = singleToNum(product?.['该商品直接成交金额']);
@@ -556,7 +573,7 @@
             const productRoi = cost > 0 ? productDirectAmount / cost : 0;
             const cartCost = cartCount > 0 ? cost / cartCount : 0;
             const imgUrl = typeof product?.img_url === 'string' ? product.img_url.trim() : '';
-            const productName = String(product?.商品名称 || product?.product_name || product?.name || '未命名商品');
+            const productName = getSingleProductName(product);
             const imgHtml = imgUrl
                 ? `<img src="${escapeHtml(imgUrl)}" style="width:44px;height:44px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px" loading="lazy">`
                 : '<span style="display:inline-block;width:44px;height:44px;background:#f2f2f7;border-radius:4px;vertical-align:middle;margin-right:8px"></span>';
@@ -611,6 +628,7 @@
         renderSingleLoadingState,
         renderSingleState,
         renderSingleKpi,
+        getSingleProductName,
         renderSingleTable,
     };
 })(window);

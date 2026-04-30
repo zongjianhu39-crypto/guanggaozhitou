@@ -386,11 +386,72 @@ function formatDateInputValue(date) {
     return `${year}-${month}-${day}`;
 }
 
+function createLocalDate(year, monthIndex, day) {
+    return new Date(year, monthIndex, day, 12, 0, 0, 0);
+}
+
 function getRelativeDateInputValue(offsetDays = 0) {
     const date = new Date();
     date.setHours(12, 0, 0, 0);
     date.setDate(date.getDate() + offsetDays);
     return formatDateInputValue(date);
+}
+
+function getPresetDateRange(preset) {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    if (preset === 'yesterday') {
+        return {
+            start: formatDateInputValue(yesterday),
+            end: formatDateInputValue(yesterday),
+        };
+    }
+
+    if (preset === 'last7') {
+        const start = new Date(yesterday);
+        start.setDate(yesterday.getDate() - 6);
+        return {
+            start: formatDateInputValue(start),
+            end: formatDateInputValue(yesterday),
+        };
+    }
+
+    if (preset === 'thisMonth') {
+        return {
+            start: formatDateInputValue(createLocalDate(today.getFullYear(), today.getMonth(), 1)),
+            end: formatDateInputValue(today),
+        };
+    }
+
+    if (preset === 'lastMonth') {
+        const lastMonthStart = createLocalDate(today.getFullYear(), today.getMonth() - 1, 1);
+        const lastMonthEnd = createLocalDate(today.getFullYear(), today.getMonth(), 0);
+        return {
+            start: formatDateInputValue(lastMonthStart),
+            end: formatDateInputValue(lastMonthEnd),
+        };
+    }
+
+    return null;
+}
+
+function applyPresetDateRange(target, preset) {
+    if (target !== 'ads' && target !== 'crowd' && target !== 'single') {
+        return;
+    }
+    const range = getPresetDateRange(preset);
+    if (!range) {
+        return;
+    }
+    const startEl = document.getElementById(`${target}-start`);
+    const endEl = document.getElementById(`${target}-end`);
+    if (startEl) startEl.value = range.start;
+    if (endEl) endEl.value = range.end;
+    persistDashboardViewState();
+    syncRangeActionButtons();
 }
 
 function initDateRanges() {
@@ -464,6 +525,12 @@ function setCurrentSingleResponse(value, options = {}) {
     setSectionResponse('single', value, options);
 }
 
+function renderCurrentSingleTable() {
+    const response = getCurrentSingleResponse();
+    const products = Array.isArray(response?.single?.items) ? response.single.items : [];
+    renderSingleTable(products);
+}
+
 window.DashboardApp = {
     logout,
     setButtonBusy,
@@ -508,6 +575,8 @@ window.DashboardApp = {
     ensureCrowdResponseCurrent,
     ensureSingleResponseCurrent,
     syncRangeActionButtons,
+    applyPresetDateRange,
+    renderCurrentSingleTable,
     setSectionLoading,
     setSectionBackgroundRefreshing,
     setSectionCacheSource,
