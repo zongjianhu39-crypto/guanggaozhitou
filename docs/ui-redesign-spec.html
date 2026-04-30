@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI 重设计方案 — 交个朋友·广告智投工作台</title>
+    <style>
+        :root {
+            --indigo-800: #1e3a5f;
+            --indigo-600: #3b5998;
+            --accent-400: #6e7ff5;
+            --accent-200: #a5b4fc;
+            --accent-50: #eef2ff;
+            --success: #18794e;
+            --success-bg: #f0fdf4;
+            --success-border: #86efac;
+            --warning: #b26a00;
+            --warning-bg: #fefce8;
+            --warning-border: #fde68a;
+            --danger: #c2410c;
+            --danger-bg: #fef2f2;
+            --danger-border: #fecaca;
+            --critical: #b42318;
+            --info: #378ADD;
+            --gray-900: #0f172a;
+            --gray-800: #334155;
+            --gray-600: #475569;
+            --gray-400: #94a3b8;
+            --gray-200: #cbd5e1;
+            --gray-100: #e2e8f0;
+            --gray-50: #f1f5f9;
+            --gray-25: #f8fafc;
+            --surface-base: #ffffff;
+            --surface-raised: #f8fafc;
+            --surface-overlay: #f1f5f9;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-2xl: 20px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+            --shadow-lg: 0 12px 28px rgba(0,0,0,0.08);
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--gray-25);
+            color: var(--gray-800);
+            line-height: 1.7;
+        }
+
+        .doc-container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 32px 80px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .doc-subtitle {
+            font-size: 1.05rem;
+            color: var(--gray-400);
+            margin-bottom: 32px;
+        }
+
+        h2 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 40px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent-200);
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin: 24px 0 12px;
+        }
+
+        p, li {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--gray-600);
+        }
+
+        ul, ol {
+            padding-left: 20px;
+            margin-bottom: 16px;
+        }
+
+        li { margin-bottom: 6px; }
+
+        .section-card {
+            background: var(--surface-base);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-xl);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+            margin: 16px 0;
+        }
+
+        .problem-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--gray-25);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-lg);
+        }
+
+        .problem-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .problem-num.red { background: var(--danger-bg); color: var(--danger); }
+        .problem-num.amber { background: var(--warning-bg); color: var(--warning); }
+        .problem-num.blue { background: var(--accent-50); color: var(--indigo-600); }
+        .problem-num.purple { background: #f3e8ff; color: #7c3aed; }
+        .problem-num.green { background: var(--success-bg); color: var(--success); }
+        .problem-num.coral { background: #fff7ed; color: #c2410c; }
+        .problem-num.gray { background: var(--gray-50); color: var(--gray-600); }
+
+        .problem-text h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 2px;
+        }
+
+        .problem-text p {
+            font-size: 0.82rem;
+            color: var(--gray-400);
+            line-height: 1.5;
+        }
+
+        .color-grid {
+            display: grid;
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-row-label {
+            width: 80px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--gray-600);
+            flex-shrink: 0;
+        }
+
+        .color-swatch {
+            height: 36px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .surface-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .surface-card {
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .surface-card h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .surface-card p {
+            font-size: 0.78rem;
+        }
+
+        .token-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.85rem;
+        }
+
+        .token-table th {
+            background: var(--gray-50);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-800);
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .token-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .token-table code {
+            background: var(--gray-50);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--accent-400);
+        }
+
+        .layout-preview {
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-xl);
+            padding: 20px;
+            margin: 16px 0;
+            background: var(--surface-base);
+        }
+
+        .wireframe-nav {
+            background: var(--indigo-800);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .wireframe-nav span {
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .wireframe-nav-items {
+            display: flex;
+            gap: 8px;
+        }
+
+        .wireframe-nav-pill {
+            padding: 4px 12px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.12);
+            color: var(--accent-200);
+            font-size: 0.75rem;
+        }
+
+        .wireframe-nav-pill.active {
+            background: rgba(255,255,255,0.22);
+            color: #fff;
+        }
+
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .metric-card {
+            background: var(--surface-base);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .metric-card.indigo::before { background: var(--accent-400); }
+        .metric-card.green::before { background: var(--success); }
+        .metric-card.amber::before { background: var(--warning); }
+        .metric-card.red::before { background: var(--danger); }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--gray-400);
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .metric-change {
+            font-size: 0.72rem;
+            margin-top: 2px;
+        }
+
+        .metric-change.up { color: var(--success); }
+        .metric-change.down { color: var(--danger); }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .card {
+            background: var(--surface-base);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 10px;
+        }
+
+        .chart-placeholder {
+            background: var(--gray-25);
+            border-radius: var(--radius-md);
+            height: 120px;
+            display: flex;
+            align-items: flex-end;
+            padding: 12px 16px;
+            gap: 8px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: var(--accent-200);
+            border-radius: 4px 4px 0 0;
+            min-height: 20px;
+        }
+
+        .chart-bar.primary { background: var(--accent-400); }
+
+        .role-entry {
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .role-entry:hover { transform: translateX(4px); }
+
+        .role-entry.trader {
+            background: var(--accent-50);
+            border: 1px solid var(--accent-200);
+            color: var(--indigo-600);
+        }
+
+        .role-entry.operator {
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+            color: var(--success);
+        }
+
+        .role-entry.manager {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            color: #92400e;
+        }
+
+        .segmented-control {
+            display: flex;
+            background: var(--gray-50);
+            border-radius: var(--radius-md);
+            padding: 3px;
+            gap: 2px;
+            margin-bottom: 14px;
+        }
+
+        .seg-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: transparent;
+            color: var(--gray-600);
+            transition: all 0.2s ease;
+        }
+
+        .seg-btn.active {
+            background: var(--accent-400);
+            color: #fff;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .insight-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .insight-card {
+            background: var(--gray-25);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-md);
+            padding: 14px;
+        }
+
+        .insight-date {
+            font-size: 0.72rem;
+            color: var(--gray-400);
+            margin-bottom: 4px;
+        }
+
+        .insight-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--gray-800);
+        }
+
+        .entry-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .entry-tag {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 500;
+        }
+
+        .entry-tag.primary { background: var(--accent-50); color: var(--indigo-600); }
+        .entry-tag.secondary { background: var(--gray-50); color: var(--gray-600); }
+
+        .genbi-layout {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 14px;
+        }
+
+        .chat-bubble {
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 10px;
+            font-size: 0.82rem;
+            line-height: 1.6;
+        }
+
+        .chat-bubble.user {
+            background: var(--gray-25);
+            border: 1px solid var(--gray-100);
+            color: var(--gray-800);
+        }
+
+        .chat-bubble.ai {
+            background: var(--accent-50);
+            border: 1px solid var(--accent-200);
+            color: var(--gray-800);
+        }
+
+        .chat-bubble .sender {
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .chat-bubble.user .sender { color: var(--indigo-600); }
+        .chat-bubble.ai .sender { color: var(--accent-400); }
+
+        .inline-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            margin: 4px 4px 0 0;
+        }
+
+        .inline-tag.green { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+        .inline-tag.amber { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+
+        .chat-input {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-md);
+            font-size: 0.82rem;
+            background: var(--gray-25);
+            color: var(--gray-400);
+        }
+
+        .chat-input button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: var(--radius-md);
+            background: var(--accent-400);
+            color: #fff;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .sidebar-section {
+            padding: 12px;
+            border-radius: var(--radius-md);
+            background: var(--gray-25);
+            border: 1px solid var(--gray-100);
+            margin-bottom: 8px;
+        }
+
+        .sidebar-section h5 {
+            font-size: 0.78rem;
+            color: var(--gray-400);
+            margin-bottom: 6px;
+        }
+
+        .rule-pill {
+            display: block;
+            padding: 8px 12px;
+            background: var(--accent-50);
+            border: 1px solid var(--accent-200);
+            border-radius: var(--radius-sm);
+            font-size: 0.78rem;
+            color: var(--indigo-600);
+            margin-bottom: 4px;
+        }
+
+        .quick-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            background: var(--surface-base);
+            border: 1px solid var(--gray-100);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            margin: 2px;
+        }
+
+        .insight-layout {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 14px;
+        }
+
+        .report-card {
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 10px;
+        }
+
+        .report-card.critical {
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+        }
+
+        .report-card.warning {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+        }
+
+        .report-card.good {
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.68rem;
+            font-weight: 600;
+        }
+
+        .risk-badge.critical { background: var(--danger); color: #fff; }
+        .risk-badge.warning { background: var(--warning); color: #fff; }
+        .risk-badge.good { background: var(--success); color: #fff; }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .comparison-col {
+            border-radius: var(--radius-lg);
+            padding: 18px;
+        }
+
+        .comparison-col.old {
+            background: var(--gray-25);
+            border: 1px solid var(--gray-100);
+        }
+
+        .comparison-col.new {
+            background: var(--accent-50);
+            border: 1px solid var(--accent-200);
+        }
+
+        .comparison-col h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .comparison-col.old h4 { color: var(--gray-600); }
+        .comparison-col.new h4 { color: var(--indigo-600); }
+
+        .comparison-col li {
+            font-size: 0.82rem;
+            margin-bottom: 6px;
+        }
+
+        .badge-new {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            background: var(--accent-400);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 600;
+            vertical-align: super;
+            margin-left: 4px;
+        }
+
+        .footer-note {
+            text-align: center;
+            padding: 32px 0;
+            font-size: 0.82rem;
+            color: var(--gray-400);
+            border-top: 1px solid var(--gray-100);
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="doc-container">
+
+    <h1>UI 重设计方案</h1>
+    <p class="doc-subtitle">交个朋友 · 广告智投工作台 — 从「功能目录」到「智能总控台」</p>
+
+    <h2>一、现状诊断</h2>
+
+    <div class="problem-grid">
+        <div class="problem-item">
+            <div class="problem-num red">1</div>
+            <div class="problem-text">
+                <h4>配色单一</h4>
+                <p>全站紫色渐变贯穿，缺乏层次区分，长时间使用视觉疲劳</p>
+            </div>
+        </div>
+        <div class="problem-item">
+            <div class="problem-num amber">2</div>
+            <div class="problem-text">
+                <h4>内联样式泛滥</h4>
+                <p>GenBI、看板、洞察中心等页面 style 堆积数百行，难以维护</p>
+            </div>
+        </div>
+        <div class="problem-item">
+            <div class="problem-num blue">3</div>
+            <div class="problem-text">
+                <h4>页面风格割裂</h4>
+                <p>首页精致、看板朴素、GenBI 又是另一套视觉语言</p>
+            </div>
+        </div>
+        <div class="problem-item">
+            <div class="problem-num purple">4</div>
+            <div class="problem-text">
+                <h4>导航信息过载</h4>
+                <p>6+ 入口平铺在顶部，投手/运营/管理者没有差异化入口</p>
+            </div>
+        </div>
+        <div class="problem-item">
+            <div class="problem-num green">5</div>
+            <div class="problem-text">
+                <h4>移动端适配弱</h4>
+                <p>Hero 双栏在小屏幕折叠体验差，表格不可横向滚动</p>
+            </div>
+        </div>
+        <div class="problem-item">
+            <div class="problem-num coral">6</div>
+            <div class="problem-text">
+                <h4>数据缺视觉焦点</h4>
+                <p>核心指标（ROI、花费）与普通信息层级相同，难以快速判断</p>
+            </div>
+        </div>
+        <div class="problem-item">
+            <div class="problem-num gray">7</div>
+            <div class="problem-text">
+                <h4>交互反馈不足</h4>
+                <p>hover 效果单调，状态切换无动效，操作无确认反馈</p>
+            </div>
+        </div>
+    </div>
+
+    <h2>二、设计原则</h2>
+
+    <div class="section-card">
+        <ol>
+            <li><strong>数据优先</strong> — 用户打开页面的第一眼，看到的是关键数据，不是大段文案</li>
+            <li><strong>状态可视化</strong> — 用色彩语义（绿/黄/红）让指标状态一目了然，降低认知负担</li>
+            <li><strong>角色差异化</strong> — 投手看表现、运营看异常、管理者看结论，同一平台三种入口体验</li>
+            <li><strong>一致性</strong> — 所有页面共享同一套 Design Token，视觉语言统一</li>
+            <li><strong>渐进展示</strong> — 先给结论，再给细节；先给概览，再给明细</li>
+        </ol>
+    </div>
+
+    <h2>三、视觉体系</h2>
+
+    <h3>3.1 色彩方案</h3>
+
+    <div class="section-card">
+        <p style="font-weight:500;color:var(--gray-800);margin-bottom:12px">主色 — 靛蓝 + 电紫</p>
+        <div class="color-row">
+            <span class="color-row-label">Primary</span>
+            <div class="color-swatch" style="background:#1e3a5f;color:#fff">800 · #1e3a5f</div>
+            <div class="color-swatch" style="background:#3b5998;color:#fff">600 · #3b5998</div>
+            <div class="color-swatch" style="background:#6e7ff5;color:#fff">400 · #6e7ff5</div>
+            <div class="color-swatch" style="background:#a5b4fc;color:#1e3a5f">200 · #a5b4fc</div>
+        </div>
+        <div class="color-row">
+            <span class="color-row-label">Accent</span>
+            <div class="color-swatch" style="background:#7c3aed;color:#fff">Purple 600</div>
+            <div class="color-swatch" style="background:#a78bfa;color:#fff">Purple 400</div>
+            <div class="color-swatch" style="background:#eef2ff;color:#3b5998">Indigo 50</div>
+        </div>
+
+        <p style="font-weight:500;color:var(--gray-800);margin:20px 0 12px">功能色 — 数据状态</p>
+        <div class="color-row">
+            <span class="color-row-label">Success</span>
+            <div class="color-swatch" style="background:#18794e;color:#fff">#18794e</div>
+            <div class="color-swatch" style="background:#f0fdf4;color:#18794e;border:1px solid #86efac">bg</div>
+        </div>
+        <div class="color-row">
+            <span class="color-row-label">Warning</span>
+            <div class="color-swatch" style="background:#b26a00;color:#fff">#b26a00</div>
+            <div class="color-swatch" style="background:#fefce8;color:#b26a00;border:1px solid #fde68a">bg</div>
+        </div>
+        <div class="color-row">
+            <span class="color-row-label">Danger</span>
+            <div class="color-swatch" style="background:#c2410c;color:#fff">#c2410c</div>
+            <div class="color-swatch" style="background:#fef2f2;color:#c2410c;border:1px solid #fecaca">bg</div>
+        </div>
+        <div class="color-row">
+            <span class="color-row-label">Critical</span>
+            <div class="color-swatch" style="background:#b42318;color:#fff">#b42318</div>
+        </div>
+
+        <p style="font-weight:500;color:var(--gray-800);margin:20px 0 12px">表面色 — 三层层级</p>
+        <div class="surface-row">
+            <div class="surface-card" style="background:#ffffff;border:1px solid #e2e8f0">
+                <h4 style="color:var(--gray-800)">Base</h4>
+                <p style="color:var(--gray-400)">#ffffff · 卡片底色</p>
+            </div>
+            <div class="surface-card" style="background:#f8fafc;border:1px solid #e2e8f0">
+                <h4 style="color:var(--gray-800)">Raised</h4>
+                <p style="color:var(--gray-400)">#f8fafc · 页面底色</p>
+            </div>
+            <div class="surface-card" style="background:#f1f5f9;border:1px solid #e2e8f0">
+                <h4 style="color:var(--gray-800)">Overlay</h4>
+                <p style="color:var(--gray-400)">#f1f5f9 · 弹窗/抽屉</p>
+            </div>
+        </div>
+    </div>
+
+    <h3>3.2 Design Token</h3>
+
+    <div class="section-card" style="overflow-x:auto">
+        <table class="token-table">
+            <thead>
+                <tr><th>类别</th><th>Token</th><th>值</th><th>用途</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>圆角</td><td><code>--radius-sm</code></td><td>6px</td><td>小按钮、标签</td></tr>
+                <tr><td>圆角</td><td><code>--radius-md</code></td><td>8px</td><td>输入框、小卡片</td></tr>
+                <tr><td>圆角</td><td><code>--radius-lg</code></td><td>12px</td><td>卡片、面板</td></tr>
+                <tr><td>圆角</td><td><code>--radius-xl</code></td><td>16px</td><td>大面板、对话框</td></tr>
+                <tr><td>阴影</td><td><code>--shadow-sm</code></td><td>0 1px 2px rgba(0,0,0,0.04)</td><td>轻微抬起</td></tr>
+                <tr><td>阴影</td><td><code>--shadow-md</code></td><td>0 4px 12px rgba(0,0,0,0.06)</td><td>卡片悬浮</td></tr>
+                <tr><td>阴影</td><td><code>--shadow-lg</code></td><td>0 12px 28px rgba(0,0,0,0.08)</td><td>弹窗/抽屉</td></tr>
+                <tr><td>字号</td><td><code>--text-xs</code></td><td>12px</td><td>辅助文字</td></tr>
+                <tr><td>字号</td><td><code>--text-sm</code></td><td>14px</td><td>正文</td></tr>
+                <tr><td>字号</td><td><code>--text-base</code></td><td>16px</td><td>大段落</td></tr>
+                <tr><td>字号</td><td><code>--text-lg</code></td><td>20px</td><td>小标题</td></tr>
+                <tr><td>字号</td><td><code>--text-xl</code></td><td>28px</td><td>指标数字</td></tr>
+                <tr><td>间距</td><td><code>--space-1</code></td><td>4px</td><td>紧凑间距</td></tr>
+                <tr><td>间距</td><td><code>--space-2</code></td><td>8px</td><td>元素内部</td></tr>
+                <tr><td>间距</td><td><code>--space-3</code></td><td>12px</td><td>卡片内部</td></tr>
+                <tr><td>间距</td><td><code>--space-4</code></td><td>16px</td><td>卡片间距</td></tr>
+                <tr><td>间距</td><td><code>--space-6</code></td><td>24px</td><td>区块间距</td></tr>
+                <tr><td>动效</td><td><code>--ease-out</code></td><td>cubic-bezier(0.2, 0.7, 0.2, 1)</td><td>展开/出现</td></tr>
+                <tr><td>动效</td><td><code>--duration-fast</code></td><td>150ms</td><td>hover/focus</td></tr>
+                <tr><td>动效</td><td><code>--duration-normal</code></td><td>250ms</td><td>切换/展开</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>四、页面设计方案</h2>
+
+    <h3>4.1 首页 — 智能总控台 <span class="badge-new">REDESIGN</span></h3>
+
+    <div class="comparison">
+        <div class="comparison-col old">
+            <h4>旧方案</h4>
+            <ul>
+                <li>营销型落地页结构</li>
+                <li>大段 Hero 文案 + 背景渐变</li>
+                <li>角色入口在页面中段</li>
+                <li>系统入口散落在多处</li>
+                <li>洞察预览在最底部</li>
+            </ul>
+        </div>
+        <div class="comparison-col new">
+            <h4>新方案</h4>
+            <ul>
+                <li>总控台型结构，一进来就看到数据</li>
+                <li>Hero 变为核心指标速览</li>
+                <li>角色入口前置到右侧常驻</li>
+                <li>系统入口合并为底部矩阵</li>
+                <li>AI 洞察紧跟指标下方</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="layout-preview">
+        <div class="wireframe-nav">
+            <span>广告智投工作台</span>
+            <div class="wireframe-nav-items">
+                <span class="wireframe-nav-pill active">首页</span>
+                <span class="wireframe-nav-pill">看板</span>
+                <span class="wireframe-nav-pill">GenBI</span>
+                <span class="wireframe-nav-pill">洞察</span>
+                <span class="wireframe-nav-pill">计划</span>
+                <span class="wireframe-nav-pill">...</span>
+            </div>
+        </div>
+
+        <div class="metric-row">
+            <div class="metric-card indigo">
+                <div class="metric-label">今日花费</div>
+                <div class="metric-value">12.8 万</div>
+                <div class="metric-change up">+5.2%</div>
+            </div>
+            <div class="metric-card green">
+                <div class="metric-label">实时 ROI</div>
+                <div class="metric-value">2.87</div>
+                <div class="metric-change up">+12.4%</div>
+            </div>
+            <div class="metric-card red">
+                <div class="metric-label">异常告警</div>
+                <div class="metric-value">3</div>
+                <div class="metric-change down">需关注</div>
+            </div>
+            <div class="metric-card" style="background:var(--accent-400);border-color:var(--accent-400)">
+                <div class="metric-label" style="color:rgba(255,255,255,0.8)">AI 分析</div>
+                <div class="metric-value" style="color:#fff;font-size:1.1rem">查看最新归因 →</div>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div class="card">
+                <div class="card-title">趋势图表 <span style="color:var(--gray-400);font-weight:400;font-size:0.78rem">花费 & ROI · 日/周切换</span></div>
+                <div class="chart-placeholder">
+                    <div class="chart-bar" style="height:40%"></div>
+                    <div class="chart-bar" style="height:55%"></div>
+                    <div class="chart-bar" style="height:50%"></div>
+                    <div class="chart-bar primary" style="height:70%"></div>
+                    <div class="chart-bar primary" style="height:80%"></div>
+                    <div class="chart-bar primary" style="height:90%"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">角色快速入口</div>
+                <div class="role-entry trader">投手 — 进看板盯盘</div>
+                <div class="role-entry operator">运营 — 进洞察复盘</div>
+                <div class="role-entry manager">管理者 — 看结论摘要</div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div class="card-title" style="margin:0">最新 AI 洞察</div>
+                <span style="font-size:0.78rem;color:var(--accent-400);cursor:pointer">查看全部 →</span>
+            </div>
+            <div class="insight-cards">
+                <div class="insight-card">
+                    <div class="insight-date">2026-04-30</div>
+                    <div class="insight-title">ROI 波动归因报告</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-date">2026-04-29</div>
+                    <div class="insight-title">花费偏离预警分析</div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-date">2026-04-28</div>
+                    <div class="insight-title">周度经营趋势洞察</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">系统入口</div>
+            <div class="entry-tags">
+                <span class="entry-tag primary">数据看板</span>
+                <span class="entry-tag primary">GenBI</span>
+                <span class="entry-tag primary">洞察</span>
+                <span class="entry-tag primary">计划</span>
+                <span class="entry-tag secondary">Prompt</span>
+                <span class="entry-tag secondary">规则管理</span>
+            </div>
+        </div>
+    </div>
+
+    <h3>4.2 数据看板 <span class="badge-new">REDESIGN</span></h3>
+
+    <div class="comparison">
+        <div class="comparison-col old">
+            <h4>旧方案</h4>
+            <ul>
+                <li>灰色 Tab 平铺，视觉层次平</li>
+                <li>指标和表格混在同一区域</li>
+                <li>缺少异常预警独立面板</li>
+                <li>所有指标样式相同，无状态区分</li>
+            </ul>
+        </div>
+        <div class="comparison-col new">
+            <h4>新方案</h4>
+            <ul>
+                <li>分段选择器替代老式 Tab</li>
+                <li>核心指标行 + 趋势图 + 明细表三层</li>
+                <li>异常预警独立右侧面板</li>
+                <li>指标卡片顶部彩色状态条</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="layout-preview">
+        <div class="wireframe-nav">
+            <span>数据看板</span>
+            <div class="wireframe-nav-items">
+                <span class="wireframe-nav-pill">日</span>
+                <span class="wireframe-nav-pill active">周</span>
+            </div>
+        </div>
+
+        <div class="metric-row">
+            <div class="metric-card indigo">
+                <div class="metric-label">今日花费</div>
+                <div class="metric-value">12.8 万</div>
+                <div class="metric-change up">+5.2%</div>
+            </div>
+            <div class="metric-card green">
+                <div class="metric-label">实时 ROI</div>
+                <div class="metric-value">2.87</div>
+                <div class="metric-change up">+12.4%</div>
+            </div>
+            <div class="metric-card amber">
+                <div class="metric-label">转化率</div>
+                <div class="metric-value">3.2%</div>
+                <div class="metric-change down">-0.8%</div>
+            </div>
+            <div class="metric-card red">
+                <div class="metric-label">去退 ROI</div>
+                <div class="metric-value">2.14</div>
+                <div class="metric-change down">-2.1%</div>
+            </div>
+        </div>
+
+        <div class="segmented-control">
+            <button class="seg-btn active">投放概览</button>
+            <button class="seg-btn">直播间</button>
+            <button class="seg-btn">人群分析</button>
+            <button class="seg-btn">异常预警</button>
+            <button class="seg-btn">AI 分析</button>
+        </div>
+
+        <div class="two-col">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <div class="card-title" style="margin:0">趋势图</div>
+                    <div style="display:flex;gap:4px">
+                        <span class="entry-tag primary" style="cursor:pointer">日</span>
+                        <span class="entry-tag secondary" style="cursor:pointer">周</span>
+                    </div>
+                </div>
+                <div class="chart-placeholder">
+                    <div class="chart-bar" style="height:35%"></div>
+                    <div class="chart-bar primary" style="height:50%"></div>
+                    <div class="chart-bar" style="height:45%"></div>
+                    <div class="chart-bar primary" style="height:65%"></div>
+                    <div class="chart-bar primary" style="height:75%"></div>
+                    <div class="chart-bar primary" style="height:85%"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <div class="card-title" style="margin:0">异常预警</div>
+                    <span class="risk-badge critical">3 条</span>
+                </div>
+                <div style="padding:10px;background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:var(--radius-md);margin-bottom:8px">
+                    <div style="font-size:0.82rem;font-weight:500;color:var(--danger)">ROI 骤降 -8.2%</div>
+                    <div style="font-size:0.72rem;color:var(--gray-400)">4月30日 · 直播间 A</div>
+                </div>
+                <div style="padding:10px;background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:var(--radius-md);margin-bottom:8px">
+                    <div style="font-size:0.82rem;font-weight:500;color:var(--warning)">花费偏离 +15%</div>
+                    <div style="font-size:0.72rem;color:var(--gray-400)">4月30日 · 全渠道</div>
+                </div>
+                <div style="padding:10px;background:var(--warning-bg);border:1px solid var(--warning-border);border-radius:var(--radius-md)">
+                    <div style="font-size:0.82rem;font-weight:500;color:var(--warning)">转化率下降</div>
+                    <div style="font-size:0.72rem;color:var(--gray-400)">4月29日 · 直播间 B</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <div class="card-title" style="margin:0">数据明细</div>
+                <span style="font-size:0.78rem;color:var(--accent-400);cursor:pointer">导出 CSV</span>
+            </div>
+            <div style="background:var(--gray-25);border-radius:var(--radius-md);padding:10px 14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:8px;font-size:0.78rem;color:var(--gray-400);font-weight:500">
+                <span>日期</span><span>直播间</span><span>花费</span><span>ROI</span><span>转化率</span><span>状态</span>
+            </div>
+        </div>
+    </div>
+
+    <h3>4.3 GenBI <span class="badge-new">REDESIGN</span></h3>
+
+    <div class="comparison">
+        <div class="comparison-col old">
+            <h4>旧方案</h4>
+            <ul>
+                <li>左右两栏：问答 + 示例</li>
+                <li>示例区占据大量空间</li>
+                <li>结果展示区域小</li>
+                <li>文件上传入口不明显</li>
+            </ul>
+        </div>
+        <div class="comparison-col new">
+            <h4>新方案</h4>
+            <ul>
+                <li>对话式布局，AI 结果嵌入对话流</li>
+                <li>右侧辅助面板（文件/历史/规则）</li>
+                <li>结果直接内嵌标签高亮关键发现</li>
+                <li>快捷提问按钮降低使用门槛</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="layout-preview">
+        <div class="wireframe-nav">
+            <span>GenBI</span>
+            <div class="wireframe-nav-items">
+                <span class="wireframe-nav-pill">历史</span>
+                <span class="wireframe-nav-pill">规则</span>
+            </div>
+        </div>
+
+        <div style="background:var(--accent-50);border:1px solid var(--accent-200);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:14px">
+            <div style="font-size:0.85rem;color:var(--indigo-600)">用自然语言提问，AI 会从投放数据中生成分析报告</div>
+            <div style="font-size:0.78rem;color:var(--accent-400);margin-top:4px">支持上传文件辅助分析 · 查看 Prompt 规则 →</div>
+        </div>
+
+        <div class="genbi-layout">
+            <div class="card">
+                <div class="card-title">对话区</div>
+                <div class="chat-bubble user">
+                    <div class="sender">你</div>
+                    最近 7 天的 ROI 趋势是怎样的？
+                </div>
+                <div class="chat-bubble ai">
+                    <div class="sender">AI 分析</div>
+                    近 7 天 ROI 呈上升趋势，从 2.34 上升至 2.87。主要驱动因素：
+                    <div style="margin-top:8px">
+                        <span class="inline-tag green">直播间 A ROI +18.3%</span>
+                        <span class="inline-tag amber">直播间 B ROI -2.1%</span>
+                    </div>
+                    <div style="margin-top:8px;font-size:0.78rem;color:var(--accent-400)">查看完整报告 →</div>
+                    <div style="font-size:0.72rem;color:var(--gray-400);margin-top:4px">数据范围: 2026-04-23 ~ 2026-04-30</div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" value="输入问题开始分析..." readonly>
+                    <button>发送</button>
+                </div>
+                <div style="margin-top:10px">
+                    <span class="quick-btn">今天的花费表现</span>
+                    <span class="quick-btn">哪场直播 ROI 最高</span>
+                    <span class="quick-btn">异常波动分析</span>
+                </div>
+            </div>
+            <div>
+                <div class="sidebar-section">
+                    <h5>上传文件</h5>
+                    <div style="border:2px dashed var(--gray-200);border-radius:var(--radius-md);padding:14px;text-align:center;font-size:0.78rem;color:var(--accent-400)">点击或拖拽上传</div>
+                </div>
+                <div class="sidebar-section">
+                    <h5>历史提问</h5>
+                    <div style="font-size:0.78rem;color:var(--gray-600)">最近 5 条记录</div>
+                </div>
+                <div class="sidebar-section">
+                    <h5>当前规则 (3 条生效)</h5>
+                    <div class="rule-pill">ROI 分析规则 v2.1</div>
+                    <div class="rule-pill">花费偏离规则 v1.4</div>
+                    <div class="rule-pill">归因模板 v3.0</div>
+                </div>
+                <div style="padding:12px;background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:var(--radius-md)">
+                    <div style="font-size:0.82rem;font-weight:500;color:var(--danger)">注意</div>
+                    <div style="font-size:0.72rem;color:var(--gray-400)">结果基于受控数据源，请交叉验证关键结论</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>4.4 洞察中心 <span class="badge-new">REDESIGN</span></h3>
+
+    <div class="comparison">
+        <div class="comparison-col old">
+            <h4>旧方案</h4>
+            <ul>
+                <li>大段 Hero 介绍区占空间</li>
+                <li>报告卡片平铺，缺少状态分类</li>
+                <li>筛选条件少</li>
+            </ul>
+        </div>
+        <div class="comparison-col new">
+            <h4>新方案</h4>
+            <ul>
+                <li>精简顶部，一栏筛选 + 一栏报告</li>
+                <li>报告卡片带风险等级色标</li>
+                <li>按日期/风险/标签多维筛选</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="layout-preview">
+        <div class="wireframe-nav">
+            <span>洞察中心</span>
+            <div class="wireframe-nav-items">
+                <span class="wireframe-nav-pill active">全部</span>
+                <span class="wireframe-nav-pill">AI 报告</span>
+                <span class="wireframe-nav-pill">经营结论</span>
+            </div>
+        </div>
+
+        <div class="insight-layout">
+            <div>
+                <div class="report-card critical">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <span style="font-size:0.72rem;color:var(--gray-400)">2026-04-30</span>
+                        <span class="risk-badge critical">严重风险</span>
+                    </div>
+                    <div style="font-size:0.9rem;font-weight:500;color:var(--gray-800)">ROI 骤降归因报告</div>
+                    <div style="font-size:0.78rem;color:var(--gray-600);margin-top:4px">今日 ROI 下降 8.2%，主要受直播间 A 影响...</div>
+                </div>
+                <div class="report-card warning">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <span style="font-size:0.72rem;color:var(--gray-400)">2026-04-29</span>
+                        <span class="risk-badge warning">中风险</span>
+                    </div>
+                    <div style="font-size:0.9rem;font-weight:500;color:var(--gray-800)">花费偏离预警分析</div>
+                    <div style="font-size:0.78rem;color:var(--gray-600);margin-top:4px">全渠道花费偏离计划 15%，建议调整投放策略...</div>
+                </div>
+                <div class="report-card good">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <span style="font-size:0.72rem;color:var(--gray-400)">2026-04-28</span>
+                        <span class="risk-badge good">低风险</span>
+                    </div>
+                    <div style="font-size:0.9rem;font-weight:500;color:var(--gray-800)">周度经营趋势洞察</div>
+                    <div style="font-size:0.78rem;color:var(--gray-600);margin-top:4px">本周整体表现平稳，ROI 环比提升 3.5%...</div>
+                </div>
+            </div>
+            <div>
+                <div class="card" style="margin-bottom:10px">
+                    <div class="card-title">筛选</div>
+                    <div style="margin-bottom:8px">
+                        <div style="font-size:0.72rem;color:var(--gray-400);margin-bottom:4px">风险等级</div>
+                        <div style="display:flex;gap:4px;flex-wrap:wrap">
+                            <span class="risk-badge critical" style="cursor:pointer">严重</span>
+                            <span class="risk-badge warning" style="cursor:pointer">中等</span>
+                            <span class="risk-badge good" style="cursor:pointer">低</span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:8px">
+                        <div style="font-size:0.72rem;color:var(--gray-400);margin-bottom:4px">时间范围</div>
+                        <div style="display:flex;gap:4px">
+                            <span class="entry-tag primary" style="cursor:pointer">近 7 天</span>
+                            <span class="entry-tag secondary" style="cursor:pointer">近 30 天</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.72rem;color:var(--gray-400);margin-bottom:4px">标签</div>
+                        <div style="display:flex;gap:4px;flex-wrap:wrap">
+                            <span class="quick-btn">ROI</span>
+                            <span class="quick-btn">花费</span>
+                            <span class="quick-btn">转化率</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">洞察统计</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                        <div style="text-align:center;padding:10px;background:var(--gray-25);border-radius:var(--radius-md)">
+                            <div style="font-size:1.3rem;font-weight:600;color:var(--gray-800)">24</div>
+                            <div style="font-size:0.72rem;color:var(--gray-400)">本月报告</div>
+                        </div>
+                        <div style="text-align:center;padding:10px;background:var(--danger-bg);border-radius:var(--radius-md)">
+                            <div style="font-size:1.3rem;font-weight:600;color:var(--danger)">3</div>
+                            <div style="font-size:0.72rem;color:var(--gray-400)">严重风险</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2>五、组件规范</h2>
+
+    <div class="section-card">
+        <h3>5.1 导航栏</h3>
+        <ul>
+            <li>深色背景（Indigo 800）+ 白色文字，sticky 定位</li>
+            <li>Logo 左侧，导航项右侧，支持移动端汉堡菜单</li>
+            <li>当前页高亮用底色 pill 形式，hover 用透明度变化</li>
+            <li>「更多」下拉菜单使用圆角卡片 + 阴影</li>
+        </ul>
+
+        <h3>5.2 指标卡片</h3>
+        <ul>
+            <li>顶部 3px 彩色状态条：靛蓝=通用、绿=正向、黄=波动、红=异常</li>
+            <li>标签灰色小字 + 数字大号加粗 + 变化率彩色</li>
+            <li>hover 时微微上移 + 阴影增强</li>
+        </ul>
+
+        <h3>5.3 分段选择器</h3>
+        <ul>
+            <li>替代老式 Tab：灰色底 + 白色/主色活跃项</li>
+            <li>活跃项带圆角 + 微阴影，切换有 200ms 滑动动效</li>
+        </ul>
+
+        <h3>5.4 按钮</h3>
+        <ul>
+            <li>主按钮：主色背景 + 白色文字 + 圆角 8px</li>
+            <li>次按钮：白底 + 边框 + 深色文字</li>
+            <li>文字按钮：无边框 + 主色文字</li>
+            <li>所有按钮 hover 有 translateY(-1px) + 阴影增强</li>
+        </ul>
+
+        <h3>5.5 表格</h3>
+        <ul>
+            <li>表头浅灰底 + 小号加粗，数据行白底</li>
+            <li>行 hover 浅灰高亮</li>
+            <li>状态列使用彩色标签</li>
+            <li>支持横向滚动 + 固定首列</li>
+        </ul>
+    </div>
+
+    <h2>六、响应式策略</h2>
+
+    <div class="section-card">
+        <table class="token-table">
+            <thead>
+                <tr><th>断点</th><th>宽度</th><th>布局调整</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Desktop</td><td>>1024px</td><td>双栏/三栏布局正常展示</td></tr>
+                <tr><td>Tablet</td><td>768-1024px</td><td>双栏变单栏，辅助面板折叠</td></tr>
+                <tr><td>Mobile</td><td><768px</td><td>导航变汉堡菜单，指标卡片 2 列，表格横向滚动</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>七、实施路线</h2>
+
+    <div class="section-card">
+        <ol>
+            <li><strong>Phase 1 — 基础设施</strong>（1-2 天）
+                <ul>
+                    <li>创建 <code>assets/css/tokens.css</code> 统一 Design Token</li>
+                    <li>更新 <code>global.css</code> 引入新 Token</li>
+                    <li>抽离各页面内联样式到独立 CSS 文件</li>
+                </ul>
+            </li>
+            <li><strong>Phase 2 — 导航 & 框架</strong>（1 天）
+                <ul>
+                    <li>统一导航栏组件</li>
+                    <li>深色导航栏替代白色导航栏</li>
+                </ul>
+            </li>
+            <li><strong>Phase 3 — 首页重设计</strong>（2-3 天）
+                <ul>
+                    <li>Hero 区从营销型改为数据总控台</li>
+                    <li>核心指标行 + 趋势图 + 角色入口</li>
+                </ul>
+            </li>
+            <li><strong>Phase 4 — 数据看板重设计</strong>（2-3 天）
+                <ul>
+                    <li>指标卡片加状态条</li>
+                    <li>分段选择器替代 Tab</li>
+                    <li>异常预警独立面板</li>
+                </ul>
+            </li>
+            <li><strong>Phase 5 — GenBI & 洞察中心</strong>（2-3 天）
+                <ul>
+                    <li>GenBI 对话式布局</li>
+                    <li>洞察中心风险等级色标</li>
+                </ul>
+            </li>
+            <li><strong>Phase 6 — 其他页面 & 响应式</strong>（2 天）
+                <ul>
+                    <li>计划拆解、Prompt 管理、规则管理页面统一样式</li>
+                    <li>响应式适配和微动效</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="footer-note">
+        交个朋友控股 · 广告业务组 · UI 重设计方案 · 2026 年 4 月
+    </div>
+
+</div>
+
+</body>
+</html>

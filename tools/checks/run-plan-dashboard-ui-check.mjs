@@ -39,8 +39,13 @@ function createContext() {
 
 async function main() {
   const { context, window } = createContext();
+  await loadScript('assets/js/plan-dashboard-reference-data.js', context);
   await loadScript('assets/js/plan-dashboard-utils.js', context);
   await loadScript('assets/js/plan-dashboard-state.js', context);
+  await loadScript('assets/js/plan-dashboard-render-shared.js', context);
+  await loadScript('assets/js/plan-dashboard-render-references.js', context);
+  await loadScript('assets/js/plan-dashboard-render-rhythm.js', context);
+  await loadScript('assets/js/plan-dashboard-render-table.js', context);
   await loadScript('assets/js/plan-dashboard-render.js', context);
   await loadScript('assets/js/plan-dashboard-page.js', context);
 

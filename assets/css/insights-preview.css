@@ -1,0 +1,300 @@
+/* ================================
+   更新卡片
+   ================================ */
+
+
+
+
+
+
+
+
+
+/* ================================
+   能力卡片
+   ================================ */
+
+
+
+
+
+
+/* ================================
+   洞察预览
+   ================================ */
+.insights-preview-section {
+    background: linear-gradient(180deg, rgba(255,255,255,0.66) 0%, #f3f1ff 100%);
+}
+
+.insights-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+.insights-preview-header .section-title {
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.insights-preview-desc {
+    color: var(--text-light);
+    max-width: 620px;
+    line-height: 1.8;
+}
+
+.insights-preview-state {
+    background: white;
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    box-shadow: var(--shadow);
+}
+
+.insights-preview-state.is-error {
+    color: #b42318;
+    border-color: rgba(180, 35, 24, 0.2);
+}
+
+.insights-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+}
+
+.insight-preview-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.insight-preview-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+}
+
+.insight-preview-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.insight-risk {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #edf2ff;
+    color: #4253b8;
+}
+
+.insight-risk.low {
+    background: rgba(24, 121, 78, 0.12);
+    color: #18794e;
+}
+
+.insight-risk.medium {
+    background: rgba(178, 106, 0, 0.12);
+    color: #b26a00;
+}
+
+.insight-risk.high {
+    background: rgba(194, 65, 12, 0.12);
+    color: #c2410c;
+}
+
+.insight-risk.critical {
+    background: rgba(180, 35, 24, 0.12);
+    color: #b42318;
+}
+
+.insight-preview-card h3 {
+    font-size: 1.1rem;
+    color: var(--text);
+    line-height: 1.5;
+}
+
+.insight-preview-summary {
+    color: var(--text-light);
+    line-height: 1.75;
+    min-height: 72px;
+}
+
+.insight-preview-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.insight-metric-box {
+    background: var(--bg-light);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.insight-metric-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.insight-metric-box strong {
+    color: var(--text);
+    font-size: 1.05rem;
+}
+
+.insight-preview-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 28px;
+}
+
+.insight-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #f1edff;
+    color: #6b4db7;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.insight-preview-link {
+    width: 100%;
+    text-align: center;
+}
+
+/* ================================
+   故事区块
+   ================================ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ================================
+   数据亮点
+   ================================ */
+
+.stat-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 28px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.stat-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: var(--bg-dark);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+/* ================================
+   页面标题区
+   ================================ */
+
+
+/* ================================
+   时间线（进度页）- 全新设计
+   ================================ */
+
+/* 项目概览卡片 */
+
+
+
+
+
+
+/* 时间线主体 */
+.timeline {
+    max-width: 750px;
+    margin: 0 auto;
+    position: relative;
+    padding-left: 40px;
+}
+
+/* 左侧竖线 */
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--primary), rgba(102,126,234,0.1));
+    border-radius: 2px;
+}
+
+
+/* 圆点 */
+
+
+
+
+
+/* 卡片左侧小三角 */
+
+
+
+
+
+
+
+
+
+/* 阶段分隔 */
+
+
+/* 响应式 */
+@media (max-width: 768px) {
+
+    .insights-preview-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .insight-preview-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+

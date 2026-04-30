@@ -1,0 +1,173 @@
+/* ================================
+   关于页
+   ================================ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ================================
+   笔记卡片（rules页）
+   ================================ */
+
+
+
+
+
+
+/* ================================
+   Footer
+   ================================ */
+.footer {
+    background: var(--text);
+    color: rgba(255,255,255,0.7);
+    padding: 40px 0;
+    text-align: center;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.footer-emoji { font-size: 1.4rem; }
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+.footer-links a {
+    color: rgba(255,255,255,0.7);
+}
+
+.footer-links a:hover {
+    color: white;
+}
+
+.footer-copy {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+}
+
+/* ================================
+   响应式
+   ================================ */
+@media (max-width: 768px) {
+    .nav-menu {
+        display: none;
+    }
+    
+    .mobile-menu-btn {
+        display: flex;
+    }
+    
+    
+    
+
+    
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    
+    
+    
+    
+    
+}
+
+/* ================================
+   广告业务展示
+   ================================ */
+
+
+
+
+
+
+
+
+
+
+
+
+/* ================================
+   Hero 动态光斑
+   ================================ */
+
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+}
+
+.blob-1 {
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(200, 180, 255, 0.5) 40%, transparent 70%);
+    top: -200px;
+    left: -200px;
+    animation: float1 8s ease-in-out infinite;
+}
+
+.blob-2 {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(220, 190, 255, 0.45) 40%, transparent 70%);
+    top: 20%;
+    right: -150px;
+    animation: float2 10s ease-in-out infinite;
+}
+
+.blob-3 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0%, rgba(210, 185, 255, 0.45) 40%, transparent 70%);
+    bottom: -100px;
+    left: 20%;
+    animation: float3 12s ease-in-out infinite;
+}
+
+@keyframes float1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(150px, 120px) scale(1.2); }
+}
+
+@keyframes float2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-120px, -150px) scale(1.15); }
+}
+
+@keyframes float3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(100px, -120px) scale(1.18); }
+}
+
+
