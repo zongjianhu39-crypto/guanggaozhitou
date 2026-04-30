@@ -1,42 +1,12 @@
 /* ================================
-   关于页
+   Legacy Pages — Token-driven v2.0
    ================================ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* ================================
-   笔记卡片（rules页）
-   ================================ */
-
-
-
-
-
-
-/* ================================
-   Footer
-   ================================ */
+/* ── Footer（旧页面共用） ── */
 .footer {
-    background: var(--text);
-    color: rgba(255,255,255,0.7);
-    padding: 40px 0;
+    background: var(--indigo-800);
+    color: rgba(255, 255, 255, 0.7);
+    padding: var(--space-10) 0;
     text-align: center;
 }
 
@@ -44,11 +14,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    font-size: 1.2rem;
-    font-weight: 600;
+    gap: var(--space-2);
+    font-size: var(--text-md);
+    font-weight: var(--font-semibold);
     color: white;
-    margin-bottom: 20px;
+    margin-bottom: var(--space-5);
 }
 
 .footer-emoji { font-size: 1.4rem; }
@@ -56,12 +26,13 @@
 .footer-links {
     display: flex;
     justify-content: center;
-    gap: 24px;
-    margin-bottom: 16px;
+    gap: var(--space-6);
+    margin-bottom: var(--space-4);
 }
 
 .footer-links a {
-    color: rgba(255,255,255,0.7);
+    color: rgba(255, 255, 255, 0.7);
+    transition: color var(--duration-fast) var(--ease-out);
 }
 
 .footer-links a:hover {
@@ -69,58 +40,11 @@
 }
 
 .footer-copy {
-    font-size: 13px;
-    color: rgba(255,255,255,0.5);
+    font-size: var(--text-xs);
+    color: rgba(255, 255, 255, 0.5);
 }
 
-/* ================================
-   响应式
-   ================================ */
-@media (max-width: 768px) {
-    .nav-menu {
-        display: none;
-    }
-    
-    .mobile-menu-btn {
-        display: flex;
-    }
-    
-    
-    
-
-    
-    .btn {
-        width: 100%;
-        text-align: center;
-    }
-    
-    
-    
-    
-    
-    
-}
-
-/* ================================
-   广告业务展示
-   ================================ */
-
-
-
-
-
-
-
-
-
-
-
-
-/* ================================
-   Hero 动态光斑
-   ================================ */
-
-
+/* ── Hero 光斑（保留兼容） ── */
 .blob {
     position: absolute;
     border-radius: 50%;
@@ -170,4 +94,18 @@
     50% { transform: translate(100px, -120px) scale(1.18); }
 }
 
+/* ── 响应式 ── */
+@media (max-width: 768px) {
+    .nav-menu {
+        display: none;
+    }
 
+    .mobile-menu-btn {
+        display: flex;
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+}

@@ -6,7 +6,7 @@
                 .replace(/\*([^*]+)\*/g, '$1')
                 .replace(/#+\s*/g, '')
                 .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
-                .replace(/^[\-\d.\s]+/, '')
+                .replace(/^[-\d.\s]+/, '')
                 .replace(/\s+/g, ' ')
                 .trim();
         }
@@ -216,9 +216,12 @@
             const normalizedItems = Array.isArray(items) ? items : [];
             const latest = normalizedItems[0]?.report_date || '--';
             const highRiskCount = normalizedItems.filter((item) => ['high', 'critical'].includes(item.risk_level)).length;
+            const lowRiskCount = normalizedItems.filter((item) => ['low'].includes(item.risk_level)).length;
 
             document.getElementById('stat-total').textContent = total ?? normalizedItems.length;
             document.getElementById('stat-high-risk').textContent = highRiskCount;
+            const lowRiskEl = document.getElementById('stat-low-risk');
+            if (lowRiskEl) lowRiskEl.textContent = lowRiskCount;
             document.getElementById('stat-latest').textContent = latest;
         }
 
@@ -239,12 +242,13 @@
             const metaLine = formatReportMetricsLine(metrics);
             const genbiReport = isGenbiReport(item, item.raw_payload || {});
             const riskClass = !genbiReport && item.risk_level ? `is-${escapeHtml(item.risk_level)}` : '';
+            const riskColorClass = !genbiReport && item.risk_level ? escapeHtml(item.risk_level) : '';
             const badgeLabel = genbiReport ? 'GenBI' : riskLabel(item.risk_level);
             const badgeClass = genbiReport ? 'medium' : escapeHtml(item.risk_level || '');
             const slug = escapeHtml(item.slug || '');
 
             return `
-                <article class="report-card report-entry ${isLatest ? 'report-entry--latest' : ''} ${riskClass}" data-report-slug="${slug}" tabindex="0" role="button" aria-label="查看报告详情">
+                <article class="report-card report-entry ${isLatest ? 'report-entry--latest' : ''} ${riskClass} ${riskColorClass}" data-report-slug="${slug}" tabindex="0" role="button" aria-label="查看报告详情">
                     <div class="report-entry-head">
                         <div class="report-entry-head-main">
                             ${isLatest ? '<span class="report-badge-latest">最新</span>' : ''}

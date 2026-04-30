@@ -36,7 +36,42 @@
     "curly": ["error", "multi-line"],
     "eqeqeq": ["error", "always", { "null": "ignore" }],
     "no-inner-declarations": "off",
+    "no-redeclare": "off",
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
     "no-var": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["assets/js/insights-page.js", "assets/js/insights-render.js"],
+      "globals": {
+        "escapeHtml": "writable",
+        "riskLabel": "writable",
+        "riskWeight": "writable",
+        "decisionLabel": "writable",
+        "metricLabels": "writable",
+        "normalizeExperienceKey": "writable",
+        "getReadableSummary": "writable",
+        "sanitizeReportText": "writable",
+        "buildDetailFocusCards": "writable",
+        "renderMetricCards": "writable",
+        "renderReportArticleBody": "writable",
+        "buildStructuredAppendix": "writable",
+        "updateStats": "writable",
+        "setViewMode": "writable",
+        "renderLoading": "writable",
+        "renderError": "writable",
+        "renderList": "writable",
+        "renderListItems": "writable",
+        "currentDetailItem": "writable",
+        "reportListCache": "writable",
+        "SB_URL": "writable",
+        "authRedirectScheduled": "writable",
+        "filterState": "writable",
+        "allReportItems": "writable"
+      },
+      "rules": {
+        "no-global-assign": "off"
+      }
+    }
+  ]
 }

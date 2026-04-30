@@ -1,182 +1,166 @@
 /* ================================
-   更新卡片
-   ================================ */
-
-
-
-
-
-
-
-
-
-/* ================================
-   能力卡片
-   ================================ */
-
-
-
-
-
-
-/* ================================
-   洞察预览
+   洞察预览卡片 — Token-driven v2.0
    ================================ */
 .insights-preview-section {
-    background: linear-gradient(180deg, rgba(255,255,255,0.66) 0%, #f3f1ff 100%);
+    background: var(--surface-raised);
 }
 
 .insights-preview-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    gap: 24px;
-    margin-bottom: 28px;
+    gap: var(--space-6);
+    margin-bottom: var(--space-6);
 }
 
 .insights-preview-header .section-title {
     text-align: left;
-    margin-bottom: 10px;
+    margin-bottom: var(--space-2);
 }
 
 .insights-preview-desc {
-    color: var(--text-light);
+    color: var(--gray-500);
     max-width: 620px;
-    line-height: 1.8;
+    line-height: var(--leading-relaxed);
 }
 
 .insights-preview-state {
-    background: white;
-    border-radius: var(--radius);
-    padding: 22px 24px;
-    border: 1px solid var(--border);
-    color: var(--text-light);
-    box-shadow: var(--shadow);
+    background: var(--surface-base);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    border: 1px solid var(--gray-200);
+    color: var(--gray-500);
+    box-shadow: var(--shadow-card);
 }
 
 .insights-preview-state.is-error {
-    color: #b42318;
-    border-color: rgba(180, 35, 24, 0.2);
+    color: var(--critical);
+    border-color: var(--danger-border);
+    background: var(--danger-bg);
 }
 
 .insights-preview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-4);
 }
 
 .insight-preview-card {
-    background: white;
-    border-radius: var(--radius);
-    padding: 24px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
+    background: var(--surface-base);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--gray-200);
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    transition: transform 0.3s, box-shadow 0.3s;
+    gap: var(--space-3);
+    transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
 }
 
 .insight-preview-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-hover);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-card-hover);
 }
 
 .insight-preview-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    color: var(--text-muted);
-    font-size: 13px;
+    gap: var(--space-3);
+    color: var(--gray-400);
+    font-size: var(--text-xs);
 }
 
 .insight-risk {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 28px;
-    padding: 0 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    background: #edf2ff;
-    color: #4253b8;
+    min-height: 24px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: var(--font-bold);
+    background: var(--indigo-50);
+    color: var(--indigo-600);
 }
 
 .insight-risk.low {
-    background: rgba(24, 121, 78, 0.12);
-    color: #18794e;
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid var(--success-border);
 }
 
 .insight-risk.medium {
-    background: rgba(178, 106, 0, 0.12);
-    color: #b26a00;
+    background: var(--warning-bg);
+    color: var(--warning);
+    border: 1px solid var(--warning-border);
 }
 
 .insight-risk.high {
-    background: rgba(194, 65, 12, 0.12);
-    color: #c2410c;
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger-border);
 }
 
 .insight-risk.critical {
-    background: rgba(180, 35, 24, 0.12);
-    color: #b42318;
+    background: var(--danger);
+    color: #fff;
 }
 
 .insight-preview-card h3 {
-    font-size: 1.1rem;
-    color: var(--text);
-    line-height: 1.5;
+    font-size: var(--text-md);
+    color: var(--gray-800);
+    line-height: var(--leading-snug);
 }
 
 .insight-preview-summary {
-    color: var(--text-light);
-    line-height: 1.75;
-    min-height: 72px;
+    color: var(--gray-500);
+    line-height: var(--leading-relaxed);
+    font-size: var(--text-sm);
+    min-height: 60px;
 }
 
 .insight-preview-metrics {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: var(--space-2);
 }
 
 .insight-metric-box {
-    background: var(--bg-light);
-    border-radius: 12px;
-    padding: 12px 14px;
+    background: var(--surface-overlay);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
 }
 
 .insight-metric-label {
     display: block;
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 6px;
+    font-size: var(--text-xs);
+    color: var(--gray-400);
+    margin-bottom: var(--space-1);
 }
 
 .insight-metric-box strong {
-    color: var(--text);
-    font-size: 1.05rem;
+    color: var(--gray-800);
+    font-size: var(--text-md);
 }
 
 .insight-preview-tags {
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
     flex-wrap: wrap;
-    min-height: 28px;
+    min-height: 24px;
 }
 
 .insight-chip {
     display: inline-flex;
     align-items: center;
-    min-height: 28px;
-    padding: 0 10px;
-    border-radius: 999px;
-    background: #f1edff;
-    color: #6b4db7;
-    font-size: 12px;
-    font-weight: 600;
+    min-height: 24px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--indigo-50);
+    color: var(--indigo-600);
+    font-size: 11px;
+    font-weight: var(--font-semibold);
 }
 
 .insight-preview-link {
@@ -185,67 +169,32 @@
 }
 
 /* ================================
-   故事区块
+   统计卡片
    ================================ */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* ================================
-   数据亮点
-   ================================ */
-
 .stat-card {
-    background: white;
-    border-radius: var(--radius);
-    padding: 28px;
+    background: var(--surface-base);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
     text-align: center;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--gray-200);
 }
 
 .stat-value {
-    font-size: 2.2rem;
-    font-weight: 700;
-    background: var(--bg-dark);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    color: var(--indigo-400);
 }
 
 .stat-label {
-    color: var(--text-light);
-    font-size: 14px;
-    margin-top: 8px;
+    color: var(--gray-500);
+    font-size: var(--text-sm);
+    margin-top: var(--space-2);
 }
 
 /* ================================
-   页面标题区
+   时间线
    ================================ */
-
-
-/* ================================
-   时间线（进度页）- 全新设计
-   ================================ */
-
-/* 项目概览卡片 */
-
-
-
-
-
-
-/* 时间线主体 */
 .timeline {
     max-width: 750px;
     margin: 0 auto;
@@ -253,7 +202,6 @@
     padding-left: 40px;
 }
 
-/* 左侧竖线 */
 .timeline::before {
     content: '';
     position: absolute;
@@ -261,33 +209,14 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: linear-gradient(to bottom, var(--primary), rgba(102,126,234,0.1));
+    background: linear-gradient(to bottom, var(--indigo-400), var(--indigo-100));
     border-radius: 2px;
 }
 
-
-/* 圆点 */
-
-
-
-
-
-/* 卡片左侧小三角 */
-
-
-
-
-
-
-
-
-
-/* 阶段分隔 */
-
-
-/* 响应式 */
+/* ================================
+   响应式
+   ================================ */
 @media (max-width: 768px) {
-
     .insights-preview-header {
         flex-direction: column;
         align-items: flex-start;
@@ -296,5 +225,8 @@
     .insight-preview-metrics {
         grid-template-columns: 1fr;
     }
-}
 
+    .insights-preview-grid {
+        grid-template-columns: 1fr;
+    }
+}

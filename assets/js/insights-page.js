@@ -249,8 +249,86 @@ async function loadList(force = false) {
             document.getElementById('detail-back-btn').addEventListener('click', openReportList);
         }
 
+        /* ── 筛选逻辑 ── */
+        let filterState = { risk: 'all', range: 'all', tag: null };
+        let allReportItems = [];
+
+        function applyFilters() {
+            let filtered = allReportItems.slice();
+
+            if (filterState.risk !== 'all') {
+                const riskMap = { critical: ['critical', 'high'], warning: ['medium'], good: ['low'] };
+                const levels = riskMap[filterState.risk] || [filterState.risk];
+                filtered = filtered.filter((item) => levels.includes(item.risk_level));
+            }
+
+            if (filterState.range !== 'all') {
+                const now = new Date();
+                const days = filterState.range === '7d' ? 7 : 30;
+                const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+                filtered = filtered.filter((item) => {
+                    if (!item.report_date) return false;
+                    const d = new Date(item.report_date);
+                    return d >= cutoff;
+                });
+            }
+
+            if (filterState.tag) {
+                filtered = filtered.filter((item) => Array.isArray(item.tags) && item.tags.includes(filterState.tag));
+            }
+
+            renderList(filtered);
+        }
+
+        function bindFilterBar() {
+            const filterBar = document.querySelector('.insights-filter-bar');
+            if (!filterBar) return;
+
+            filterBar.addEventListener('click', (e) => {
+                const pill = e.target.closest('.filter-pill');
+                if (!pill) return;
+
+                const risk = pill.dataset.risk;
+                const range = pill.dataset.range;
+                const tag = pill.dataset.tag;
+
+                if (risk !== undefined) {
+                    filterState.risk = risk;
+                    filterBar.querySelectorAll('[data-risk]').forEach((p) => p.classList.toggle('active', p.dataset.risk === risk));
+                }
+
+                if (range !== undefined) {
+                    filterState.range = range;
+                    filterBar.querySelectorAll('[data-range]').forEach((p) => p.classList.toggle('active', p.dataset.range === range));
+                }
+
+                if (tag !== undefined) {
+                    if (filterState.tag === tag) {
+                        filterState.tag = null;
+                        pill.classList.remove('active');
+                    } else {
+                        filterState.tag = tag;
+                        filterBar.querySelectorAll('[data-tag]').forEach((p) => p.classList.toggle('active', p.dataset.tag === tag));
+                    }
+                }
+
+                applyFilters();
+            });
+        }
+
+        const _originalRenderList = renderList;
+        renderList = function(items) {
+            allReportItems = Array.isArray(items) ? items : allReportItems;
+            if (filterState.risk !== 'all' || filterState.range !== 'all' || filterState.tag) {
+                applyFilters();
+                return;
+            }
+            _originalRenderList(items);
+        };
+
         window.addEventListener('popstate', () => loadCurrentView(false));
 
         bindPageActions();
         bindReportCardInteractions();
+        bindFilterBar();
         loadCurrentView();

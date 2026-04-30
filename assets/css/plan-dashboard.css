@@ -1,6 +1,6 @@
 body.plan-dashboard-page {
-  background: #f5f7fb;
-  color: #1f2937;
+  background: var(--surface-raised, #f5f7fb);
+  color: var(--gray-800, #1f2937);
 }
 .plan-shell {
   max-width: min(1600px, calc(100vw - 48px));
@@ -12,10 +12,10 @@ body.plan-dashboard-page {
 .table-shell,
 .plan-drawer,
 .plan-modal-card {
-  background: #fff;
-  border: 1px solid #e6ebf3;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  background: var(--surface-base, #fff);
+  border: 1px solid var(--gray-200, #e6ebf3);
+  border-radius: var(--radius-xl, 16px);
+  box-shadow: var(--shadow-sm, 0 4px 16px rgba(15, 23, 42, 0.04));
 }
 .plan-toolbar-card,
 .plan-section {
