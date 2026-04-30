@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { authenticateEdgeRequest } from '../_shared/request-auth.ts';
 import { SB_SERVICE_ROLE_KEY, SB_URL } from '../_shared/supabase-client.ts';
 import { getSuperLiveTablesForDates } from '../_shared/table-routes.ts';
-import { createErrorResponse } from '../_shared/error-handler.ts';
+import { createErrorResponseWithStatus } from '../_shared/error-handler.ts';
 import {
   DATA_SOURCE_CONFIG,
   buildPlanDashboardSummary,
@@ -48,6 +48,19 @@ function chunkArray<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
+function isMissingOptionalTableError(error: { code?: string; message?: string; details?: string } | null) {
+  if (!error) return false;
+  const text = `${error.code || ''} ${error.message || ''} ${error.details || ''}`.toLowerCase();
+  return text.includes('pgrst205')
+    || text.includes('42p01')
+    || text.includes('could not find the table')
+    || (text.includes('relation') && text.includes('does not exist'));
+}
+
+function logMissingOptionalTable(table: string, error: { message?: string } | null) {
+  console.warn(`[plan-dashboard-summary] optional source table skipped: ${table}`, error?.message || '');
+}
+
 async function fetchRowsByDateFilters(
   client: ReturnType<typeof createClient>,
   table: string,
@@ -67,7 +80,13 @@ async function fetchRowsByDateFilters(
         .select(select)
         .in(dateField, chunk)
         .range(from, from + pageSize - 1);
-      if (error) throw new Error(`读取表 ${table} 失败: ${error.message}`);
+      if (error) {
+        if (isMissingOptionalTableError(error)) {
+          logMissingOptionalTable(table, error);
+          return [];
+        }
+        throw new Error(`读取表 ${table} 失败: ${error.message}`);
+      }
       if (!data?.length) break;
       rows.push(...data);
       if (data.length < pageSize) break;
@@ -96,7 +115,13 @@ async function fetchRowsByDateRange(
       .gte(dateField, start)
       .lte(dateField, end)
       .range(from, from + pageSize - 1);
-    if (error) throw new Error(`读取表 ${table} 失败: ${error.message}`);
+    if (error) {
+      if (isMissingOptionalTableError(error)) {
+        logMissingOptionalTable(table, error);
+        return [];
+      }
+      throw new Error(`读取表 ${table} 失败: ${error.message}`);
+    }
     if (!data?.length) break;
     rows.push(...data);
     if (data.length < pageSize) break;
@@ -408,6 +433,6 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'POST') return await handlePost(req, client, headers, authResult);
     return json({ error: '仅支持 GET / POST / OPTIONS' }, 405, headers);
   } catch (error) {
-    return createErrorResponse(error, 'plan-dashboard-summary');
+    return createErrorResponseWithStatus(error, 'plan-dashboard-summary', 500, headers);
   }
 });

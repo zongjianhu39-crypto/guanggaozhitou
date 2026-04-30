@@ -23,11 +23,6 @@
     };
   }
 
-  function currentMonth() {
-    const now = new Date();
-    return now.getFullYear() === PLAN_YEAR ? now.getMonth() + 1 : PLAN_BREAKDOWN_START_MONTH;
-  }
-
   function isMonthDisabled(month) {
     return !PLAN_BREAKDOWN_AVAILABLE_MONTHS.includes(month);
   }
@@ -88,8 +83,7 @@
   }
 
   function getInitialMonth() {
-    const month = currentMonth();
-    return isMonthDisabled(month) ? PLAN_BREAKDOWN_AVAILABLE_MONTHS[0] : month;
+    return PLAN_BREAKDOWN_AVAILABLE_MONTHS[0];
   }
 
   function getSelectedMonths() {
