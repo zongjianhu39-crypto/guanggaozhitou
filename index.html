@@ -280,7 +280,7 @@
 
             try {
                 const today = getShanghaiToday();
-                const startDate = getNdaysAgo(30);
+                const startDate = getNdaysAgo(14);
 
                 const result = await authHelpers.fetchFunctionJson('dashboard-data', {
                     query: { sections: 'ads', start_date: startDate, end_date: today },
@@ -303,38 +303,46 @@
                     return;
                 }
 
-                const kpi = homeDashboardData.kpi;
                 const daily = homeDashboardData.daily || [];
-                const weekly = homeDashboardData.weekly || [];
 
-                // 今日数据：取 daily 最后一行（API 返回按日期倒序，daily[0] = 最近一天）
-                const todayRow = daily.length > 0 ? daily[0] : null;
-                const yesterdayRow = daily.length > 1 ? daily[1] : null;
+                // 最新数据行（API 返回按日期倒序，daily[0] = 最近一天有数据的日期）
+                const latestRow = daily.length > 0 ? daily[0] : null;
+                const prevRow = daily.length > 1 ? daily[1] : null;
 
-                // 今日花费
-                const todaySpend = todayRow ? todayRow.cost : 0;
-                spendEl.textContent = formatCurrency(todaySpend);
+                // 判断最新数据是否就是今天
+                const latestDate = latestRow ? latestRow.label : '';
+                const isToday = latestDate === today;
+                const dateLabel = isToday ? '今日' : (latestDate.slice(5) || '最新');
 
-                // 计算花费变化：对比昨日
-                if (todayRow && yesterdayRow) {
-                    const change = formatChange(todayRow.cost, yesterdayRow.cost);
-                    spendChangeEl.textContent = '较昨日 ' + change.text;
+                // 花费
+                const latestSpend = latestRow ? latestRow.cost : 0;
+                spendEl.textContent = formatCurrency(latestSpend);
+
+                if (latestRow && prevRow) {
+                    const change = formatChange(latestRow.cost, prevRow.cost);
+                    spendChangeEl.textContent = '较前日 ' + change.text;
                     spendChangeEl.className = 'metric-change ' + change.cls;
                 } else {
-                    spendChangeEl.textContent = todayRow ? '今日数据' : '暂无数据';
+                    spendChangeEl.textContent = latestRow ? dateLabel + '数据' : '暂无数据';
                     spendChangeEl.className = 'metric-change neutral';
                 }
 
-                // 今日 ROI
-                const todayRoi = todayRow ? todayRow.roi : 0;
-                roiEl.textContent = formatRoi(todayRoi);
+                // ROI — 标签也改为显示实际日期
+                const latestRoi = latestRow ? latestRow.roi : 0;
+                roiEl.textContent = formatRoi(latestRoi);
 
-                if (todayRow && yesterdayRow) {
-                    const change = formatChange(todayRow.roi, yesterdayRow.roi);
-                    roiChangeEl.textContent = '较昨日 ' + change.text;
+                // 更新指标卡的 label，让用户知道这是哪天的数据
+                const spendLabelEl = spendEl.closest('.metric-card')?.querySelector('.metric-label');
+                const roiLabelEl = roiEl.closest('.metric-card')?.querySelector('.metric-label');
+                if (spendLabelEl) spendLabelEl.textContent = dateLabel + '花费';
+                if (roiLabelEl) roiLabelEl.textContent = dateLabel + ' ROI';
+
+                if (latestRow && prevRow) {
+                    const change = formatChange(latestRow.roi, prevRow.roi);
+                    roiChangeEl.textContent = '较前日 ' + change.text;
                     roiChangeEl.className = 'metric-change ' + change.cls;
                 } else {
-                    roiChangeEl.textContent = todayRow ? '今日 ROI' : '暂无数据';
+                    roiChangeEl.textContent = latestRow ? dateLabel + ' ROI' : '暂无数据';
                     roiChangeEl.className = 'metric-change neutral';
                 }
 
