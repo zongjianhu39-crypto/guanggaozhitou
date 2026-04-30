@@ -87,11 +87,11 @@
       const date = new Date(Date.UTC(1899, 11, 30 + Math.floor(serial)));
       return date.toISOString().slice(0, 10);
     }
-    let match = raw.match(/^(\d{4})[年\/.\-](\d{1,2})[月\/.\-](\d{1,2})日?$/);
+    let match = raw.match(/^(\d{4})[年/.-](\d{1,2})[月/.-](\d{1,2})日?$/);
     if (match) {
       return `${match[1]}-${String(Number(match[2])).padStart(2, '0')}-${String(Number(match[3])).padStart(2, '0')}`;
     }
-    match = raw.match(/^(\d{1,2})[月\/.\-](\d{1,2})日?$/);
+    match = raw.match(/^(\d{1,2})[月/.-](\d{1,2})日?$/);
     if (match) {
       return `${inferImportYear()}-${String(Number(match[1])).padStart(2, '0')}-${String(Number(match[2])).padStart(2, '0')}`;
     }
@@ -110,7 +110,7 @@
     const normalized = raw
       .replace(/[,，\s￥¥元]/g, '')
       .replace(/万元|万|亿元|亿/g, '')
-      .replace(/[^\d.\-]/g, '');
+      .replace(/[^\d.-]/g, '');
     if (!normalized || normalized === '-' || normalized === '.') return null;
     const parsed = Number.parseFloat(normalized);
     if (!Number.isFinite(parsed)) return null;
@@ -304,19 +304,19 @@
       '备注',
       '实际花费',
       '25年代投花费',
-	      '25年花费',
-	      '25年观看次数',
-	      '25年总成交笔数',
-	      '25年直接成交笔数',
-	      '25年总购物车数',
-	      '25年预售成交笔数',
-	      '25年成交人数',
-	      '25年淘宝成交笔数',
-	      '25年订单成本',
-	      '25年直接成交订单成本',
-	      '25年预售订单成本',
-	      '25年加购成本',
-	      '25年广告成交占比',
+          '25年花费',
+          '25年观看次数',
+          '25年总成交笔数',
+          '25年直接成交笔数',
+          '25年总购物车数',
+          '25年预售成交笔数',
+          '25年成交人数',
+          '25年淘宝成交笔数',
+          '25年订单成本',
+          '25年直接成交订单成本',
+          '25年预售订单成本',
+          '25年加购成本',
+          '25年广告成交占比',
       '25年保量佣金',
       '25年预估结算机构佣金',
       '25年品牌费',
@@ -333,19 +333,19 @@
         day.remark || '',
         day.actual_cost,
         csvOptionalAmount(day.agent_amount),
-	        refAmount,
-	        day.reference_views ?? 0,
-	        day.reference_orders ?? 0,
-	        day.reference_direct_orders ?? 0,
-	        day.reference_cart ?? 0,
-	        day.reference_pre_orders ?? 0,
-	        day.reference_buyers ?? 0,
-	        day.reference_taobao_orders ?? 0,
-	        csvSafeDivide(refAmount, day.reference_orders, 2),
-	        csvSafeDivide(refAmount, day.reference_direct_orders, 2),
-	        csvSafeDivide(refAmount, day.reference_pre_orders, 2),
-	        csvSafeDivide(refAmount, day.reference_cart, 2),
-	        csvPercent(day.reference_orders, day.reference_taobao_orders),
+            refAmount,
+            day.reference_views ?? 0,
+            day.reference_orders ?? 0,
+            day.reference_direct_orders ?? 0,
+            day.reference_cart ?? 0,
+            day.reference_pre_orders ?? 0,
+            day.reference_buyers ?? 0,
+            day.reference_taobao_orders ?? 0,
+            csvSafeDivide(refAmount, day.reference_orders, 2),
+            csvSafeDivide(refAmount, day.reference_direct_orders, 2),
+            csvSafeDivide(refAmount, day.reference_pre_orders, 2),
+            csvSafeDivide(refAmount, day.reference_cart, 2),
+            csvPercent(day.reference_orders, day.reference_taobao_orders),
         day.reference_financial_guarantee_commission ?? 0,
         day.reference_financial_estimated_agency_commission ?? 0,
         day.reference_financial_brand_fee ?? 0,
