@@ -1,0 +1,30 @@
+# CODEOWNERS - 代码审查归属
+# 格式: 目录/文件 @审查者GitHub用户名
+# 变更匹配路径的文件时，需要对应审查者批准
+
+# 🔒 安全核心模块（L3 专家审查）
+/supabase/functions/feishu-auth/    @zongjianhu39-crypto
+/supabase/functions/_shared/auth.ts @zongjianhu39-crypto
+/supabase/migrations/               @zongjianhu39-crypto
+
+# 🤖 AI 相关模块
+/supabase/functions/genbi-query/    @zongjianhu39-crypto
+/supabase/functions/genbi-rules/    @zongjianhu39-crypto
+/supabase/functions/genbi-rule-admin/ @zongjianhu39-crypto
+/supabase/functions/ai-analysis/    @zongjianhu39-crypto
+/supabase/functions/ai-prompt-admin/ @zongjianhu39-crypto
+
+# 📊 数据看板模块
+/supabase/functions/dashboard-data/ @zongjianhu39-crypto
+/supabase/functions/plan-dashboard-summary/ @zongjianhu39-crypto
+/assets/js/dashboard-*.js           @zongjianhu39-crypto
+/assets/js/plan-dashboard-*.js      @zongjianhu39-crypto
+
+# 🔑 配置与部署
+/assets/js/config.js                @zongjianhu39-crypto
+/scripts/                           @zongjianhu39-crypto
+.github/workflows/                  @zongjianhu39-crypto
+.gitee/workflows/                   @zongjianhu39-crypto
+
+# 📋 默认（所有未匹配的文件）
+*                                   @zongjianhu39-crypto

@@ -10,6 +10,7 @@
 
 import { callMiniMax } from './minimax-client.ts';
 import { listGenbiRuleConfigRecords } from './genbi-rule-store.ts';
+import { debugLog } from './logger.ts';
 
 export type GenbiIntent = string;  // 完全动态，不再限制为固定枚举
 
@@ -107,14 +108,14 @@ export async function detectIntentByAI(question: string): Promise<{ intent: stri
 
     // 直接命中数据库中的意图
     if (allIntentKeys.has(cleaned)) {
-      console.log(`[genbi-intent] AI: "${question.slice(0, 40)}" → ${cleaned}`);
+      debugLog(`[genbi-intent] AI: "${question.slice(0, 40)}" → ${cleaned}`);
       return { intent: cleaned, source: 'ai' };
     }
 
     // 清洗非法字符后再次尝试命中（例如 AI 输出带引号、冒号、空格）
     const extracted = cleaned.replace(/[^a-z0-9_]/g, '');
     if (extracted && allIntentKeys.has(extracted)) {
-      console.log(`[genbi-intent] AI(提取): "${question.slice(0, 40)}" → ${extracted}`);
+      debugLog(`[genbi-intent] AI(提取): "${question.slice(0, 40)}" → ${extracted}`);
       return { intent: extracted, source: 'ai' };
     }
 

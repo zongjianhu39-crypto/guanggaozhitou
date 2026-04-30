@@ -1,0 +1,5 @@
+.git
+node_modules
+supabase/.temp
+scripts/.deploy.env
+website 2.zip

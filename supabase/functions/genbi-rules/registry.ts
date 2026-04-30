@@ -3,6 +3,7 @@ import type { GenbiRange } from '../_shared/genbi-time.ts';
 import { buildUnsupportedResponse } from '../_shared/genbi-format.ts';
 import { answerDynamicRule } from './dynamic.ts';
 import { getGenbiSemanticConfig } from '../_shared/genbi-semantic.ts';
+import { debugLog } from '../_shared/logger.ts';
 
 type GenbiHandlerContext = {
   question: string;
@@ -91,7 +92,7 @@ export async function dispatchGenbiIntent(intent: GenbiIntent | string, context:
 
     const ruleKey = String(intentRules[intent] || '').trim();
     if (ruleKey && rules[ruleKey]) {
-      console.log(`[registry] using dynamic rule from database for intent: ${intent}, ruleKey: ${ruleKey}`);
+      debugLog(`[registry] using dynamic rule from database for intent: ${intent}, ruleKey: ${ruleKey}`);
       const dynamicResult = await answerDynamicRule(intent, context) as Record<string, unknown>;
 
       // 动态规则返回空数据时，直接返回 unsupported 响应

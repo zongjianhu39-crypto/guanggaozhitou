@@ -12,6 +12,7 @@ import { createErrorResponse } from '../_shared/error-handler.ts';
 import { validatePromptInput, sanitizePromptInput, validateDateString } from '../_shared/input-validator.ts';
 import { checkRateLimit, createRateLimitResponse } from '../_shared/rate-limiter.ts';
 import { callMiniMax } from '../_shared/minimax-client.ts';
+import { debugLog } from '../_shared/logger.ts';
 import {
   getFinancialTablesForDateRange,
   getSingleProductAdTablesForDateRange,
@@ -287,6 +288,18 @@ type DailyReportResult = {
   tags: string[];
 };
 
+type DataRow = Record<string, unknown>;
+
+type DashboardPayloadLike = {
+  ads?: {
+    kpi?: DataRow;
+    daily?: DataRow[];
+  };
+  crowd?: {
+    summary?: Array<DataRow & { subRows?: DataRow[] }>;
+  };
+};
+
 const toNum = (value: unknown): number => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   if (typeof value === 'string') return parseFloat(value.replace(/,/g, '').trim()) || 0;
@@ -512,7 +525,7 @@ function rankCostStructure(costItems: Array<[string, number]>, totalFinCost: num
     }));
 }
 
-function rankLiveSessions(taobaoData: any[]): LiveSessionItem[] {
+function rankLiveSessions(taobaoData: DataRow[]): LiveSessionItem[] {
   const sessionMap = new Map<string, LiveSessionItem>();
 
   for (const row of taobaoData) {
@@ -584,7 +597,7 @@ function summarizeLiveSessions(items: LiveSessionItem[]): string {
     .join('；')}`;
 }
 
-function rankSingleProducts(rows: any[], totalCost: number, overallRoi: number): ProductInsight[] {
+function rankSingleProducts(rows: DataRow[], totalCost: number, overallRoi: number): ProductInsight[] {
   const productMap = new Map<string, {
     productId: string;
     name: string;
@@ -962,7 +975,7 @@ function createMetricBucket(): MetricBucket {
   };
 }
 
-function accumulateMetrics(bucket: MetricBucket, row: any): void {
+function accumulateMetrics(bucket: MetricBucket, row: DataRow): void {
   bucket.cost += toNum(row['花费']);
   bucket.amount += toNum(row['总成交金额']);
   bucket.orders += toNum(row['总成交笔数']);
@@ -988,7 +1001,7 @@ function buildCostStructureSummary(costItems: Array<[string, number]>, totalFinC
   return summarizeCostStructure(rankCostStructure(costItems, totalFinCost));
 }
 
-function buildLiveSessionSummary(taobaoData: any[]): string {
+function buildLiveSessionSummary(taobaoData: DataRow[]): string {
   return summarizeLiveSessions(rankLiveSessions(taobaoData));
 }
 
@@ -1043,8 +1056,8 @@ async function fetchTableData(
   selectColumns: string[],
   startDate: string,
   endDate: string,
-): Promise<any[]> {
-  const allData: any[] = [];
+): Promise<DataRow[]> {
+  const allData: DataRow[] = [];
   const batchSize = 1000;
   const maxPages = 200;
   let offset = 0;
@@ -1057,14 +1070,14 @@ async function fetchTableData(
     url.searchParams.append(DATE_COLUMN, `lte.${endDate}`);
     url.searchParams.set('limit', String(batchSize));
     url.searchParams.set('offset', String(offset));
-    console.log(`[ai-analysis] Fetching ${table} ${DATE_COLUMN}=gte.${startDate}&${DATE_COLUMN}=lte.${endDate} page=${page + 1} offset=${offset}`);
+    debugLog(`[ai-analysis] Fetching ${table} ${DATE_COLUMN}=gte.${startDate}&${DATE_COLUMN}=lte.${endDate} page=${page + 1} offset=${offset}`);
 
     const resp = await fetch(url.toString(), {
       headers: getSupabaseHeaders(),
     });
     const respText = await resp.text();
 
-    console.log(`[ai-analysis] ${table} resp status=${resp.status}`);
+    debugLog(`[ai-analysis] ${table} resp status=${resp.status}`);
     if (!resp.ok) {
       if (resp.status === 404) {
         console.warn(`[ai-analysis] 表 ${table} 不存在，按空表处理。body=${respText}`);
@@ -1074,7 +1087,7 @@ async function fetchTableData(
       throw new Error(`查询表 ${table} 失败: ${resp.status} ${respText}`);
     }
 
-    let data: any[] = [];
+    let data: DataRow[] = [];
     try {
       data = respText ? JSON.parse(respText) : [];
     } catch (error) {
@@ -1084,7 +1097,7 @@ async function fetchTableData(
       );
     }
 
-    console.log(`[ai-analysis] ${table} 批次行数: ${data.length}`);
+    debugLog(`[ai-analysis] ${table} 批次行数: ${data.length}`);
     allData.push(...data);
 
     if (data.length === 0 || data.length < batchSize) {
@@ -1102,7 +1115,7 @@ async function fetchTableData(
   return allData;
 }
 
-async function fetchRoutedTables(routedTables: RoutedTable[], selectColumns: string[]): Promise<any[]> {
+async function fetchRoutedTables(routedTables: RoutedTable[], selectColumns: string[]): Promise<DataRow[]> {
   if (!routedTables.length) return [];
   const results = await Promise.all(
     routedTables.map(async ({ table, dates }) => {
@@ -1111,7 +1124,7 @@ async function fetchRoutedTables(routedTables: RoutedTable[], selectColumns: str
       const rangeEnd = sortedDates[sortedDates.length - 1];
       const startedAt = Date.now();
       const rows = await fetchTableData(table, selectColumns, rangeStart, rangeEnd);
-      console.log(`[ai-analysis] ${table} range rows=${rows.length} duration_ms=${Date.now() - startedAt}`);
+      debugLog(`[ai-analysis] ${table} range rows=${rows.length} duration_ms=${Date.now() - startedAt}`);
       return rows;
     }),
   );
@@ -1119,7 +1132,7 @@ async function fetchRoutedTables(routedTables: RoutedTable[], selectColumns: str
 }
 
 /** 对分页结果再按 日期 做一次收口过滤，日期列来自 Supabase date 类型。 */
-function filterByDateRange(data: any[], startDate: string, endDate: string): any[] {
+function filterByDateRange(data: DataRow[], startDate: string, endDate: string): DataRow[] {
   return data.filter((r) => {
     const d = typeof r?.[DATE_COLUMN] === 'string' ? r[DATE_COLUMN].trim() : '';
     return /^\d{4}-\d{2}-\d{2}$/.test(d) && d >= startDate && d <= endDate;
@@ -1133,16 +1146,16 @@ async function getDailyReport(
   analysisType: string
 ): Promise<DailyReportResult | null> {
   const superLiveTables = getSuperLiveTablesForDateRange(startDate, endDate);
-  console.log(`[ai-analysis] 查询日期范围: ${startDate} ~ ${endDate}, 超级直播表: ${JSON.stringify(superLiveTables.map((item) => item.table))}`);
-  console.log(
+  debugLog(`[ai-analysis] 查询日期范围: ${startDate} ~ ${endDate}, 超级直播表: ${JSON.stringify(superLiveTables.map((item) => item.table))}`);
+  debugLog(
     `[ai-analysis] env check: SUPABASE_URL=${!!SB_URL}, SERVICE_ROLE_KEY=${!!SB_SERVICE_ROLE_KEY}`
   );
 
   // 并行加载 super_live_* 表，所有底表统一使用 日期 + gte/lte 范围过滤。
   const superLiveFlat = await fetchRoutedTables(superLiveTables, AI_SUPER_LIVE_COLUMNS);
-  console.log(`[ai-analysis] super_live 总行数: ${superLiveFlat.length}, 前3行: ${JSON.stringify(superLiveFlat.slice(0,3))}`);
+  debugLog(`[ai-analysis] super_live 总行数: ${superLiveFlat.length}, 前3行: ${JSON.stringify(superLiveFlat.slice(0,3))}`);
   const superLiveData = filterByDateRange(superLiveFlat, startDate, endDate);
-  console.log(`[ai-analysis] super_live 过滤后行数: ${superLiveData.length}`);
+  debugLog(`[ai-analysis] super_live 过滤后行数: ${superLiveData.length}`);
 
   // 并行加载 financial 和 taobao_live
   const financialPromise = fetchRoutedTables(getFinancialTablesForDateRange(startDate, endDate), AI_FINANCIAL_COLUMNS);
@@ -1151,11 +1164,11 @@ async function getDailyReport(
   const [financialRaw, taobaoRaw] = await Promise.all([financialPromise, taobaoPromise]);
   const financialData = filterByDateRange(financialRaw, startDate, endDate);
   const taobaoData = filterByDateRange(taobaoRaw, startDate, endDate);
-  console.log(`[ai-analysis] financial 过滤后: ${financialData.length}, taobao_live 过滤后: ${taobaoData.length}`);
+  debugLog(`[ai-analysis] financial 过滤后: ${financialData.length}, taobao_live 过滤后: ${taobaoData.length}`);
 
   // 空数据拦截
   if (superLiveData.length === 0 && financialData.length === 0 && taobaoData.length === 0) {
-    console.log(`[ai-analysis] 空数据拦截`);
+    debugLog(`[ai-analysis] 空数据拦截`);
     return null;
   }
 
@@ -1408,8 +1421,8 @@ async function getDailyReport(
   };
 }
 
-async function fetchSingleProductRows(startDate: string, endDate: string): Promise<any[]> {
-  const allRows: any[] = [];
+async function fetchSingleProductRows(startDate: string, endDate: string): Promise<DataRow[]> {
+  const allRows: DataRow[] = [];
   const batchSize = 1000;
 
   for (const { table } of getSingleProductAdTablesForDateRange(startDate, endDate)) {
@@ -1655,7 +1668,7 @@ function fmtMoney(v: unknown): string {
 }
 
 // 通用：把 dashboard payload 里所有可用维度格式化成 Markdown 段落
-function buildFullDataContext(payload: any, rankedProducts?: any[]): string {
+function buildFullDataContext(payload: DashboardPayloadLike, rankedProducts?: ProductInsight[]): string {
   const sections: string[] = [];
   const ads = payload?.ads || {};
   const kpi = ads.kpi;
@@ -1686,7 +1699,9 @@ function buildFullDataContext(payload: any, rankedProducts?: any[]): string {
 
   // --- 每日趋势 ---
   if (ads.daily && ads.daily.length > 0) {
-    const sorted = [...ads.daily].sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
+    const sorted = [...ads.daily].sort((a: DataRow, b: DataRow) => (
+      String(a.label ?? '') > String(b.label ?? '') ? 1 : -1
+    ));
     const lines = [
       '## 每日趋势',
       '| 日期 | 花费 | 成交额 | ROI | 直接ROI | 去退ROI | 订单 | 观看 | 观看成本 | 转化率 |',
@@ -1712,13 +1727,13 @@ function buildFullDataContext(payload: any, rankedProducts?: any[]): string {
     sections.push(lines.join('\n'));
 
     // 子人群 Top 15
-    const allSubs: any[] = [];
+    const allSubs: DataRow[] = [];
     for (const c of crowdRows) {
       for (const sub of (c.subRows || [])) {
         allSubs.push({ crowd: c.crowd || '-', ...sub });
       }
     }
-    allSubs.sort((a, b) => (b.cost ?? 0) - (a.cost ?? 0));
+    allSubs.sort((a, b) => toNum(b.cost) - toNum(a.cost));
     if (allSubs.length > 0) {
       const top = allSubs.slice(0, 15);
       const subLines = [
@@ -1760,7 +1775,7 @@ function buildFullDataContext(payload: any, rankedProducts?: any[]): string {
 }
 
 function buildReportFromDashboardPayload(
-  payload: any,
+  payload: DashboardPayloadLike,
   startDate: string,
   endDate: string,
   analysisType: string
@@ -2013,13 +2028,13 @@ Deno.serve(async (req: Request) => {
     // 尝试优先使用 dashboard 的上层聚合结果，失败则回退到底表自聚合
     let reportResult = null;
     if (analysisType === 'single') {
-      console.log('[ai-analysis] 使用单品广告聚合结果作为输入');
+      debugLog('[ai-analysis] 使用单品广告聚合结果作为输入');
       reportResult = await getSingleProductReport(start_date, end_date);
     } else {
       try {
         const dashboardPayload = await fetchDashboardPayload(start_date, end_date);
         if (dashboardPayload) {
-          console.log('[ai-analysis] 使用 dashboard-data 聚合结果作为输入');
+          debugLog('[ai-analysis] 使用 dashboard-data 聚合结果作为输入');
           reportResult = buildReportFromDashboardPayload(dashboardPayload, start_date, end_date, analysisType);
         }
       } catch (err) {
@@ -2030,9 +2045,9 @@ Deno.serve(async (req: Request) => {
 
     if (!reportResult) {
       if (analysisType === 'single') {
-        console.log('[ai-analysis] 单品广告聚合结果为空');
+        debugLog('[ai-analysis] 单品广告聚合结果为空');
       } else {
-        console.log('[ai-analysis] 使用底表自聚合(getDailyReport)作为输入');
+        debugLog('[ai-analysis] 使用底表自聚合(getDailyReport)作为输入');
         reportResult = await getDailyReport(start_date, end_date, analysisType);
       }
     }
@@ -2081,15 +2096,15 @@ Deno.serve(async (req: Request) => {
 
     const combinedSystemPrompt = supplementSections.join('\n\n').trim();
 
-    console.log('[ai-analysis] system prompt sections loaded:', sectionMap.map(({ label, result }) => `${label}${result.status === 'fulfilled' ? '✅' : '❌'}`).join(' '));
-    console.log('[ai-analysis] system prompt preview (前500字):', combinedSystemPrompt.slice(0, 500));
+    debugLog('[ai-analysis] system prompt sections loaded:', sectionMap.map(({ label, result }) => `${label}${result.status === 'fulfilled' ? '✅' : '❌'}`).join(' '));
+    debugLog('[ai-analysis] system prompt preview (前500字):', combinedSystemPrompt.slice(0, 500));
 
     const prompt = buildPrompt(
       reportResult.promptData,
       templateKey,
       promptDefinition.content
     );
-    console.log('[ai-analysis] final prompt preview (前800字):', prompt.slice(0, 800));
+    debugLog('[ai-analysis] final prompt preview (前800字):', prompt.slice(0, 800));
     const analysis = await callMiniMax(prompt, combinedSystemPrompt, { maxTokens: 32768 });
 
     const headline = extractHeadlineFromAnalysis(analysis, reportResult.reportSummary);

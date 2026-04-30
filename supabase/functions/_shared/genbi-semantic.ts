@@ -1,4 +1,5 @@
 import { listGenbiRuleConfigRecords, mergeGenbiRulesWithRecords } from './genbi-rule-store.ts';
+import { debugLog } from './logger.ts';
 
 type GenbiSemanticConfig = {
   version: string;
@@ -138,7 +139,7 @@ async function loadSemanticConfig(): Promise<GenbiSemanticConfig> {
       const intentKey = String(config.intentKey || '').trim();
       if (intentKey) {
         dynamicIntentRules[intentKey] = record.rule_key;
-        console.log(`[genbi-semantic] dynamic intent mapping: ${intentKey} -> ${record.rule_key}`);
+        debugLog(`[genbi-semantic] dynamic intent mapping: ${intentKey} -> ${record.rule_key}`);
       }
     });
     mergedConfig.intentRules = dynamicIntentRules;

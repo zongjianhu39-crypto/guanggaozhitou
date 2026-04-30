@@ -1,0 +1,20 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es2022": true
+  },
+  "extends": ["eslint:recommended"],
+  "globals": {
+    "Chart": "readonly",
+    "CONFIG": "readonly",
+    "supabase": "readonly"
+  },
+  "rules": {
+    "curly": ["error", "multi-line"],
+    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "no-inner-declarations": "off",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "no-var": "off"
+  }
+}

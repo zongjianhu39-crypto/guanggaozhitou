@@ -1,0 +1,42 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Run release checks
+        run: npm run check:release
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install lint tools
+        run: npm install -g eslint@8 @typescript-eslint/parser@7 @typescript-eslint/eslint-plugin@7 prettier@3
+
+      - name: Lint frontend JavaScript
+        run: npm run lint:frontend
+
+      - name: Lint Supabase Edge Functions
+        run: npm run lint:supabase
+
+      - name: Check formatting
+        run: npm run format:check

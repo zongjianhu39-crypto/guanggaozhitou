@@ -11,6 +11,7 @@ import { resolveActivePromptTemplate, type ActivePromptTemplate } from '../_shar
 import { validatePromptInput } from '../_shared/input-validator.ts';
 import { checkRateLimit, createRateLimitResponse } from '../_shared/rate-limiter.ts';
 import { insertGenbiQueryEvent } from '../_shared/genbi-event-store.ts';
+import { debugLog } from '../_shared/logger.ts';
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
 
@@ -157,7 +158,7 @@ async function buildSystemPromptFromTemplates(): Promise<string> {
       const content = result.value.content.trim();
       if (content) {
         sections.push(`${label}\n${content}`);
-        console.log(`[genbi-query] prompt template "${key}" loaded`);
+        debugLog(`[genbi-query] prompt template "${key}" loaded`);
       }
     } else {
       console.warn(`[genbi-query] prompt template "${key}" load failed:`, result.reason);
@@ -191,7 +192,7 @@ async function handleIntent(question: string) {
   const { intent, source: intentSource } = await detectIntentByAI(question);
   const range = detectDateRange(question);
 
-  console.log(`[genbi-query] intent=${intent}(via ${intentSource}), range=${JSON.stringify(range)}, question="${question.slice(0, 80)}"`);
+  debugLog(`[genbi-query] intent=${intent}(via ${intentSource}), range=${JSON.stringify(range)}, question="${question.slice(0, 80)}"`);
 
   // 1. 规则引擎：获取结构化数据（表格、高亮等）
   const ruleResult = await dispatchGenbiIntent(intent, {
@@ -217,7 +218,7 @@ async function handleIntent(question: string) {
 
   // 4. 加载 Prompt 模板组装 system prompt
   const systemPrompt = await buildSystemPromptFromTemplates();
-  console.log(`[genbi-query] system prompt length=${systemPrompt.length}, data context length=${dataContext.length}`);
+  debugLog(`[genbi-query] system prompt length=${systemPrompt.length}, data context length=${dataContext.length}`);
 
   // 5. 调用 MiniMax AI（按 intent 自适应 maxTokens）
   const maxTokens = resolveAnswerMaxTokens(String(intent));
@@ -229,7 +230,7 @@ async function handleIntent(question: string) {
     const sanitized = sanitizeAiOutput(rawAiResponse);
     aiAnswer = sanitized.answer;
     aiThinking = sanitized.thinking;
-    console.log(`[genbi-query] AI response received, answer=${aiAnswer.length}, thinking=${aiThinking.length}, maxTokens=${maxTokens}`);
+    debugLog(`[genbi-query] AI response received, answer=${aiAnswer.length}, thinking=${aiThinking.length}, maxTokens=${maxTokens}`);
   } catch (aiError) {
     console.warn('[genbi-query] AI 调用失败，回退到规则引擎回答:', aiError instanceof Error ? aiError.message : String(aiError));
     aiAnswer = String(ruleResult.answer || '');
@@ -385,12 +386,12 @@ Deno.serve(async (req: Request) => {
         '用简洁专业的中文，避免套话。',
       ].join('\n');
 
-      console.log(`[genbi-query] assortment mode: ${productItems.length} products`);
+      debugLog(`[genbi-query] assortment mode: ${productItems.length} products`);
 
       try {
         const aiAnswer = await callMiniMax(assortmentPrompt, systemPrompt, { maxTokens: 32768 });
         const sanitized = sanitizeAiOutput(aiAnswer);
-        console.log(`[genbi-query] assortment AI response answer=${sanitized.answer.length}, thinking=${sanitized.thinking.length}`);
+        debugLog(`[genbi-query] assortment AI response answer=${sanitized.answer.length}, thinking=${sanitized.thinking.length}`);
         return new Response(JSON.stringify({
           success: true,
           title: '🎯 货盘人群推荐',

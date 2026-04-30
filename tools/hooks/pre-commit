@@ -1,0 +1,40 @@
+#!/bin/bash
+# Pre-commit hook: 在提交前自动运行密钥扫描
+# 安装: cp tools/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+echo "🔍 Pre-commit: Running secret scan..."
+
+if [ -f "$REPO_ROOT/tools/checks/check-no-keys.sh" ]; then
+  bash "$REPO_ROOT/tools/checks/check-no-keys.sh"
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ 提交被阻止：检测到潜在密钥泄露！"
+    echo "   如果是误报，请在 check-no-keys.sh 中添加排除规则。"
+    echo "   强制提交（不推荐）: git commit --no-verify"
+    exit 1
+  fi
+else
+  echo "❌ check-no-keys.sh not found. Commit blocked because the secret scan cannot run."
+  exit 1
+fi
+
+# 检查是否有大文件意外提交
+echo "🔍 Pre-commit: Checking for large files..."
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+for file in $STAGED_FILES; do
+  if [ -f "$file" ]; then
+    SIZE=$(wc -c < "$file")
+    if [ "$SIZE" -gt 1048576 ]; then
+      SIZE_MB=$(( (SIZE + 1048575) / 1048576 ))
+      echo "❌ 文件过大: $file (${SIZE_MB}MB)"
+      echo "   超过 1MB 限制，请确认是否需要提交。"
+      exit 1
+    fi
+  fi
+done
+
+echo "✅ Pre-commit checks passed."

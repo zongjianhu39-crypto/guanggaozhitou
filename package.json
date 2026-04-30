@@ -3,6 +3,9 @@
   "private": true,
   "scripts": {
     "check:release": "node tools/checks/run-release-check.mjs",
-    "check:release:online": "node tools/checks/run-release-check.mjs --online --dashboard-smoke"
+    "check:release:online": "node tools/checks/run-release-check.mjs --online --dashboard-smoke",
+    "lint:frontend": "eslint \"assets/js/*.js\" \"*.js\" --no-error-on-unmatched-pattern",
+    "lint:supabase": "eslint \"supabase/functions/**/*.ts\" --config supabase/.eslintrc.json --no-error-on-unmatched-pattern",
+    "format:check": "prettier --check \"**/*.{js,ts,json,css,html,md,yml,yaml}\" --ignore-path .prettierignore"
   }
 }

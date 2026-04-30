@@ -4,6 +4,7 @@ import { listGenbiRuleConfigRecords, upsertGenbiRuleConfig, deactivateGenbiRuleC
 import { createErrorResponseWithStatus } from '../_shared/error-handler.ts';
 import { previewDynamicRule } from '../genbi-rules/dynamic.ts';
 import { getLastWeekRange } from '../_shared/genbi-time.ts';
+import { debugLog } from '../_shared/logger.ts';
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -189,7 +190,7 @@ Deno.serve(async (req: Request) => {
       const config = body.config || {};
       const intentKey = String(config.intentKey || '').trim();
       if (intentKey) {
-        console.log(`[genbi-rule-admin] rule ${body.rule_key} mapped to intent: ${intentKey}`);
+        debugLog(`[genbi-rule-admin] rule ${body.rule_key} mapped to intent: ${intentKey}`);
       }
 
       return new Response(JSON.stringify({

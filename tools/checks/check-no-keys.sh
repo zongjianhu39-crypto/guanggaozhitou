@@ -9,6 +9,12 @@ trap 'rm -f "$TMP_FILE"' EXIT
 
 echo "Scanning repo for hard-coded secrets..."
 
+if ! command -v rg >/dev/null 2>&1; then
+  echo "Secret scan failed: ripgrep (rg) is required but was not found in PATH." >&2
+  echo "Install rg locally or make it available in CI before running release checks." >&2
+  exit 1
+fi
+
 PATTERNS=(
   'ftp://[^<"'"'"']+:[^@<"'"'"']+@'
   'eyJ[a-zA-Z0-9_-]{20,}'
@@ -21,7 +27,6 @@ PATTERNS=(
 
 for pattern in "${PATTERNS[@]}"; do
   rg -n --pcre2 \
-    --glob '!assets/js/config.js' \
     --glob '!.env.local' \
     --glob '!scripts/.deploy.env' \
     --glob '!tools/checks/check-no-keys.sh' \

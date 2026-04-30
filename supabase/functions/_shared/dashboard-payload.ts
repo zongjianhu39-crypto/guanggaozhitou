@@ -1,6 +1,7 @@
 import { classifyDimensionValue, getDashboardSpec } from './dashboard-spec.ts';
 import { getSupabaseHeaders, SB_URL } from './supabase-client.ts';
 import { aggregateSingleByProduct, buildSingleKpiPayload, dedupeSingleProductRows } from './single-product.ts';
+import { debugLog } from './logger.ts';
 import {
   getFinancialTablesForDateRange,
   getSingleProductAdTablesForDateRange,
@@ -204,7 +205,7 @@ function getCachedDashboardPayload(cacheKey: string, endDate: string): Record<st
     dashboardPayloadCache.delete(cacheKey);
     return null;
   }
-  console.log(`[dashboard-data] payload cache hit ${cacheKey} age_ms=${Date.now() - cached.cachedAt}`);
+  debugLog(`[dashboard-data] payload cache hit ${cacheKey} age_ms=${Date.now() - cached.cachedAt}`);
   return structuredClone(cached.payload);
 }
 
@@ -341,9 +342,9 @@ async function fetchTableData(table: string, selectColumns: string[], options: R
 
 async function fetchSummaryTable(table: string, selectColumns: string[], startDate: string, endDate: string): Promise<any[]> {
   const startedAt = Date.now();
-  console.log(`[dashboard-data] summary query ${table} ${DATE_COLUMN}=gte.${startDate}&${DATE_COLUMN}=lte.${endDate}`);
+  debugLog(`[dashboard-data] summary query ${table} ${DATE_COLUMN}=gte.${startDate}&${DATE_COLUMN}=lte.${endDate}`);
   const rows = await fetchTableData(table, selectColumns, { rangeGte: startDate, rangeLte: endDate });
-  console.log(`[dashboard-data] summary query ${table} rows=${rows.length} duration_ms=${Date.now() - startedAt}`);
+  debugLog(`[dashboard-data] summary query ${table} rows=${rows.length} duration_ms=${Date.now() - startedAt}`);
   return rows;
 }
 
@@ -355,9 +356,9 @@ async function fetchRoutedTables(routedTables: RoutedTable[], selectColumns: str
       const rangeGte = sortedDates[0];
       const rangeLte = sortedDates[sortedDates.length - 1];
       const startedAt = Date.now();
-      console.log(`[dashboard-data] query ${table} ${DATE_COLUMN}=gte.${rangeGte}&${DATE_COLUMN}=lte.${rangeLte}`);
+      debugLog(`[dashboard-data] query ${table} ${DATE_COLUMN}=gte.${rangeGte}&${DATE_COLUMN}=lte.${rangeLte}`);
       const rows = await fetchTableData(table, selectColumns, { rangeGte, rangeLte });
-      console.log(`[dashboard-data] query ${table} rows=${rows.length} duration_ms=${Date.now() - startedAt}`);
+      debugLog(`[dashboard-data] query ${table} rows=${rows.length} duration_ms=${Date.now() - startedAt}`);
       return rows;
     }),
   );
@@ -805,11 +806,11 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
   const needRawSuperLive = needRawAds || needRawCrowd;
   const superLiveColumns = needRawCrowd ? SUPER_LIVE_CROWD_COLUMNS : SUPER_LIVE_BASE_COLUMNS;
 
-  if (useAdsSummary) console.log(`[dashboard-data] using ads summary rows=${adsSummaryData.length}`);
-  if (useCrowdSummary) console.log(`[dashboard-data] using crowd summary rows=${crowdSummaryData.length}`);
-  if (useSingleSummary) console.log(`[dashboard-data] using single summary rows=${singleSummaryData.length}`);
+  if (useAdsSummary) debugLog(`[dashboard-data] using ads summary rows=${adsSummaryData.length}`);
+  if (useCrowdSummary) debugLog(`[dashboard-data] using crowd summary rows=${crowdSummaryData.length}`);
+  if (useSingleSummary) debugLog(`[dashboard-data] using single summary rows=${singleSummaryData.length}`);
   if (needRawAds || needRawCrowd || needRawSingle) {
-    console.log(`[dashboard-data] summary fallback raw ads=${needRawAds} crowd=${needRawCrowd} single=${needRawSingle}`);
+    debugLog(`[dashboard-data] summary fallback raw ads=${needRawAds} crowd=${needRawCrowd} single=${needRawSingle}`);
   }
 
   const [financialRaw, taobaoRaw, superLiveChunks, singleProductRaw] = await Promise.all([
