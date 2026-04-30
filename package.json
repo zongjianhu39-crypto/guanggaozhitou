@@ -7,5 +7,8 @@
     "lint:frontend": "eslint \"assets/js/*.js\" \"*.js\" --no-error-on-unmatched-pattern",
     "lint:supabase": "eslint \"supabase/functions/**/*.ts\" --config supabase/.eslintrc.json --no-error-on-unmatched-pattern",
     "format:check": "prettier --check \"**/*.{js,ts,json,css,html,md,yml,yaml}\" --ignore-path .prettierignore"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1"
   }
 }

@@ -1,3 +1,5 @@
 .env.local
 scripts/.deploy.env
 .DS_Store
+node_modules/
+.eslintcache

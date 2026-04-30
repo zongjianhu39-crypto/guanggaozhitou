@@ -25,9 +25,10 @@ else
   exit 1
 fi
 
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
 # 检查是否有大文件意外提交
 echo "🔍 Pre-commit: Checking for large files..."
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
 for file in $STAGED_FILES; do
   if [ -f "$file" ]; then
     SIZE=$(wc -c < "$file")
@@ -39,5 +40,21 @@ for file in $STAGED_FILES; do
     fi
   fi
 done
+
+# 对 staged 的前端 JS 文件跑 ESLint（只阻断 error，warning 放行）
+STAGED_JS=$(echo "$STAGED_FILES" | grep -E '^(assets/js/|)[^/]+\.js$' || true)
+if [ -n "$STAGED_JS" ] && [ -x "$REPO_ROOT/node_modules/.bin/eslint" ]; then
+  echo "🔍 Pre-commit: Linting staged JS files..."
+  # shellcheck disable=SC2086
+  "$REPO_ROOT/node_modules/.bin/eslint" --no-error-on-unmatched-pattern $STAGED_JS
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ 提交被阻止：ESLint 检查未通过！"
+    echo "   修复上述错误后重试；或临时绕过: git commit --no-verify"
+    exit 1
+  fi
+elif [ -n "$STAGED_JS" ]; then
+  echo "ℹ️  Skip ESLint: node_modules/.bin/eslint 未安装（npm install 后启用）"
+fi
 
 echo "✅ Pre-commit checks passed."
