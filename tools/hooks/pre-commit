@@ -42,7 +42,7 @@ for file in $STAGED_FILES; do
 done
 
 # 对 staged 的前端 JS 文件跑 ESLint（只阻断 error，warning 放行）
-STAGED_JS=$(echo "$STAGED_FILES" | grep -E '^(assets/js/|)[^/]+\.js$' || true)
+STAGED_JS=$(echo "$STAGED_FILES" | grep -E '^(assets/js/[^/]+\.js|[^/]+\.js)$' || true)
 if [ -n "$STAGED_JS" ] && [ -x "$REPO_ROOT/node_modules/.bin/eslint" ]; then
   echo "🔍 Pre-commit: Linting staged JS files..."
   # shellcheck disable=SC2086
