@@ -7,6 +7,7 @@
     <title>洞察中心 - 交个朋友·广告智投工作台</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="assets/css/insights.css" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
     <script src="assets/js/auth-helpers.js?v=202604301830"></script>
@@ -23,9 +24,14 @@
                 <li><a href="genbi.html" class="nav-link">GenBI</a></li>
                 <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
                 <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
-                <li><a href="insights.html" class="nav-link active">洞察中心</a></li>
-                <li><a href="genbi-rule-admin.html" class="nav-link">规则管理</a></li>
-                <li><a href="prompt-admin.html" class="nav-link">Prompt</a></li>
+                <li class="nav-item-dropdown">
+                    <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
+                    <div class="nav-dropdown" role="menu">
+                        <a href="insights.html" class="active">洞察中心</a>
+                        <a href="genbi-rule-admin.html">GenBI 规则管理</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                    </div>
+                </li>
                 <li><a href="auth/index.html" data-action="logout" class="nav-link">退出登录</a></li>
             </ul>
             <button class="mobile-menu-btn">
