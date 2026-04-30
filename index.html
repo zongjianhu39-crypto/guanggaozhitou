@@ -133,13 +133,6 @@
                     </div>
                     <a href="insights.html" class="btn btn-outline btn-sm">查看全部 →</a>
                 </div>
-                <div class="insights-toolbar">
-                    <div class="segmented-control">
-                        <button class="seg-btn active">AI 报告</button>
-                        <button class="seg-btn">经营结论</button>
-                        <button class="seg-btn">周会复盘</button>
-                    </div>
-                </div>
                 <div id="insights-preview-state" class="insights-preview-state">正在加载最新报告...</div>
                 <div id="insights-preview-grid" class="insights-preview-grid"></div>
             </div>
@@ -619,24 +612,7 @@
             }
         }
 
-        // ── 分段选择器交互：洞察分栏 ──
-        const insightTypeMap = { 0: 'daily', 1: 'weekly', 2: 'monthly' };
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('seg-btn')) {
-                const control = e.target.closest('.segmented-control');
-                if (control) {
-                    control.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-
-                    // 洞察分栏过滤
-                    const segBtns = Array.from(control.querySelectorAll('.seg-btn'));
-                    const idx = segBtns.indexOf(e.target);
-                    if (control.closest('.insights-toolbar') && insightTypeMap[idx]) {
-                        loadInsightsPreview(insightTypeMap[idx]);
-                    }
-                }
-            }
-        });
+        // ── 分段选择器交互（通用） ──
 
         // ── 日/周切换 ──
         document.addEventListener('click', function(e) {
@@ -654,7 +630,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             loadHomeMetrics();
-            loadInsightsPreview(null);
+            loadInsightsPreview('daily');
         });
     </script>
 
