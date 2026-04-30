@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>预算效率评分卡 - 交个朋友·广告智投工作台</title>
+    <meta name="description" content="预算效率评分与再分配引擎，从诊断到行动的闭环">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/budget-scorecard.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+    <script src="assets/js/auth-helpers.js?v=202604301830"></script>
+    <script src="auth.js?v=202604301830"></script>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-emoji">🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="genbi.html" class="nav-link">GenBI</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li class="nav-item-dropdown">
+                    <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
+                    <div class="nav-dropdown" role="menu">
+                        <a href="budget-scorecard.html">预算效率评分卡</a>
+                        <a href="insights.html">洞察中心</a>
+                        <a href="genbi-rule-admin.html">GenBI 规则管理</a>
+                        <a href="prompt-admin.html">Prompt 管理</a>
+                    </div>
+                </li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="bs-shell">
+        <!-- 页面头部 -->
+        <section class="bs-header">
+            <div class="bs-header-left">
+                <h1 class="bs-header-title">预算效率评分卡</h1>
+                <p class="bs-header-desc">评估每个投放单元的预算效率，生成再分配建议，追踪执行效果</p>
+            </div>
+            <div class="bs-header-actions">
+                <div class="bs-date-group">
+                    <label class="bs-date-label">开始</label>
+                    <input type="date" id="bs-start" class="bs-date-input">
+                    <label class="bs-date-label">结束</label>
+                    <input type="date" id="bs-end" class="bs-date-input">
+                    <div class="bs-date-presets">
+                        <button class="bs-preset-btn" data-preset="yesterday">昨天</button>
+                        <button class="bs-preset-btn" data-preset="last7">近7天</button>
+                        <button class="bs-preset-btn active" data-preset="thisMonth">本月</button>
+                    </div>
+                </div>
+                <button id="bs-load-btn" class="btn btn-primary" type="button">计算评分</button>
+            </div>
+        </section>
+
+        <!-- 页面状态提示 -->
+        <div id="bs-status" class="bs-status" aria-live="polite" style="display:none;">
+            <span id="bs-status-badge" class="bs-status-badge">就绪</span>
+            <span id="bs-status-text" class="bs-status-text"></span>
+        </div>
+
+        <!-- 评分总览 -->
+        <section class="bs-overview" id="bs-overview" style="display:none;">
+            <h2 class="bs-section-title">效率分布总览</h2>
+            <div class="bs-grade-row">
+                <div class="bs-grade-card bs-grade-a">
+                    <div class="bs-grade-label">A 超目标</div>
+                    <div class="bs-grade-count" id="grade-a-count">0</div>
+                    <div class="bs-grade-pct" id="grade-a-pct">0%</div>
+                    <div class="bs-grade-hint">加预算候选</div>
+                </div>
+                <div class="bs-grade-card bs-grade-b">
+                    <div class="bs-grade-label">B 达标</div>
+                    <div class="bs-grade-count" id="grade-b-count">0</div>
+                    <div class="bs-grade-pct" id="grade-b-pct">0%</div>
+                    <div class="bs-grade-hint">维持</div>
+                </div>
+                <div class="bs-grade-card bs-grade-c">
+                    <div class="bs-grade-label">C 低效</div>
+                    <div class="bs-grade-count" id="grade-c-count">0</div>
+                    <div class="bs-grade-pct" id="grade-c-pct">0%</div>
+                    <div class="bs-grade-hint">减预算候选</div>
+                </div>
+                <div class="bs-grade-card bs-grade-d">
+                    <div class="bs-grade-label">D 亏损</div>
+                    <div class="bs-grade-count" id="grade-d-count">0</div>
+                    <div class="bs-grade-pct" id="grade-d-pct">0%</div>
+                    <div class="bs-grade-hint">暂停候选</div>
+                </div>
+            </div>
+            <div class="bs-budget-bar-container">
+                <div class="bs-budget-bar-label">预算流向</div>
+                <div class="bs-budget-bar" id="bs-budget-bar"></div>
+                <div class="bs-budget-bar-legend">
+                    <span class="bs-legend-item"><span class="bs-legend-dot bs-grade-a-dot"></span>A 级花费</span>
+                    <span class="bs-legend-item"><span class="bs-legend-dot bs-grade-b-dot"></span>B 级花费</span>
+                    <span class="bs-legend-item"><span class="bs-legend-dot bs-grade-c-dot"></span>C 级花费</span>
+                    <span class="bs-legend-item"><span class="bs-legend-dot bs-grade-d-dot"></span>D 级花费</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 维度切换 Tab -->
+        <section class="bs-tabs-section" id="bs-tabs-section" style="display:none;">
+            <div class="bs-tab-bar" role="tablist">
+                <button class="bs-tab active" data-tab="single" role="tab" aria-selected="true">单品维度</button>
+                <button class="bs-tab" data-tab="crowd" role="tab" aria-selected="false">人群维度</button>
+            </div>
+        </section>
+
+        <!-- 评分明细表 -->
+        <section class="bs-detail-section" id="bs-detail-section" style="display:none;">
+            <div class="bs-detail-header">
+                <h2 class="bs-section-title">评分明细</h2>
+                <button id="bs-export-btn" class="btn btn-outline btn-sm" type="button">导出 CSV</button>
+            </div>
+            <div class="bs-table-wrap">
+                <table class="bs-table" id="bs-score-table">
+                    <thead>
+                        <tr>
+                            <th class="bs-th-grade">等级</th>
+                            <th class="bs-th-name">名称</th>
+                            <th class="bs-th-num">花费</th>
+                            <th class="bs-th-num">ROI</th>
+                            <th class="bs-th-num">效率分</th>
+                            <th class="bs-th-num">花费占比</th>
+                            <th class="bs-th-action">建议动作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bs-score-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 再分配建议 -->
+        <section class="bs-realloc-section" id="bs-realloc-section" style="display:none;">
+            <div class="bs-detail-header">
+                <h2 class="bs-section-title">再分配建议</h2>
+                <span class="bs-realloc-summary" id="bs-realloc-summary"></span>
+            </div>
+            <div id="bs-realloc-list" class="bs-realloc-list"></div>
+        </section>
+
+        <!-- 执行追踪 -->
+        <section class="bs-track-section" id="bs-track-section" style="display:none;">
+            <div class="bs-detail-header">
+                <h2 class="bs-section-title">执行追踪</h2>
+                <span class="bs-track-hint">标记建议状态后，7天自动验证效果</span>
+            </div>
+            <div id="bs-track-list" class="bs-track-list"></div>
+            <div id="bs-track-empty" class="bs-track-empty" style="display:none;">
+                <p>暂无执行中的建议。采纳再分配建议后，可在此追踪效果。</p>
+            </div>
+        </section>
+
+        <!-- 空状态 -->
+        <section class="bs-empty" id="bs-empty">
+            <div class="bs-empty-icon">📊</div>
+            <h2 class="bs-empty-title">选择日期范围，计算预算效率评分</h2>
+            <p class="bs-empty-desc">评分卡基于 ROI 达标率和花费权重为每个投放单元打分，自动生成预算再分配建议</p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-inner">
+                <div class="footer-brand">
+                    <span>🎯</span>
+                    <span>交个朋友·广告智投工作台</span>
+                </div>
+                <div class="footer-links">
+                    <a href="supabase-dashboard.html">数据看板</a>
+                    <a href="insights.html">洞察中心</a>
+                    <a href="genbi.html">GenBI</a>
+                </div>
+                <div class="footer-copy">交个朋友控股 · 广告业务组内部平台</div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/shared-utils.js"></script>
+    <script src="assets/js/budget-scorecard-page.js?v=202605010500"></script>
+    <script src="script.js?v=202604301830"></script>
+</body>
+</html>
