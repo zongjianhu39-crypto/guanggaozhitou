@@ -144,11 +144,14 @@
     min-height: 200px;
     border-radius: var(--radius-md);
     background: var(--surface-overlay);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding: var(--space-4) var(--space-6);
+    padding: var(--space-4) var(--space-4) var(--space-2);
     overflow: hidden;
+    position: relative;
+}
+
+#home-chart-canvas {
+    width: 100% !important;
+    max-height: 220px;
 }
 
 .chart-placeholder-bars {

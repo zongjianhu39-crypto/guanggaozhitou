@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>交个朋友·广告智投工作台</title>
     <meta name="description" content="直播广告投放自动化平台，数据驱动决策，实时监控花费、ROI、转化率，AI智能分析辅助投放决策">
@@ -12,6 +12,7 @@
     <meta property="og:type" content="website">
     <link rel="stylesheet" href="style.css?v=202605010100">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body class="home-page">
     <script src="assets/js/auth-helpers.js?v=202604301830"></script>
@@ -90,15 +91,7 @@
                         </div>
                     </div>
                     <div class="chart-area" id="home-chart">
-                        <div class="chart-placeholder-bars">
-                            <div class="chart-bar" style="height:35%"></div>
-                            <div class="chart-bar primary" style="height:50%"></div>
-                            <div class="chart-bar" style="height:45%"></div>
-                            <div class="chart-bar primary" style="height:65%"></div>
-                            <div class="chart-bar primary" style="height:75%"></div>
-                            <div class="chart-bar primary" style="height:85%"></div>
-                            <div class="chart-bar" style="height:60%"></div>
-                        </div>
+                        <canvas id="home-chart-canvas"></canvas>
                     </div>
                 </div>
                 <div class="card card-roles">
@@ -226,7 +219,11 @@
             : ((typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SB_URL) ? CONFIG.SB_URL : 'https://qjscsikithbxuxmjyjsp.supabase.co');
 
         let homeInsightsAuthRedirectScheduled = false;
+        let homeChartInstance = null;
+        let homeDashboardData = null;
+        let homeCurrentPeriod = 'daily';
 
+        /* ── 工具函数 ── */
         function previewEscapeHtml(value) {
             return String(value ?? '')
                 .replace(/&/g, '&amp;')
@@ -237,15 +234,273 @@
         }
 
         function previewRiskLabel(level) {
-            const labels = {
-                low: '低风险',
-                medium: '中风险',
-                high: '高风险',
-                critical: '严重风险'
-            };
+            const labels = { low: '低风险', medium: '中风险', high: '高风险', critical: '严重风险' };
             return labels[level] || '未评级';
         }
 
+        function formatCurrency(value) {
+            if (value == null || isNaN(value)) return '--';
+            if (value >= 10000) return '¥' + (value / 10000).toFixed(1) + '万';
+            return '¥' + value.toLocaleString('zh-CN', { maximumFractionDigits: 0 });
+        }
+
+        function formatRoi(value) {
+            if (value == null || isNaN(value)) return '--';
+            return value.toFixed(2);
+        }
+
+        function formatChange(current, previous) {
+            if (previous == null || previous === 0 || current == null) return { text: '--', cls: 'neutral' };
+            const pct = ((current - previous) / Math.abs(previous)) * 100;
+            const sign = pct > 0 ? '+' : '';
+            const cls = pct > 0 ? 'positive' : pct < 0 ? 'negative' : 'neutral';
+            return { text: sign + pct.toFixed(1) + '%', cls: cls };
+        }
+
+        function getShanghaiToday() {
+            return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        }
+
+        function getShanghaiYesterday() {
+            return new Date(Date.now() + 8 * 60 * 60 * 1000 - 86400000).toISOString().slice(0, 10);
+        }
+
+        function getNdaysAgo(n) {
+            return new Date(Date.now() + 8 * 60 * 60 * 1000 - n * 86400000).toISOString().slice(0, 10);
+        }
+
+        /* ── 指标卡加载 ── */
+        async function loadHomeMetrics() {
+            const spendEl = document.getElementById('metric-spend');
+            const spendChangeEl = document.getElementById('metric-spend-change');
+            const roiEl = document.getElementById('metric-roi');
+            const roiChangeEl = document.getElementById('metric-roi-change');
+            const alertsEl = document.getElementById('metric-alerts');
+            const alertsChangeEl = document.getElementById('metric-alerts-change');
+
+            try {
+                const today = getShanghaiToday();
+                const startDate = getNdaysAgo(30);
+
+                const result = await authHelpers.fetchFunctionJson('dashboard-data', {
+                    query: { sections: 'ads', start_date: startDate, end_date: today },
+                    parseErrorMessage: '看板数据读取失败，请稍后重试',
+                    onUnauthorized: () => {
+                        redirectToHomeLogin('登录状态已失效，正在跳转重新登录...');
+                    },
+                });
+
+                const data = result.data || result;
+                homeDashboardData = data.ads || null;
+
+                if (!homeDashboardData || !homeDashboardData.kpi) {
+                    spendEl.textContent = '--';
+                    roiEl.textContent = '--';
+                    alertsEl.textContent = '--';
+                    spendChangeEl.textContent = '暂无数据';
+                    roiChangeEl.textContent = '暂无数据';
+                    alertsChangeEl.textContent = '暂无数据';
+                    return;
+                }
+
+                const kpi = homeDashboardData.kpi;
+                const daily = homeDashboardData.daily || [];
+                const weekly = homeDashboardData.weekly || [];
+
+                // 今日花费
+                const todaySpend = kpi.totalCost;
+                spendEl.textContent = formatCurrency(todaySpend);
+
+                // 计算花费变化：对比最近两天
+                if (daily.length >= 2) {
+                    const latest = daily[0];
+                    const prev = daily[1];
+                    const change = formatChange(latest.cost, prev.cost);
+                    spendChangeEl.textContent = '较昨日 ' + change.text;
+                    spendChangeEl.className = 'metric-change ' + change.cls;
+                } else {
+                    spendChangeEl.textContent = '累计 ' + formatCurrency(todaySpend);
+                    spendChangeEl.className = 'metric-change neutral';
+                }
+
+                // 实时 ROI
+                const avgRoi = kpi.avgRoi;
+                roiEl.textContent = formatRoi(avgRoi);
+
+                if (daily.length >= 2) {
+                    const latestRoi = daily[0].roi;
+                    const prevRoi = daily[1].roi;
+                    const change = formatChange(latestRoi, prevRoi);
+                    roiChangeEl.textContent = '较昨日 ' + change.text;
+                    roiChangeEl.className = 'metric-change ' + change.cls;
+                } else {
+                    roiChangeEl.textContent = '区间均值';
+                    roiChangeEl.className = 'metric-change neutral';
+                }
+
+                // 异常告警 - 从 AI 报告中获取 high/critical 风险等级数量
+                try {
+                    const alertsResult = await authHelpers.fetchFunctionJson('ai-reports', {
+                        query: { risk_level: 'high', limit: 10 },
+                    });
+                    const alertsData = alertsResult.data || alertsResult;
+                    const alertItems = alertsData.items || [];
+                    alertsEl.textContent = alertItems.length;
+                    alertsChangeEl.textContent = alertItems.length > 0 ? '需要关注' : '一切正常';
+                    alertsChangeEl.className = 'metric-change ' + (alertItems.length > 0 ? 'negative' : 'positive');
+                } catch {
+                    alertsEl.textContent = '--';
+                    alertsChangeEl.textContent = '告警查询失败';
+                    alertsChangeEl.className = 'metric-change neutral';
+                }
+
+                // 渲染图表
+                renderHomeChart(homeCurrentPeriod);
+
+            } catch (error) {
+                spendEl.textContent = '--';
+                roiEl.textContent = '--';
+                alertsEl.textContent = '--';
+                spendChangeEl.textContent = '加载失败';
+                spendChangeEl.classList.add('neutral');
+                roiChangeEl.textContent = '加载失败';
+                roiChangeEl.classList.add('neutral');
+                alertsChangeEl.textContent = '加载失败';
+                alertsChangeEl.classList.add('neutral');
+                console.error('[home] loadHomeMetrics failed:', error);
+            }
+        }
+
+        /* ── Chart.js 趋势图 ── */
+        function renderHomeChart(period) {
+            homeCurrentPeriod = period;
+
+            if (!homeDashboardData) return;
+
+            const canvas = document.getElementById('home-chart-canvas');
+            if (!canvas) return;
+
+            // 销毁旧图表
+            if (homeChartInstance) {
+                homeChartInstance.destroy();
+                homeChartInstance = null;
+            }
+
+            const ctx = canvas.getContext('2d');
+            const rows = period === 'weekly'
+                ? (homeDashboardData.weekly || []).slice(0, 8).reverse()
+                : (homeDashboardData.daily || []).slice(0, 14).reverse();
+
+            if (!rows.length) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            const labels = rows.map(r => {
+                const l = r.label || '';
+                return period === 'weekly' ? l : l.slice(5);
+            });
+            const costData = rows.map(r => r.cost || 0);
+            const roiData = rows.map(r => r.roi || 0);
+
+            const costColor = 'rgba(99, 102, 241, 0.85)';
+            const costBgColor = 'rgba(99, 102, 241, 0.15)';
+            const roiColor = 'rgba(139, 92, 246, 1)';
+
+            homeChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '花费',
+                            data: costData,
+                            backgroundColor: costBgColor,
+                            borderColor: costColor,
+                            borderWidth: 1.5,
+                            borderRadius: 4,
+                            yAxisID: 'y',
+                            order: 2,
+                        },
+                        {
+                            label: 'ROI',
+                            data: roiData,
+                            type: 'line',
+                            borderColor: roiColor,
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointBackgroundColor: roiColor,
+                            tension: 0.3,
+                            yAxisID: 'y1',
+                            order: 1,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                boxHeight: 12,
+                                padding: 16,
+                                font: { size: 11 },
+                                usePointStyle: true,
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    if (label === '花费') return label + ': ¥' + value.toLocaleString('zh-CN', { maximumFractionDigits: 0 });
+                                    return label + ': ' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 10 }, color: '#9ca3af' }
+                        },
+                        y: {
+                            position: 'left',
+                            grid: { color: 'rgba(0,0,0,0.04)' },
+                            ticks: {
+                                font: { size: 10 },
+                                color: '#6366f1',
+                                callback: function(value) {
+                                    if (value >= 10000) return (value / 10000).toFixed(0) + '万';
+                                    return value;
+                                }
+                            },
+                            title: { display: false }
+                        },
+                        y1: {
+                            position: 'right',
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 10 },
+                                color: '#8b5cf6',
+                                callback: function(value) { return value.toFixed(1); }
+                            },
+                            title: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* ── AI 洞察预览 ── */
         function renderPreviewCards(items) {
             const grid = document.getElementById('insights-preview-grid');
             grid.innerHTML = items.map((item) => {
@@ -314,13 +569,23 @@
             }, 1200);
         }
 
-        async function loadInsightsPreview() {
+        async function loadInsightsPreview(reportType) {
             const stateEl = document.getElementById('insights-preview-state');
             const gridEl = document.getElementById('insights-preview-grid');
 
+            stateEl.style.display = '';
+            stateEl.textContent = '正在加载最新报告...';
+            stateEl.classList.remove('is-error');
+            gridEl.innerHTML = '';
+
             try {
+                const queryParams = { limit: 3 };
+                if (reportType) {
+                    queryParams.report_type = reportType;
+                }
+
                 const resolved = await authHelpers.fetchFunctionJson('ai-reports', {
-                    query: { limit: 3 },
+                    query: queryParams,
                     parseErrorMessage: '洞察服务返回了无法解析的响应，请稍后重试',
                     onUnauthorized: () => {
                         redirectToHomeLogin('登录状态已失效，正在跳转重新登录...');
@@ -346,18 +611,43 @@
             }
         }
 
-        // Segmented control interaction
+        // ── 分段选择器交互：洞察分栏 ──
+        const insightTypeMap = { 0: 'daily', 1: 'weekly', 2: 'monthly' };
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('seg-btn')) {
                 const control = e.target.closest('.segmented-control');
                 if (control) {
                     control.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
                     e.target.classList.add('active');
+
+                    // 洞察分栏过滤
+                    const segBtns = Array.from(control.querySelectorAll('.seg-btn'));
+                    const idx = segBtns.indexOf(e.target);
+                    if (control.closest('.insights-toolbar') && insightTypeMap[idx]) {
+                        loadInsightsPreview(insightTypeMap[idx]);
+                    }
                 }
             }
         });
 
-        document.addEventListener('DOMContentLoaded', loadInsightsPreview);
+        // ── 日/周切换 ──
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('metric-period')) {
+                const actions = e.target.closest('.card-actions');
+                if (!actions) return;
+                actions.querySelectorAll('.metric-period').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                const period = e.target.textContent.trim() === '周' ? 'weekly' : 'daily';
+                if (homeDashboardData) {
+                    renderHomeChart(period);
+                }
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHomeMetrics();
+            loadInsightsPreview(null);
+        });
     </script>
 
 </body>

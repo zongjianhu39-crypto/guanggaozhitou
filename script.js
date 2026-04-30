@@ -4,26 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const navMenu = document.querySelector('.nav-menu');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const hero = document.querySelector('.home-page .home-hero');
-  const roleCards = Array.from(document.querySelectorAll('.home-page .role-card[data-role]'));
-  const entryCards = Array.from(document.querySelectorAll('.home-page .home-entry-grid .entry-card[data-roles]'));
-  const roleBridge = document.getElementById('entry-role-bridge');
-  const roleBridgeBadge = roleBridge ? roleBridge.querySelector('.entry-role-badge') : null;
-  const roleBridgeCopy = roleBridge ? roleBridge.querySelector('.entry-role-copy') : null;
-
-  const roleDescriptions = {
-    trader: {
-      label: '投手',
-      copy: '先看数据看板，再继续跑 AI 分析；如果需要复盘，再回看洞察中心。'
-    },
-    operator: {
-      label: '运营',
-      copy: '先看洞察中心抓最近变化，再回到指南或 Prompt 管理，补齐复盘和协同动作。'
-    },
-    manager: {
-      label: '管理者',
-      copy: '先看洞察中心快速抓结果和风险，必要时再进数据看板确认实时表现。'
-    }
-  };
 
   if (hamburger) {
     hamburger.setAttribute('aria-expanded', 'false');
@@ -78,60 +58,6 @@ document.addEventListener('DOMContentLoaded', function() {
       window.location.replace('auth/index.html');
     });
   });
-
-  function applyRoleView(role) {
-    if (!roleDescriptions[role]) {
-      return;
-    }
-
-    roleCards.forEach(function(card) {
-      const isActive = card.dataset.role === role;
-      card.classList.toggle('is-active', isActive);
-      card.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    });
-
-    entryCards.forEach(function(card) {
-      const roles = (card.dataset.roles || '').split(',').map(function(value) {
-        return value.trim();
-      }).filter(Boolean);
-      const isRecommended = roles.includes(role);
-      card.classList.toggle('is-recommended', isRecommended);
-      card.classList.toggle('is-muted', !isRecommended);
-    });
-
-    if (roleBridge && roleBridgeBadge && roleBridgeCopy) {
-      roleBridge.dataset.activeRole = role;
-      roleBridgeBadge.textContent = '当前推荐：' + roleDescriptions[role].label;
-      roleBridgeCopy.textContent = roleDescriptions[role].copy;
-    }
-  }
-
-  if (roleCards.length && entryCards.length) {
-    roleCards.forEach(function(card) {
-      card.addEventListener('click', function(event) {
-        if (event.target.closest('a')) {
-          return;
-        }
-        applyRoleView(card.dataset.role);
-        if (window.innerWidth <= 768) {
-          const systemEntry = document.getElementById('system-entry');
-          if (systemEntry) {
-            systemEntry.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-          }
-        }
-      });
-
-      card.addEventListener('keydown', function(event) {
-        if (event.key !== 'Enter' && event.key !== ' ') {
-          return;
-        }
-        event.preventDefault();
-        applyRoleView(card.dataset.role);
-      });
-    });
-
-    applyRoleView('trader');
-  }
 
   const revealTargets = document.querySelectorAll([
     '.home-page .home-hero-copy',
