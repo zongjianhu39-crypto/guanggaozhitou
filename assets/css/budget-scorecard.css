@@ -1,5 +1,5 @@
 /* ================================
-   预算效率评分卡
+   人群预算评分卡
    budget-scorecard.css
    ================================ */
 
@@ -150,6 +150,13 @@
     margin: 0;
 }
 
+.bs-config-subtitle {
+    font-size: var(--text-xs);
+    font-weight: var(--font-normal);
+    color: var(--gray-400);
+    margin-left: var(--space-1);
+}
+
 .bs-config-arrow {
     font-size: var(--text-xs);
     color: var(--gray-400);
@@ -222,7 +229,7 @@
 /* Grade overview cards */
 .bs-grade-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: var(--space-4);
     margin-bottom: var(--space-6);
 }
@@ -256,6 +263,10 @@
     background: #fef2f2;
     border-color: #fecaca;
 }
+.bs-grade-n {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
 
 .bs-grade-label {
     font-size: var(--text-sm);
@@ -267,6 +278,7 @@
 .bs-grade-b .bs-grade-label { color: #185FA5; }
 .bs-grade-c .bs-grade-label { color: #b26a00; }
 .bs-grade-d .bs-grade-label { color: #c2410c; }
+.bs-grade-n .bs-grade-label { color: #475569; }
 
 .bs-grade-count {
     font-size: var(--text-3xl);
@@ -278,6 +290,7 @@
 .bs-grade-b .bs-grade-count { color: #185FA5; }
 .bs-grade-c .bs-grade-count { color: #b26a00; }
 .bs-grade-d .bs-grade-count { color: #c2410c; }
+.bs-grade-n .bs-grade-count { color: #475569; }
 
 .bs-grade-pct {
     font-size: var(--text-sm);
@@ -324,6 +337,7 @@
 .bs-budget-bar-seg.grade-b { background: #378ADD; }
 .bs-budget-bar-seg.grade-c { background: #fbbf24; }
 .bs-budget-bar-seg.grade-d { background: #f87171; }
+.bs-budget-bar-seg.grade-n { background: #94a3b8; }
 
 .bs-budget-bar-legend {
     display: flex;
@@ -350,38 +364,7 @@
 .bs-grade-b-dot { background: #378ADD; }
 .bs-grade-c-dot { background: #fbbf24; }
 .bs-grade-d-dot { background: #f87171; }
-
-/* Tabs */
-.bs-tabs-section {
-    margin-bottom: var(--space-4);
-}
-
-.bs-tab-bar {
-    display: flex;
-    gap: var(--space-1);
-    border-bottom: 1px solid var(--gray-200);
-}
-
-.bs-tab {
-    padding: var(--space-2) var(--space-4);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--gray-500);
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all var(--duration-fast);
-}
-
-.bs-tab:hover {
-    color: var(--indigo-600);
-}
-
-.bs-tab.active {
-    color: var(--indigo-600);
-    border-bottom-color: var(--indigo-600);
-}
+.bs-grade-n-dot { background: #94a3b8; }
 
 /* Detail table */
 .bs-detail-section {
@@ -465,6 +448,7 @@
 .bs-grade-badge.b { background: #dbeafe; color: #185FA5; }
 .bs-grade-badge.c { background: #fef9c3; color: #b26a00; }
 .bs-grade-badge.d { background: #fee2e2; color: #c2410c; }
+.bs-grade-badge.n { background: #e2e8f0; color: #475569; }
 
 /* Action label in table */
 .bs-action-label {
@@ -479,8 +463,9 @@
 .bs-action-label.maintain { background: #e0e7ff; color: #3730a3; }
 .bs-action-label.decrease { background: #fef9c3; color: #92400e; }
 .bs-action-label.pause { background: #fee2e2; color: #991b1b; }
+.bs-action-label.observe { background: #e2e8f0; color: #475569; }
 
-/* Efficiency score bar */
+/* Cost health score bar */
 .bs-score-bar {
     display: inline-flex;
     align-items: center;
@@ -505,6 +490,7 @@
 .bs-score-bar-fill.b { background: #378ADD; }
 .bs-score-bar-fill.c { background: #fbbf24; }
 .bs-score-bar-fill.d { background: #f87171; }
+.bs-score-bar-fill.n { background: #94a3b8; }
 
 /* Realloc section */
 .bs-realloc-section {

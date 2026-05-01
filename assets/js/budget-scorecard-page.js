@@ -1,9 +1,9 @@
 /**
- * 预算效率评分卡 — 页面逻辑
+ * 人群预算评分卡 — 页面逻辑
  *
  * 核心流程:
- *  1. 调用 dashboard-data API 获取单品+人群数据
- *  2. 计算 ROI 达标率 × 花费权重 → 效率分
+ *  1. 调用 dashboard-data API 获取人群数据
+ *  2. 基于订单成本计算成本健康分
  *  3. A/B/C/D 分级 + 再分配建议
  *  4. 建议追踪 (localStorage)
  */
@@ -16,10 +16,11 @@
 
     // 默认评分配置
     var DEFAULT_CONFIG = {
-        roiTarget: 2.0,        // ROI目标值
-        gradeAThreshold: 70,   // A级阈值
-        gradeBThreshold: 40,   // B级阈值
-        gradeCThreshold: 15,   // C级阈值
+        orderCostTarget: 80,    // 目标订单成本
+        minOrdersForDecision: 5, // 最低成交样本
+        gradeAThreshold: 80,    // A级阈值
+        gradeBThreshold: 60,    // B级阈值
+        gradeCThreshold: 40,    // C级阈值
     };
 
     // 加载配置
@@ -28,6 +29,9 @@
             var saved = localStorage.getItem(CONFIG_KEY);
             if (saved) {
                 var parsed = JSON.parse(saved);
+                if (parsed.orderCostTarget === undefined) {
+                    return Object.assign({}, DEFAULT_CONFIG);
+                }
                 return Object.assign({}, DEFAULT_CONFIG, parsed);
             }
         } catch (e) {
@@ -46,7 +50,7 @@
     }
 
     var scoreConfig = loadConfig();
-    var ROI_TARGET = scoreConfig.roiTarget;
+    var ORDER_COST_TARGET = scoreConfig.orderCostTarget;
 
     // ── 工具函数 ──
 
@@ -65,9 +69,14 @@
         return (n * 100).toFixed(1) + '%';
     }
 
-    function formatRoi(n) {
-        if (!isFinite(n) || n === 0) return '--';
-        return n.toFixed(2);
+    function formatInt(n) {
+        if (!isFinite(n)) return '--';
+        return String(Math.round(n));
+    }
+
+    function formatOrderCost(n) {
+        if (!isFinite(n) || n <= 0) return '--';
+        return formatMoney(n);
     }
 
     function escapeHtml(v) {
@@ -98,11 +107,8 @@
         loading: false,
         startDate: '',
         endDate: '',
-        singleItems: [],
         crowdItems: [],
-        scoredSingles: [],
         scoredCrowds: [],
-        activeTab: 'single',
         trackedItems: loadTrackedItems(),
     };
 
@@ -128,21 +134,19 @@
     // ── 评分算法 ──
 
     /**
-     * 效率分 = ROI达标率 × 花费权重
+     * 成本健康分 = min(目标订单成本 / 实际订单成本, 1.25) / 1.25 × 100
      *
-     * ROI达标率 = min(actualROI / targetROI, 2.0)
-     * 花费权重   = log(1 + spend / 1000) / log(1 + totalSpend / 1000)
-     *
-     * 最终得分范围 ~ 0–100+
+     * 达到目标成本时约为 80 分；成本越低分越高，最高封顶 100。
      */
-    function computeEfficiencyScore(actualROI, targetROI, spend, totalSpend) {
-        if (spend <= 0 || totalSpend <= 0) return 0;
-        var roiRatio = Math.min(actualROI / targetROI, 2.0);
-        var spendWeight = Math.log(1 + spend / 1000) / Math.log(1 + totalSpend / 1000);
-        return roiRatio * spendWeight * 100;
+    function computeCostHealthScore(orderCost, targetCost) {
+        if (orderCost <= 0 || targetCost <= 0) return 0;
+        var ratio = targetCost / orderCost;
+        return Math.min(ratio, 1.25) / 1.25 * 100;
     }
 
-    function getGrade(score) {
+    function getGrade(score, orders, spend) {
+        if (spend > 0 && orders <= 0) return 'D';
+        if (orders < scoreConfig.minOrdersForDecision) return 'N';
         if (score >= scoreConfig.gradeAThreshold) return 'A';
         if (score >= scoreConfig.gradeBThreshold) return 'B';
         if (score >= scoreConfig.gradeCThreshold) return 'C';
@@ -155,6 +159,7 @@
             case 'B': return '维持';
             case 'C': return '减预算';
             case 'D': return '暂停';
+            case 'N': return '观察';
             default: return '--';
         }
     }
@@ -165,6 +170,7 @@
             case 'B': return 'maintain';
             case 'C': return 'decrease';
             case 'D': return 'pause';
+            case 'N': return 'observe';
             default: return '';
         }
     }
@@ -176,14 +182,19 @@
         return items.map(function (item) {
             var roi = toNum(item.roi);
             var spend = toNum(item.spend);
-            var score = computeEfficiencyScore(roi, ROI_TARGET, spend, totalSpend);
-            var grade = getGrade(score);
+            var orders = toNum(item.orders);
+            var orderCost = toNum(item.orderCost) || (orders > 0 ? spend / orders : 0);
+            var score = computeCostHealthScore(orderCost, ORDER_COST_TARGET);
+            var grade = getGrade(score, orders, spend);
             return {
                 id: type + ':' + item.name,
                 name: item.name,
                 type: type,
                 roi: roi,
                 spend: spend,
+                orders: orders,
+                orderCost: orderCost,
+                amount: toNum(item.amount),
                 spendPct: spend / totalSpend,
                 score: score,
                 grade: grade,
@@ -197,32 +208,37 @@
 
     function generateReallocations(scored) {
         var donors = scored.filter(function (s) { return s.grade === 'C' || s.grade === 'D'; });
-        var receivers = scored.filter(function (s) { return s.grade === 'A'; });
+        var receivers = scored.filter(function (s) {
+            return s.grade === 'A' && s.orders >= scoreConfig.minOrdersForDecision;
+        });
         if (donors.length === 0 || receivers.length === 0) return [];
 
         var totalReallocatable = donors.reduce(function (s, d) {
-            var cutPct = d.grade === 'D' ? 0.6 : 0.3;
+            var cutPct = d.grade === 'D' ? 0.6 : 0.25;
             return s + d.spend * cutPct;
         }, 0);
 
         if (totalReallocatable <= 0) return [];
 
+        var totalReceiverOrders = receivers.reduce(function (s, r) { return s + r.orders; }, 0);
         var totalReceiverSpend = receivers.reduce(function (s, r) { return s + r.spend; }, 0);
-        if (totalReceiverSpend <= 0) return [];
+        if (totalReceiverOrders <= 0 && totalReceiverSpend <= 0) return [];
 
-        // 改为按来源分组:每个C/D级人群是一个建议项
+        // 按来源分组:每个C/D级人群是一个建议项。
         var suggestions = [];
         donors.forEach(function (donor) {
-            var cutPct = donor.grade === 'D' ? 0.6 : 0.3;
+            var cutPct = donor.grade === 'D' ? 0.6 : 0.25;
             var cutAmount = donor.spend * cutPct;
 
-            // 按接收方的花费占比分配这笔预算
+            // 优先按接收方成交笔数占比分配；无成交时才退回花费占比。
             var toItems = receivers.map(function (receiver) {
-                var share = receiver.spend / totalReceiverSpend;
+                var share = totalReceiverOrders > 0 ? receiver.orders / totalReceiverOrders : receiver.spend / totalReceiverSpend;
                 return {
                     name: receiver.name,
                     grade: receiver.grade,
                     roi: receiver.roi,
+                    orders: receiver.orders,
+                    orderCost: receiver.orderCost,
                     addAmount: cutAmount * share,
                 };
             });
@@ -233,6 +249,8 @@
                     grade: donor.grade,
                     roi: donor.roi,
                     spend: donor.spend,
+                    orders: donor.orders,
+                    orderCost: donor.orderCost,
                     cutPct: cutPct,
                     cutAmount: cutAmount,
                 },
@@ -265,7 +283,7 @@
     }
 
     function showContent() {
-        ['bs-overview', 'bs-tabs-section', 'bs-detail-section', 'bs-realloc-section', 'bs-track-section'].forEach(function (id) {
+        ['bs-overview', 'bs-detail-section', 'bs-realloc-section', 'bs-track-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = '';
         });
@@ -274,7 +292,7 @@
     }
 
     function hideContent() {
-        ['bs-overview', 'bs-tabs-section', 'bs-detail-section', 'bs-realloc-section'].forEach(function (id) {
+        ['bs-overview', 'bs-detail-section', 'bs-realloc-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = 'none';
         });
@@ -283,18 +301,19 @@
     }
 
     function renderOverview(scored) {
-        var counts = { A: 0, B: 0, C: 0, D: 0 };
-        var spends = { A: 0, B: 0, C: 0, D: 0 };
+        var counts = { A: 0, B: 0, C: 0, D: 0, N: 0 };
+        var spends = { A: 0, B: 0, C: 0, D: 0, N: 0 };
         var total = scored.length;
 
         scored.forEach(function (s) {
+            if (!Object.prototype.hasOwnProperty.call(counts, s.grade)) return;
             counts[s.grade]++;
             spends[s.grade] += s.spend;
         });
 
         var totalSpend = scored.reduce(function (sum, s) { return sum + s.spend; }, 0);
 
-        ['A', 'B', 'C', 'D'].forEach(function (grade) {
+        ['A', 'B', 'C', 'D', 'N'].forEach(function (grade) {
             var countEl = $('grade-' + grade.toLowerCase() + '-count');
             var pctEl = $('grade-' + grade.toLowerCase() + '-pct');
             if (countEl) countEl.textContent = counts[grade];
@@ -304,11 +323,11 @@
         var bar = $('bs-budget-bar');
         if (bar) {
             bar.innerHTML = '';
-            ['A', 'B', 'C', 'D'].forEach(function (grade) {
+            ['A', 'B', 'C', 'D', 'N'].forEach(function (grade) {
                 if (spends[grade] <= 0) return;
                 var seg = document.createElement('div');
                 seg.className = 'bs-budget-bar-seg grade-' + grade.toLowerCase();
-                seg.style.width = (spends[grade] / totalSpend * 100) + '%';
+                seg.style.width = totalSpend > 0 ? (spends[grade] / totalSpend * 100) + '%' : '0%';
                 seg.title = grade + ' 级花费 ' + formatMoney(spends[grade]);
                 bar.appendChild(seg);
             });
@@ -321,7 +340,7 @@
         tbody.innerHTML = '';
 
         if (scored.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
             return;
         }
 
@@ -332,7 +351,8 @@
                 '<td class="bs-td-grade"><span class="bs-grade-badge ' + s.grade.toLowerCase() + '">' + s.grade + '</span></td>' +
                 '<td>' + escapeHtml(s.name) + '</td>' +
                 '<td class="bs-td-num">' + formatMoney(s.spend) + '</td>' +
-                '<td class="bs-td-num">' + formatRoi(s.roi) + '</td>' +
+                '<td class="bs-td-num">' + formatInt(s.orders) + '</td>' +
+                '<td class="bs-td-num">' + formatOrderCost(s.orderCost) + '</td>' +
                 '<td class="bs-td-num"><span class="bs-score-bar"><span class="bs-score-bar-track"><span class="bs-score-bar-fill ' + s.grade.toLowerCase() + '" style="width:' + scorePct + '%"></span></span> ' + s.score.toFixed(1) + '</span></td>' +
                 '<td class="bs-td-num">' + formatPct(s.spendPct) + '</td>' +
                 '<td class="bs-td-action"><span class="bs-action-label ' + s.actionClass + '">' + s.action + '</span></td>';
@@ -347,25 +367,25 @@
         list.innerHTML = '';
 
         if (suggestions.length === 0) {
-            list.innerHTML = '<div class="bs-track-empty">当前评分数据无需再分配，或没有可加预算的 A 级单元。</div>';
+            list.innerHTML = '<div class="bs-track-empty">当前评分数据无需再分配，或没有成交样本足够的 A 级人群。</div>';
             if (summary) summary.textContent = '';
             return;
         }
 
         var totalRealloc = suggestions.reduce(function (sum, s) { return sum + s.totalCutAmount; }, 0);
-        if (summary) summary.textContent = '共 ' + suggestions.length + ' 个低效单元可优化，总计可再分配 ' + formatMoney(totalRealloc);
+        if (summary) summary.textContent = '共 ' + suggestions.length + ' 个高成本人群可优化，总计可再分配 ' + formatMoney(totalRealloc);
 
         suggestions.forEach(function (sug, idx) {
             var fromItem = sug.fromItem;
-            var gradeLabel = fromItem.grade === 'D' ? '亏损' : '低效';
-            var cutLabel = fromItem.grade === 'D' ? '削减 60%' : '削减 30%';
+            var gradeLabel = fromItem.grade === 'D' ? '低效' : '成本偏高';
+            var cutLabel = fromItem.grade === 'D' ? '削减 60%' : '削减 25%';
 
             // 构建分配目标列表
             var toItemsHtml = sug.toItems.map(function (to) {
                 return '<div class="bs-realloc-to-item">' +
                     '<span class="bs-realloc-to-name">' + escapeHtml(to.name) + '</span>' +
                     '<span class="bs-realloc-to-amount">+' + formatMoney(to.addAmount) + '</span>' +
-                    '<span class="bs-realloc-to-meta">ROI ' + formatRoi(to.roi) + '</span>' +
+                    '<span class="bs-realloc-to-meta">成交 ' + formatInt(to.orders) + ' 单 · 成本 ' + formatOrderCost(to.orderCost) + '</span>' +
                     '</div>';
             }).join('');
 
@@ -383,18 +403,22 @@
                             '<span class="bs-realloc-row-value">' + formatMoney(fromItem.spend) + '</span>' +
                         '</div>' +
                         '<div class="bs-realloc-row">' +
-                            '<span class="bs-realloc-row-label">建议削减</span>' +
-                            '<span class="bs-realloc-row-value cut">-' + formatMoney(fromItem.cutAmount) + ' (' + cutLabel + ')</span>' +
+                            '<span class="bs-realloc-row-label">成交笔数</span>' +
+                            '<span class="bs-realloc-row-value">' + formatInt(fromItem.orders) + ' 单</span>' +
                         '</div>' +
                         '<div class="bs-realloc-row">' +
-                            '<span class="bs-realloc-row-label">当前 ROI</span>' +
-                            '<span class="bs-realloc-row-value">' + formatRoi(fromItem.roi) + '</span>' +
+                            '<span class="bs-realloc-row-label">订单成本</span>' +
+                            '<span class="bs-realloc-row-value">' + formatOrderCost(fromItem.orderCost) + '</span>' +
+                        '</div>' +
+                        '<div class="bs-realloc-row">' +
+                            '<span class="bs-realloc-row-label">建议削减</span>' +
+                            '<span class="bs-realloc-row-value cut">-' + formatMoney(fromItem.cutAmount) + ' (' + cutLabel + ')</span>' +
                         '</div>' +
                     '</div>' +
                 '</div>' +
                 '<div class="bs-realloc-arrow">&#10132;</div>' +
                 '<div class="bs-realloc-to">' +
-                    '<div class="bs-realloc-to-header">分配至 A 级单元</div>' +
+                    '<div class="bs-realloc-to-header">分配至 A 级人群</div>' +
                     '<div class="bs-realloc-to-list">' + toItemsHtml + '</div>' +
                 '</div>' +
                 '<div class="bs-realloc-actions">' +
@@ -428,20 +452,20 @@
             var effectText = '';
             var effectClass = 'neutral';
 
-            if (item.status === 'verified' && item.effectRoi !== null && item.effectRoi !== undefined) {
-                effectText = 'ROI ' + (item.effectRoi >= 0 ? '+' : '') + item.effectRoi.toFixed(2);
-                effectClass = item.effectRoi >= 0 ? 'positive' : 'negative';
+            if (item.status === 'verified') {
+                effectText = '已确认成本改善';
+                effectClass = 'positive';
             } else if (item.status === 'rejected') {
-                effectText = '已驳回';
+                effectText = '已确认无效';
                 effectClass = 'negative';
             } else if (item.status === 'verifying') {
-                effectText = '等待确认效果';
+                effectText = '等待复盘订单成本';
             } else if (needsVerify) {
                 effectText = '已满 ' + daysSince + ' 天，请验证效果';
             } else if (item.status === 'executed') {
                 effectText = '执行第 ' + daysSince + ' 天（满 7 天验证）';
             } else {
-                effectText = '待执行';
+                effectText = '执行前成本 ' + formatOrderCost(item.fromOrderCost);
             }
 
             var verifyBtnHtml = '';
@@ -479,7 +503,7 @@
         var result;
         try {
             result = await authHelpers.fetchFunctionJson('dashboard-data', {
-                query: { start_date: startDate, end_date: endDate, sections: 'crowd,single' },
+                query: { start_date: startDate, end_date: endDate, sections: 'crowd' },
                 parseErrorMessage: '数据接口返回了无法解析的响应',
                 onUnauthorized: function () {
                     setStatus('error', '登录状态已失效，请重新登录');
@@ -522,16 +546,6 @@
                 return;
             }
 
-            // 解析单品数据
-            var singleRaw = data && data.single && data.single.items ? data.single.items : [];
-            state.singleItems = singleRaw.map(function (item) {
-                return {
-                    name: item.name || item['商品名称'] || '未命名单品',
-                    roi: toNum(item.roi),
-                    spend: toNum(item.spend || item['花费']),
-                };
-            }).filter(function (item) { return item.spend > 0; });
-
             // 解析人群数据
             var crowdRaw = data && data.crowd && data.crowd.summary ? data.crowd.summary : [];
             state.crowdItems = [];
@@ -541,6 +555,9 @@
                         name: group.crowd,
                         roi: toNum(group.summary.roi),
                         spend: toNum(group.summary.cost || group.summary['花费']),
+                        orders: toNum(group.summary.orders),
+                        orderCost: toNum(group.summary.orderCost),
+                        amount: toNum(group.summary.amount),
                     });
                 }
                 if (group.subRows && group.subRows.length > 0) {
@@ -549,6 +566,9 @@
                             name: sub.label || sub.name || '未命名人群',
                             roi: toNum(sub.roi),
                             spend: toNum(sub.cost || sub['花费']),
+                            orders: toNum(sub.orders),
+                            orderCost: toNum(sub.orderCost),
+                            amount: toNum(sub.amount),
                         });
                     });
                 }
@@ -556,13 +576,12 @@
             state.crowdItems = state.crowdItems.filter(function (item) { return item.spend > 0; });
 
             // 评分
-            state.scoredSingles = scoreItems(state.singleItems, 'single');
             state.scoredCrowds = scoreItems(state.crowdItems, 'crowd');
 
             // 渲染
             showContent();
             renderActiveTab();
-            setStatus('success', '评分完成，共 ' + (state.scoredSingles.length + state.scoredCrowds.length) + ' 个投放单元');
+            setStatus('success', '评分完成，共 ' + state.scoredCrowds.length + ' 个人群单元');
         } catch (err) {
             setStatus('error', '数据加载失败：' + (err.message || '请稍后重试'));
             hideContent();
@@ -572,7 +591,7 @@
     }
 
     function renderActiveTab() {
-        var scored = state.activeTab === 'crowd' ? state.scoredCrowds : state.scoredSingles;
+        var scored = state.scoredCrowds;
         renderOverview(scored);
         renderScoreTable(scored);
         renderReallocations(generateReallocations(scored));
@@ -615,22 +634,6 @@
         if (endEl3) endEl3.value = thisMonthRange.end;
     }
 
-    function initTabs() {
-        var tabs = document.querySelectorAll('.bs-tab');
-        tabs.forEach(function (tab) {
-            tab.addEventListener('click', function () {
-                tabs.forEach(function (t) {
-                    t.classList.remove('active');
-                    t.setAttribute('aria-selected', 'false');
-                });
-                tab.classList.add('active');
-                tab.setAttribute('aria-selected', 'true');
-                state.activeTab = tab.dataset.tab;
-                renderActiveTab();
-            });
-        });
-    }
-
     function initLoadButton() {
         var btn = $('bs-load-btn');
         if (!btn) return;
@@ -646,7 +649,7 @@
             if (!adoptBtn || adoptBtn.classList.contains('adopted')) return;
 
             var idx = parseInt(adoptBtn.dataset.idx, 10);
-            var scored = state.activeTab === 'crowd' ? state.scoredCrowds : state.scoredSingles;
+            var scored = state.scoredCrowds;
             var suggestions = generateReallocations(scored);
             var sug = suggestions[idx];
             if (!sug) return;
@@ -663,8 +666,9 @@
                 statusText: '待执行',
                 adoptedAt: Date.now(),
                 adoptedDate: formatDateInput(new Date()),
-                toRoi: sug.toItems[0] ? sug.toItems[0].roi : null,
-                effectRoi: null,
+                fromOrderCost: fromItem.orderCost,
+                fromOrders: fromItem.orders,
+                targetOrderCost: ORDER_COST_TARGET,
                 startDate: state.startDate,
                 endDate: state.endDate,
             };
@@ -703,12 +707,10 @@
                 case 'confirm':
                     item.status = 'verified';
                     item.statusText = '已验证有效';
-                    item.effectRoi = item.toRoi - ROI_TARGET;
                     break;
                 case 'reject':
                     item.status = 'rejected';
                     item.statusText = '已验证无效';
-                    item.effectRoi = item.toRoi - ROI_TARGET;
                     break;
             }
 
@@ -721,12 +723,22 @@
         var btn = $('bs-export-btn');
         if (!btn) return;
         btn.addEventListener('click', function () {
-            var scored = state.activeTab === 'crowd' ? state.scoredCrowds : state.scoredSingles;
+            var scored = state.scoredCrowds;
             if (scored.length === 0) return;
 
-            var header = '等级,名称,花费,ROI,效率分,花费占比,建议动作\n';
+            var header = '等级,人群,花费,成交笔数,订单成本,成本健康分,花费占比,ROI,建议动作\n';
             var rows = scored.map(function (s) {
-                return [s.grade, '"' + s.name + '"', s.spend.toFixed(2), s.roi.toFixed(4), s.score.toFixed(1), (s.spendPct * 100).toFixed(1) + '%', s.action].join(',');
+                return [
+                    s.grade,
+                    '"' + String(s.name).replace(/"/g, '""') + '"',
+                    s.spend.toFixed(2),
+                    s.orders.toFixed(0),
+                    s.orderCost.toFixed(2),
+                    s.score.toFixed(1),
+                    (s.spendPct * 100).toFixed(1) + '%',
+                    s.roi.toFixed(4),
+                    s.action,
+                ].join(',');
             }).join('\n');
 
             var csv = '\uFEFF' + header + rows;
@@ -744,35 +756,75 @@
 
     // ── 配置面板 ──
 
+    function applyConfig(newConfig) {
+        scoreConfig = newConfig;
+        ORDER_COST_TARGET = newConfig.orderCostTarget;
+        saveConfig(newConfig);
+    }
+
+    // 基于当前已加载数据重新计算(不重新请求API)
+    function recomputeScores() {
+        var hasData = false;
+        if (state.crowdItems && state.crowdItems.length > 0) {
+            state.scoredCrowds = scoreItems(state.crowdItems, 'crowd');
+            hasData = true;
+        }
+        if (hasData) {
+            renderActiveTab();
+            return true;
+        }
+        return false;
+    }
+
     function initConfigPanel() {
         var toggle = $('bs-config-toggle');
         var body = $('bs-config-body');
         var section = $('bs-config-section');
         var saveBtn = $('bs-config-save');
         var resetBtn = $('bs-config-reset');
+        var orderCostInput = $('cfg-order-cost-target');
+        var minOrdersInput = $('cfg-min-orders');
+        var aInput = $('cfg-grade-a');
+        var bInput = $('cfg-grade-b');
+        var cInput = $('cfg-grade-c');
 
-        if (!toggle || !body) return;
+        if (!toggle || !body || !section) {
+            console.warn('[budget-scorecard] 配置面板DOM元素未找到');
+            return;
+        }
 
         // 填充当前配置
-        $('cfg-roi-target').value = scoreConfig.roiTarget;
-        $('cfg-grade-a').value = scoreConfig.gradeAThreshold;
-        $('cfg-grade-b').value = scoreConfig.gradeBThreshold;
-        $('cfg-grade-c').value = scoreConfig.gradeCThreshold;
+        if (orderCostInput) orderCostInput.value = scoreConfig.orderCostTarget;
+        if (minOrdersInput) minOrdersInput.value = scoreConfig.minOrdersForDecision;
+        if (aInput) aInput.value = scoreConfig.gradeAThreshold;
+        if (bInput) bInput.value = scoreConfig.gradeBThreshold;
+        if (cInput) cInput.value = scoreConfig.gradeCThreshold;
 
-        // 展开/收起
-        toggle.addEventListener('click', function () {
+        // 展开/收起 (只响应 header 点击,避免冒泡问题)
+        toggle.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
             var isExpanded = section.classList.toggle('expanded');
             body.style.display = isExpanded ? '' : 'none';
         });
 
-        // 保存配置
+        // 保存配置并重新计算
         if (saveBtn) {
-            saveBtn.addEventListener('click', function () {
+            saveBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                var orderCostValue = parseFloat(orderCostInput.value);
+                var minOrdersValue = parseInt(minOrdersInput.value, 10);
+                var gradeAValue = parseInt(aInput.value, 10);
+                var gradeBValue = parseInt(bInput.value, 10);
+                var gradeCValue = parseInt(cInput.value, 10);
                 var newConfig = {
-                    roiTarget: parseFloat($('cfg-roi-target').value) || 2.0,
-                    gradeAThreshold: parseInt($('cfg-grade-a').value) || 70,
-                    gradeBThreshold: parseInt($('cfg-grade-b').value) || 40,
-                    gradeCThreshold: parseInt($('cfg-grade-c').value) || 15,
+                    orderCostTarget: isFinite(orderCostValue) ? orderCostValue : 80,
+                    minOrdersForDecision: isFinite(minOrdersValue) ? minOrdersValue : 5,
+                    gradeAThreshold: isFinite(gradeAValue) ? gradeAValue : 80,
+                    gradeBThreshold: isFinite(gradeBValue) ? gradeBValue : 60,
+                    gradeCThreshold: isFinite(gradeCValue) ? gradeCValue : 40,
                 };
 
                 // 验证阈值逻辑
@@ -784,30 +836,49 @@
                     setStatus('error', 'B级阈值必须大于C级阈值');
                     return;
                 }
+                if (newConfig.orderCostTarget <= 0) {
+                    setStatus('error', '目标订单成本必须大于 0');
+                    return;
+                }
+                if (newConfig.minOrdersForDecision <= 0) {
+                    setStatus('error', '最低成交样本必须大于 0');
+                    return;
+                }
 
-                scoreConfig = newConfig;
-                ROI_TARGET = newConfig.roiTarget;
-                saveConfig(newConfig);
+                applyConfig(newConfig);
 
-                setStatus('success', '配置已保存，下次计算将使用新标准');
-                setTimeout(hideStatus, 3000);
+                // 如果已有数据,立即重新计算
+                var recomputed = recomputeScores();
+                if (recomputed) {
+                    setStatus('success', '配置已保存，评分已按新标准重新计算');
+                } else {
+                    setStatus('success', '配置已保存，点击"计算评分"按新标准生成结果');
+                }
+                setTimeout(hideStatus, 3500);
             });
         }
 
         // 恢复默认
         if (resetBtn) {
-            resetBtn.addEventListener('click', function () {
-                scoreConfig = Object.assign({}, DEFAULT_CONFIG);
-                ROI_TARGET = DEFAULT_CONFIG.roiTarget;
-                saveConfig(DEFAULT_CONFIG);
+            resetBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
 
-                $('cfg-roi-target').value = DEFAULT_CONFIG.roiTarget;
-                $('cfg-grade-a').value = DEFAULT_CONFIG.gradeAThreshold;
-                $('cfg-grade-b').value = DEFAULT_CONFIG.gradeBThreshold;
-                $('cfg-grade-c').value = DEFAULT_CONFIG.gradeCThreshold;
+                applyConfig(Object.assign({}, DEFAULT_CONFIG));
 
-                setStatus('success', '已恢复默认配置');
-                setTimeout(hideStatus, 3000);
+                if (orderCostInput) orderCostInput.value = DEFAULT_CONFIG.orderCostTarget;
+                if (minOrdersInput) minOrdersInput.value = DEFAULT_CONFIG.minOrdersForDecision;
+                if (aInput) aInput.value = DEFAULT_CONFIG.gradeAThreshold;
+                if (bInput) bInput.value = DEFAULT_CONFIG.gradeBThreshold;
+                if (cInput) cInput.value = DEFAULT_CONFIG.gradeCThreshold;
+
+                var recomputed = recomputeScores();
+                if (recomputed) {
+                    setStatus('success', '已恢复默认配置，评分已重新计算');
+                } else {
+                    setStatus('success', '已恢复默认配置');
+                }
+                setTimeout(hideStatus, 3500);
             });
         }
     }
@@ -817,7 +888,6 @@
     document.addEventListener('DOMContentLoaded', function () {
         initConfigPanel();
         initDatePresets();
-        initTabs();
         initLoadButton();
         initAdoptButtons();
         initTrackButtons();
