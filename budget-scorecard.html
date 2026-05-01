@@ -72,6 +72,42 @@
             <span id="bs-status-text" class="bs-status-text"></span>
         </div>
 
+        <!-- 评分标准配置 -->
+        <section class="bs-config-section" id="bs-config-section">
+            <div class="bs-config-header" id="bs-config-toggle">
+                <h3 class="bs-config-title">⚙️ 评分标准配置</h3>
+                <span class="bs-config-arrow">▼</span>
+            </div>
+            <div class="bs-config-body" id="bs-config-body" style="display:none;">
+                <div class="bs-config-grid">
+                    <div class="bs-config-item">
+                        <label class="bs-config-label">ROI 目标值</label>
+                        <input type="number" id="cfg-roi-target" class="bs-config-input" step="0.1" min="0.5" max="10" value="2.0">
+                        <span class="bs-config-hint">期望的投入产出比</span>
+                    </div>
+                    <div class="bs-config-item">
+                        <label class="bs-config-label">A 级阈值 (超目标)</label>
+                        <input type="number" id="cfg-grade-a" class="bs-config-input" step="5" min="50" max="90" value="70">
+                        <span class="bs-config-hint">效率分≥此值为A级</span>
+                    </div>
+                    <div class="bs-config-item">
+                        <label class="bs-config-label">B 级阈值 (达标)</label>
+                        <input type="number" id="cfg-grade-b" class="bs-config-input" step="5" min="20" max="60" value="40">
+                        <span class="bs-config-hint">效率分≥此值为B级</span>
+                    </div>
+                    <div class="bs-config-item">
+                        <label class="bs-config-label">C 级阈值 (低效)</label>
+                        <input type="number" id="cfg-grade-c" class="bs-config-input" step="5" min="5" max="30" value="15">
+                        <span class="bs-config-hint">效率分≥此值为C级</span>
+                    </div>
+                </div>
+                <div class="bs-config-actions">
+                    <button id="bs-config-reset" class="btn btn-outline btn-sm" type="button">恢复默认</button>
+                    <button id="bs-config-save" class="btn btn-primary btn-sm" type="button">保存配置</button>
+                </div>
+            </div>
+        </section>
+
         <!-- 评分总览 -->
         <section class="bs-overview" id="bs-overview" style="display:none;">
             <h2 class="bs-section-title">效率分布总览</h2>

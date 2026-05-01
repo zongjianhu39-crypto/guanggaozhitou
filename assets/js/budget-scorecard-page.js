@@ -12,7 +12,41 @@
 
     var authHelpers = window.authHelpers || {};
     var STORAGE_KEY = 'bs_track_items';
-    var ROI_TARGET = 2.0;
+    var CONFIG_KEY = 'bs_score_config';
+
+    // 默认评分配置
+    var DEFAULT_CONFIG = {
+        roiTarget: 2.0,        // ROI目标值
+        gradeAThreshold: 70,   // A级阈值
+        gradeBThreshold: 40,   // B级阈值
+        gradeCThreshold: 15,   // C级阈值
+    };
+
+    // 加载配置
+    function loadConfig() {
+        try {
+            var saved = localStorage.getItem(CONFIG_KEY);
+            if (saved) {
+                var parsed = JSON.parse(saved);
+                return Object.assign({}, DEFAULT_CONFIG, parsed);
+            }
+        } catch (e) {
+            console.warn('加载评分配置失败:', e);
+        }
+        return Object.assign({}, DEFAULT_CONFIG);
+    }
+
+    // 保存配置
+    function saveConfig(config) {
+        try {
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+        } catch (e) {
+            console.warn('保存评分配置失败:', e);
+        }
+    }
+
+    var scoreConfig = loadConfig();
+    var ROI_TARGET = scoreConfig.roiTarget;
 
     // ── 工具函数 ──
 
@@ -109,9 +143,9 @@
     }
 
     function getGrade(score) {
-        if (score >= 70) return 'A';
-        if (score >= 40) return 'B';
-        if (score >= 15) return 'C';
+        if (score >= scoreConfig.gradeAThreshold) return 'A';
+        if (score >= scoreConfig.gradeBThreshold) return 'B';
+        if (score >= scoreConfig.gradeCThreshold) return 'C';
         return 'D';
     }
 
@@ -176,27 +210,34 @@
         var totalReceiverSpend = receivers.reduce(function (s, r) { return s + r.spend; }, 0);
         if (totalReceiverSpend <= 0) return [];
 
+        // 改为按来源分组:每个C/D级人群是一个建议项
         var suggestions = [];
-        receivers.forEach(function (receiver) {
-            var share = receiver.spend / totalReceiverSpend;
-            var addAmount = totalReallocatable * share;
+        donors.forEach(function (donor) {
+            var cutPct = donor.grade === 'D' ? 0.6 : 0.3;
+            var cutAmount = donor.spend * cutPct;
 
-            var fromItems = donors.map(function (d) {
+            // 按接收方的花费占比分配这笔预算
+            var toItems = receivers.map(function (receiver) {
+                var share = receiver.spend / totalReceiverSpend;
                 return {
-                    name: d.name,
-                    grade: d.grade,
-                    cutPct: d.grade === 'D' ? 0.6 : 0.3,
-                    amount: d.spend * (d.grade === 'D' ? 0.6 : 0.3),
+                    name: receiver.name,
+                    grade: receiver.grade,
+                    roi: receiver.roi,
+                    addAmount: cutAmount * share,
                 };
             });
 
             suggestions.push({
-                fromItems: fromItems,
-                toItem: receiver.name,
-                toGrade: receiver.grade,
-                toRoi: receiver.roi,
-                addAmount: addAmount,
-                totalReallocatable: totalReallocatable,
+                fromItem: {
+                    name: donor.name,
+                    grade: donor.grade,
+                    roi: donor.roi,
+                    spend: donor.spend,
+                    cutPct: cutPct,
+                    cutAmount: cutAmount,
+                },
+                toItems: toItems,
+                totalCutAmount: cutAmount,
             });
         });
 
@@ -311,29 +352,50 @@
             return;
         }
 
-        var totalRealloc = suggestions.length > 0 ? suggestions[0].totalReallocatable : 0;
-        if (summary) summary.textContent = '可再分配总额 ' + formatMoney(totalRealloc);
+        var totalRealloc = suggestions.reduce(function (sum, s) { return sum + s.totalCutAmount; }, 0);
+        if (summary) summary.textContent = '共 ' + suggestions.length + ' 个低效单元可优化，总计可再分配 ' + formatMoney(totalRealloc);
 
         suggestions.forEach(function (sug, idx) {
-            var fromNames = sug.fromItems.map(function (f) { return f.name; }).join('、');
-            var fromCutDescs = sug.fromItems.map(function (f) { return f.name + '(-' + (f.cutPct * 100).toFixed(0) + '%)'; }).join('、');
-            var fromTotalCut = sug.fromItems.reduce(function (s, f) { return s + f.amount; }, 0);
+            var fromItem = sug.fromItem;
+            var gradeLabel = fromItem.grade === 'D' ? '亏损' : '低效';
+            var cutLabel = fromItem.grade === 'D' ? '削减 60%' : '削减 30%';
+
+            // 构建分配目标列表
+            var toItemsHtml = sug.toItems.map(function (to) {
+                return '<div class="bs-realloc-to-item">' +
+                    '<span class="bs-realloc-to-name">' + escapeHtml(to.name) + '</span>' +
+                    '<span class="bs-realloc-to-amount">+' + formatMoney(to.addAmount) + '</span>' +
+                    '<span class="bs-realloc-to-meta">ROI ' + formatRoi(to.roi) + '</span>' +
+                    '</div>';
+            }).join('');
 
             var card = document.createElement('div');
             card.className = 'bs-realloc-card';
             card.innerHTML =
                 '<div class="bs-realloc-from">' +
-                    '<div class="bs-realloc-label">削减来源 (C/D 级)</div>' +
-                    '<div class="bs-realloc-name">' + escapeHtml(fromNames) + '</div>' +
-                    '<div class="bs-realloc-amount">-' + formatMoney(fromTotalCut) + '</div>' +
-                    '<div class="bs-realloc-meta">' + escapeHtml(fromCutDescs) + '</div>' +
+                    '<div class="bs-realloc-from-header">' +
+                        '<span class="bs-realloc-grade-badge ' + fromItem.grade.toLowerCase() + '">' + fromItem.grade + ' ' + gradeLabel + '</span>' +
+                        '<div class="bs-realloc-name">' + escapeHtml(fromItem.name) + '</div>' +
+                    '</div>' +
+                    '<div class="bs-realloc-from-body">' +
+                        '<div class="bs-realloc-row">' +
+                            '<span class="bs-realloc-row-label">当前花费</span>' +
+                            '<span class="bs-realloc-row-value">' + formatMoney(fromItem.spend) + '</span>' +
+                        '</div>' +
+                        '<div class="bs-realloc-row">' +
+                            '<span class="bs-realloc-row-label">建议削减</span>' +
+                            '<span class="bs-realloc-row-value cut">-' + formatMoney(fromItem.cutAmount) + ' (' + cutLabel + ')</span>' +
+                        '</div>' +
+                        '<div class="bs-realloc-row">' +
+                            '<span class="bs-realloc-row-label">当前 ROI</span>' +
+                            '<span class="bs-realloc-row-value">' + formatRoi(fromItem.roi) + '</span>' +
+                        '</div>' +
+                    '</div>' +
                 '</div>' +
                 '<div class="bs-realloc-arrow">&#10132;</div>' +
                 '<div class="bs-realloc-to">' +
-                    '<div class="bs-realloc-label">增加去向 (A 级)</div>' +
-                    '<div class="bs-realloc-name">' + escapeHtml(sug.toItem) + '</div>' +
-                    '<div class="bs-realloc-amount">+' + formatMoney(sug.addAmount) + '</div>' +
-                    '<div class="bs-realloc-meta">当前 ROI ' + formatRoi(sug.toRoi) + '</div>' +
+                    '<div class="bs-realloc-to-header">分配至 A 级单元</div>' +
+                    '<div class="bs-realloc-to-list">' + toItemsHtml + '</div>' +
                 '</div>' +
                 '<div class="bs-realloc-actions">' +
                     '<button class="bs-adopt-btn" data-idx="' + idx + '" type="button">采纳</button>' +
@@ -589,15 +651,19 @@
             var sug = suggestions[idx];
             if (!sug) return;
 
+            var fromItem = sug.fromItem;
+            var toNames = sug.toItems.map(function (t) { return t.name; }).join('、');
+            var totalAdd = sug.toItems.reduce(function (sum, t) { return sum + t.addAmount; }, 0);
+
             var trackItem = {
                 id: 'rec-' + Date.now(),
-                title: sug.fromItems.map(function (f) { return f.name; }).join('、') + ' → ' + sug.toItem,
-                amount: formatMoney(sug.addAmount),
+                title: fromItem.name + ' → ' + toNames,
+                amount: formatMoney(totalAdd),
                 status: 'pending',
                 statusText: '待执行',
                 adoptedAt: Date.now(),
                 adoptedDate: formatDateInput(new Date()),
-                toRoi: sug.toRoi,
+                toRoi: sug.toItems[0] ? sug.toItems[0].roi : null,
                 effectRoi: null,
                 startDate: state.startDate,
                 endDate: state.endDate,
@@ -676,9 +742,80 @@
         });
     }
 
+    // ── 配置面板 ──
+
+    function initConfigPanel() {
+        var toggle = $('bs-config-toggle');
+        var body = $('bs-config-body');
+        var section = $('bs-config-section');
+        var saveBtn = $('bs-config-save');
+        var resetBtn = $('bs-config-reset');
+
+        if (!toggle || !body) return;
+
+        // 填充当前配置
+        $('cfg-roi-target').value = scoreConfig.roiTarget;
+        $('cfg-grade-a').value = scoreConfig.gradeAThreshold;
+        $('cfg-grade-b').value = scoreConfig.gradeBThreshold;
+        $('cfg-grade-c').value = scoreConfig.gradeCThreshold;
+
+        // 展开/收起
+        toggle.addEventListener('click', function () {
+            var isExpanded = section.classList.toggle('expanded');
+            body.style.display = isExpanded ? '' : 'none';
+        });
+
+        // 保存配置
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function () {
+                var newConfig = {
+                    roiTarget: parseFloat($('cfg-roi-target').value) || 2.0,
+                    gradeAThreshold: parseInt($('cfg-grade-a').value) || 70,
+                    gradeBThreshold: parseInt($('cfg-grade-b').value) || 40,
+                    gradeCThreshold: parseInt($('cfg-grade-c').value) || 15,
+                };
+
+                // 验证阈值逻辑
+                if (newConfig.gradeAThreshold <= newConfig.gradeBThreshold) {
+                    setStatus('error', 'A级阈值必须大于B级阈值');
+                    return;
+                }
+                if (newConfig.gradeBThreshold <= newConfig.gradeCThreshold) {
+                    setStatus('error', 'B级阈值必须大于C级阈值');
+                    return;
+                }
+
+                scoreConfig = newConfig;
+                ROI_TARGET = newConfig.roiTarget;
+                saveConfig(newConfig);
+
+                setStatus('success', '配置已保存，下次计算将使用新标准');
+                setTimeout(hideStatus, 3000);
+            });
+        }
+
+        // 恢复默认
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function () {
+                scoreConfig = Object.assign({}, DEFAULT_CONFIG);
+                ROI_TARGET = DEFAULT_CONFIG.roiTarget;
+                saveConfig(DEFAULT_CONFIG);
+
+                $('cfg-roi-target').value = DEFAULT_CONFIG.roiTarget;
+                $('cfg-grade-a').value = DEFAULT_CONFIG.gradeAThreshold;
+                $('cfg-grade-b').value = DEFAULT_CONFIG.gradeBThreshold;
+                $('cfg-grade-c').value = DEFAULT_CONFIG.gradeCThreshold;
+
+                setStatus('success', '已恢复默认配置');
+                setTimeout(hideStatus, 3000);
+            });
+        }
+    }
+
     // ── 初始化 ──
 
     document.addEventListener('DOMContentLoaded', function () {
+        initConfigPanel();
         initDatePresets();
         initTabs();
         initLoadButton();
