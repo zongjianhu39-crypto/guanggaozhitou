@@ -25,7 +25,7 @@ const SUPER_LIVE_BASE_COLUMNS = [
   '总预售成交笔数',
   '互动量',
 ];
-const SUPER_LIVE_CROWD_COLUMNS = [...SUPER_LIVE_BASE_COLUMNS, '人群名字'];
+const SUPER_LIVE_CROWD_COLUMNS = [...SUPER_LIVE_BASE_COLUMNS, '计划名字', '人群名字'];
 const SINGLE_PRODUCT_COLUMNS = ['id', '日期', '商品id', '商品名称', 'img_url', '花费', '直接成交笔数', '直接成交金额', '该商品直接成交笔数', '该商品直接成交金额', '该商品加购数', '该商品收藏数', '观看人数'];
 const ADS_SUMMARY_COLUMNS = [
   '日期',
@@ -162,6 +162,11 @@ type RequestedSections = {
   single: boolean;
 };
 
+type DashboardPayloadOptions = {
+  crowdPlanNameIncludes?: string | null;
+  forceRawCrowd?: boolean;
+};
+
 type DashboardPayloadCacheEntry = {
   cachedAt: number;
   payload: Record<string, unknown>;
@@ -188,13 +193,15 @@ function getDashboardPayloadCacheTtlMs(endDate: string): number {
     : DASHBOARD_CURRENT_CACHE_TTL_MS;
 }
 
-function getDashboardPayloadCacheKey(startDate: string, endDate: string, sections: RequestedSections): string {
+function getDashboardPayloadCacheKey(startDate: string, endDate: string, sections: RequestedSections, options: DashboardPayloadOptions = {}): string {
   return [
     startDate,
     endDate,
     sections.ads ? 'ads' : '',
     sections.crowd ? 'crowd' : '',
     sections.single ? 'single' : '',
+    options.forceRawCrowd ? 'rawCrowd' : '',
+    options.crowdPlanNameIncludes ? `crowdPlan:${options.crowdPlanNameIncludes}` : '',
   ].join('|');
 }
 
@@ -776,8 +783,14 @@ function buildKpiPayload(totalAggregate: AggregateBucket, dailyRows: DisplayRow[
   };
 }
 
-export async function getDashboardPayload(startDate: string, endDate: string, sections: RequestedSections) {
-  const cacheKey = getDashboardPayloadCacheKey(startDate, endDate, sections);
+function filterRowsByPlanName(rows: any[], keyword?: string | null): any[] {
+  const normalizedKeyword = String(keyword ?? '').trim();
+  if (!normalizedKeyword) return rows;
+  return rows.filter((row) => String(row?.['计划名字'] ?? '').includes(normalizedKeyword));
+}
+
+export async function getDashboardPayload(startDate: string, endDate: string, sections: RequestedSections, options: DashboardPayloadOptions = {}) {
+  const cacheKey = getDashboardPayloadCacheKey(startDate, endDate, sections, options);
   const cachedPayload = getCachedDashboardPayload(cacheKey, endDate);
   if (cachedPayload) {
     return cachedPayload;
@@ -787,6 +800,8 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
   const needAds = sections.ads;
   const needCrowd = sections.crowd;
   const needSingle = sections.single;
+  const crowdPlanNameIncludes = String(options.crowdPlanNameIncludes ?? '').trim();
+  const forceRawCrowd = Boolean(options.forceRawCrowd || crowdPlanNameIncludes);
 
   const [adsSummaryRaw, crowdSummaryRaw, singleSummaryRaw] = await Promise.all([
     needAds ? fetchSummaryTable('dashboard_ads_daily_summary', ADS_SUMMARY_COLUMNS, startDate, endDate) : Promise.resolve([]),
@@ -798,7 +813,7 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
   const crowdSummaryData = filterByDateRange(crowdSummaryRaw, startDate, endDate);
   const singleSummaryData = filterByDateRange(singleSummaryRaw, startDate, endDate);
   const useAdsSummary = needAds && adsSummaryData.length > 0;
-  const useCrowdSummary = needCrowd && crowdSummaryData.length > 0;
+  const useCrowdSummary = needCrowd && !forceRawCrowd && crowdSummaryData.length > 0;
   const useSingleSummary = needSingle && singleSummaryData.length > 0;
   const needRawAds = needAds && !useAdsSummary;
   const needRawCrowd = needCrowd && !useCrowdSummary;
@@ -823,7 +838,7 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
   const financialData = filterByDateRange(financialRaw, startDate, endDate);
   const taobaoData = filterByDateRange(taobaoRaw, startDate, endDate);
   const superLiveFlat = Array.isArray(superLiveChunks) ? superLiveChunks.flat() : [];
-  const superLiveData = filterByDateRange(superLiveFlat, startDate, endDate);
+  const superLiveData = filterRowsByPlanName(filterByDateRange(superLiveFlat, startDate, endDate), crowdPlanNameIncludes);
   const singleProductFilteredData = filterByDateRange(singleProductRaw, startDate, endDate);
   const singleProductData = needSingle ? dedupeSingleProductRows(singleProductFilteredData) : singleProductFilteredData;
 
@@ -891,4 +906,4 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
   return payload;
 }
 
-export { isValidDateString, type RequestedSections };
+export { isValidDateString, type DashboardPayloadOptions, type RequestedSections };

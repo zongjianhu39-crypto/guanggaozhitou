@@ -48,7 +48,7 @@
         <section class="bs-header">
             <div class="bs-header-left">
                 <h1 class="bs-header-title">人群预算评分卡</h1>
-                <p class="bs-header-desc">基于订单成本评估人群投放质量，辅助预算加减、暂停和复投判断</p>
+                <p class="bs-header-desc">仅分析计划名含“规则”的直播间人群，并按预热、预售付定、现货阶段切换效果指标</p>
             </div>
             <div class="bs-header-actions">
                 <div class="bs-date-group">
@@ -81,9 +81,18 @@
             <div class="bs-config-body" id="bs-config-body">
                 <div class="bs-config-grid">
                     <div class="bs-config-item">
-                        <label class="bs-config-label">目标订单成本</label>
-                        <input type="number" id="cfg-order-cost-target" class="bs-config-input" step="1" min="1" max="10000" value="80">
-                        <span class="bs-config-hint">期望每成交一单的花费（元）</span>
+                        <label class="bs-config-label">分析阶段</label>
+                        <select id="cfg-analysis-stage" class="bs-config-input">
+                            <option value="warmup">预热期：看加购成本</option>
+                            <option value="presale">预售付定：看预售订单成本</option>
+                            <option value="spot">现货期：看订单成本</option>
+                        </select>
+                        <span class="bs-config-hint">不同阶段使用不同效果指标</span>
+                    </div>
+                    <div class="bs-config-item">
+                        <label class="bs-config-label" id="cfg-target-label">目标订单成本</label>
+                        <input type="number" id="cfg-target-cost" class="bs-config-input" step="1" min="1" max="10000" value="80">
+                        <span class="bs-config-hint" id="cfg-target-hint">期望每成交一单的花费（元）</span>
                     </div>
                     <div class="bs-config-item">
                         <label class="bs-config-label">最低成交样本</label>
@@ -115,7 +124,7 @@
 
         <!-- 评分总览 -->
         <section class="bs-overview" id="bs-overview" style="display:none;">
-            <h2 class="bs-section-title">人群成本健康总览</h2>
+            <h2 class="bs-section-title" id="bs-overview-title">人群成本健康总览</h2>
             <div class="bs-grade-row">
                 <div class="bs-grade-card bs-grade-a">
                     <div class="bs-grade-label">A 优质</div>
@@ -174,8 +183,8 @@
                             <th class="bs-th-grade">等级</th>
                             <th class="bs-th-name">人群</th>
                             <th class="bs-th-num">花费</th>
-                            <th class="bs-th-num">成交笔数</th>
-                            <th class="bs-th-num">订单成本</th>
+                            <th class="bs-th-num" id="bs-volume-th">成交笔数</th>
+                            <th class="bs-th-num" id="bs-cost-th">订单成本</th>
                             <th class="bs-th-num">成本健康分</th>
                             <th class="bs-th-num">花费占比</th>
                             <th class="bs-th-action">建议动作</th>
@@ -199,7 +208,7 @@
         <section class="bs-track-section" id="bs-track-section" style="display:none;">
             <div class="bs-detail-header">
                 <h2 class="bs-section-title">执行追踪</h2>
-                <span class="bs-track-hint">标记建议状态后，7天复盘订单成本变化</span>
+                <span class="bs-track-hint" id="bs-track-hint">标记建议状态后，7天复盘订单成本变化</span>
             </div>
             <div id="bs-track-list" class="bs-track-list"></div>
             <div id="bs-track-empty" class="bs-track-empty" style="display:none;">
@@ -211,7 +220,7 @@
         <section class="bs-empty" id="bs-empty">
             <div class="bs-empty-icon">📊</div>
             <h2 class="bs-empty-title">选择日期范围，计算人群预算评分</h2>
-            <p class="bs-empty-desc">评分卡基于订单成本和成交样本为人群打分，自动生成预算再分配建议</p>
+            <p class="bs-empty-desc">评分卡按阶段切换加购成本、预售订单成本、订单成本，只分析直播间规则计划的人群</p>
         </section>
     </main>
 

@@ -13,10 +13,44 @@
     var authHelpers = window.authHelpers || {};
     var STORAGE_KEY = 'bs_track_items';
     var CONFIG_KEY = 'bs_score_config';
+    var STAGE_CONFIG = {
+        warmup: {
+            label: '预热期',
+            costKey: 'cartCost',
+            volumeKey: 'cart',
+            costLabel: '加购成本',
+            volumeLabel: '加购数',
+            targetLabel: '目标加购成本',
+            targetHint: '期望每个加购的花费（元）',
+        },
+        presale: {
+            label: '预售付定',
+            costKey: 'preOrderCost',
+            volumeKey: 'preOrders',
+            costLabel: '预售订单成本',
+            volumeLabel: '预售成交笔数',
+            targetLabel: '目标预售订单成本',
+            targetHint: '期望每个预售付定订单的花费（元）',
+        },
+        spot: {
+            label: '现货期',
+            costKey: 'orderCost',
+            volumeKey: 'orders',
+            costLabel: '订单成本',
+            volumeLabel: '成交笔数',
+            targetLabel: '目标订单成本',
+            targetHint: '期望每成交一单的花费（元）',
+        },
+    };
 
     // 默认评分配置
     var DEFAULT_CONFIG = {
-        orderCostTarget: 80,    // 目标订单成本
+        analysisStage: 'spot',
+        targetCosts: {
+            warmup: 20,
+            presale: 80,
+            spot: 80,
+        },
         minOrdersForDecision: 5, // 最低成交样本
         gradeAThreshold: 80,    // A级阈值
         gradeBThreshold: 60,    // B级阈值
@@ -29,10 +63,13 @@
             var saved = localStorage.getItem(CONFIG_KEY);
             if (saved) {
                 var parsed = JSON.parse(saved);
-                if (parsed.orderCostTarget === undefined) {
-                    return Object.assign({}, DEFAULT_CONFIG);
+                var merged = Object.assign({}, DEFAULT_CONFIG, parsed);
+                merged.targetCosts = Object.assign({}, DEFAULT_CONFIG.targetCosts, parsed.targetCosts || {});
+                if (parsed.orderCostTarget !== undefined && parsed.targetCosts === undefined) {
+                    merged.targetCosts.spot = parsed.orderCostTarget;
                 }
-                return Object.assign({}, DEFAULT_CONFIG, parsed);
+                if (!STAGE_CONFIG[merged.analysisStage]) merged.analysisStage = DEFAULT_CONFIG.analysisStage;
+                return merged;
             }
         } catch (e) {
             console.warn('加载评分配置失败:', e);
@@ -50,7 +87,8 @@
     }
 
     var scoreConfig = loadConfig();
-    var ORDER_COST_TARGET = scoreConfig.orderCostTarget;
+    var ACTIVE_STAGE = scoreConfig.analysisStage;
+    var TARGET_COST = getTargetCost(ACTIVE_STAGE);
 
     // ── 工具函数 ──
 
@@ -77,6 +115,16 @@
     function formatOrderCost(n) {
         if (!isFinite(n) || n <= 0) return '--';
         return formatMoney(n);
+    }
+
+    function getStageConfig(stage) {
+        return STAGE_CONFIG[stage] || STAGE_CONFIG.spot;
+    }
+
+    function getTargetCost(stage) {
+        var stageKey = STAGE_CONFIG[stage] ? stage : DEFAULT_CONFIG.analysisStage;
+        var value = scoreConfig.targetCosts && scoreConfig.targetCosts[stageKey];
+        return isFinite(value) && value > 0 ? value : DEFAULT_CONFIG.targetCosts[stageKey];
     }
 
     function escapeHtml(v) {
@@ -178,22 +226,31 @@
     function scoreItems(items, type) {
         var totalSpend = items.reduce(function (s, item) { return s + toNum(item.spend); }, 0);
         if (totalSpend <= 0) return [];
+        var stage = getStageConfig(ACTIVE_STAGE);
 
         return items.map(function (item) {
             var roi = toNum(item.roi);
             var spend = toNum(item.spend);
-            var orders = toNum(item.orders);
-            var orderCost = toNum(item.orderCost) || (orders > 0 ? spend / orders : 0);
-            var score = computeCostHealthScore(orderCost, ORDER_COST_TARGET);
-            var grade = getGrade(score, orders, spend);
+            var volume = toNum(item[stage.volumeKey]);
+            var metricCost = toNum(item[stage.costKey]) || (volume > 0 ? spend / volume : 0);
+            var score = computeCostHealthScore(metricCost, TARGET_COST);
+            var grade = getGrade(score, volume, spend);
             return {
                 id: type + ':' + item.name,
                 name: item.name,
                 type: type,
                 roi: roi,
                 spend: spend,
-                orders: orders,
-                orderCost: orderCost,
+                volume: volume,
+                metricCost: metricCost,
+                metricCostLabel: stage.costLabel,
+                volumeLabel: stage.volumeLabel,
+                orders: toNum(item.orders),
+                orderCost: toNum(item.orderCost),
+                cart: toNum(item.cart),
+                cartCost: toNum(item.cartCost),
+                preOrders: toNum(item.preOrders),
+                preOrderCost: toNum(item.preOrderCost),
                 amount: toNum(item.amount),
                 spendPct: spend / totalSpend,
                 score: score,
@@ -209,7 +266,7 @@
     function generateReallocations(scored) {
         var donors = scored.filter(function (s) { return s.grade === 'C' || s.grade === 'D'; });
         var receivers = scored.filter(function (s) {
-            return s.grade === 'A' && s.orders >= scoreConfig.minOrdersForDecision;
+            return s.grade === 'A' && s.volume >= scoreConfig.minOrdersForDecision;
         });
         if (donors.length === 0 || receivers.length === 0) return [];
 
@@ -220,9 +277,9 @@
 
         if (totalReallocatable <= 0) return [];
 
-        var totalReceiverOrders = receivers.reduce(function (s, r) { return s + r.orders; }, 0);
+        var totalReceiverVolume = receivers.reduce(function (s, r) { return s + r.volume; }, 0);
         var totalReceiverSpend = receivers.reduce(function (s, r) { return s + r.spend; }, 0);
-        if (totalReceiverOrders <= 0 && totalReceiverSpend <= 0) return [];
+        if (totalReceiverVolume <= 0 && totalReceiverSpend <= 0) return [];
 
         // 按来源分组:每个C/D级人群是一个建议项。
         var suggestions = [];
@@ -230,15 +287,17 @@
             var cutPct = donor.grade === 'D' ? 0.6 : 0.25;
             var cutAmount = donor.spend * cutPct;
 
-            // 优先按接收方成交笔数占比分配；无成交时才退回花费占比。
+            // 优先按接收方当前阶段有效量占比分配；无有效量时才退回花费占比。
             var toItems = receivers.map(function (receiver) {
-                var share = totalReceiverOrders > 0 ? receiver.orders / totalReceiverOrders : receiver.spend / totalReceiverSpend;
+                var share = totalReceiverVolume > 0 ? receiver.volume / totalReceiverVolume : receiver.spend / totalReceiverSpend;
                 return {
                     name: receiver.name,
                     grade: receiver.grade,
                     roi: receiver.roi,
-                    orders: receiver.orders,
-                    orderCost: receiver.orderCost,
+                    volume: receiver.volume,
+                    metricCost: receiver.metricCost,
+                    metricCostLabel: receiver.metricCostLabel,
+                    volumeLabel: receiver.volumeLabel,
                     addAmount: cutAmount * share,
                 };
             });
@@ -249,8 +308,10 @@
                     grade: donor.grade,
                     roi: donor.roi,
                     spend: donor.spend,
-                    orders: donor.orders,
-                    orderCost: donor.orderCost,
+                    volume: donor.volume,
+                    metricCost: donor.metricCost,
+                    metricCostLabel: donor.metricCostLabel,
+                    volumeLabel: donor.volumeLabel,
                     cutPct: cutPct,
                     cutAmount: cutAmount,
                 },
@@ -298,6 +359,25 @@
         });
         var empty = $('bs-empty');
         if (empty) empty.style.display = '';
+    }
+
+    function updateStageCopy() {
+        var stage = getStageConfig(ACTIVE_STAGE);
+        var targetLabel = $('cfg-target-label');
+        var targetHint = $('cfg-target-hint');
+        var targetInput = $('cfg-target-cost');
+        var overviewTitle = $('bs-overview-title');
+        var volumeTh = $('bs-volume-th');
+        var costTh = $('bs-cost-th');
+        var trackHint = $('bs-track-hint');
+
+        if (targetLabel) targetLabel.textContent = stage.targetLabel;
+        if (targetHint) targetHint.textContent = stage.targetHint;
+        if (targetInput) targetInput.value = getTargetCost(ACTIVE_STAGE);
+        if (overviewTitle) overviewTitle.textContent = stage.label + '人群成本健康总览';
+        if (volumeTh) volumeTh.textContent = stage.volumeLabel;
+        if (costTh) costTh.textContent = stage.costLabel;
+        if (trackHint) trackHint.textContent = '标记建议状态后，7天复盘' + stage.costLabel + '变化';
     }
 
     function renderOverview(scored) {
@@ -351,8 +431,8 @@
                 '<td class="bs-td-grade"><span class="bs-grade-badge ' + s.grade.toLowerCase() + '">' + s.grade + '</span></td>' +
                 '<td>' + escapeHtml(s.name) + '</td>' +
                 '<td class="bs-td-num">' + formatMoney(s.spend) + '</td>' +
-                '<td class="bs-td-num">' + formatInt(s.orders) + '</td>' +
-                '<td class="bs-td-num">' + formatOrderCost(s.orderCost) + '</td>' +
+                '<td class="bs-td-num">' + formatInt(s.volume) + '</td>' +
+                '<td class="bs-td-num">' + formatOrderCost(s.metricCost) + '</td>' +
                 '<td class="bs-td-num"><span class="bs-score-bar"><span class="bs-score-bar-track"><span class="bs-score-bar-fill ' + s.grade.toLowerCase() + '" style="width:' + scorePct + '%"></span></span> ' + s.score.toFixed(1) + '</span></td>' +
                 '<td class="bs-td-num">' + formatPct(s.spendPct) + '</td>' +
                 '<td class="bs-td-action"><span class="bs-action-label ' + s.actionClass + '">' + s.action + '</span></td>';
@@ -379,13 +459,15 @@
             var fromItem = sug.fromItem;
             var gradeLabel = fromItem.grade === 'D' ? '低效' : '成本偏高';
             var cutLabel = fromItem.grade === 'D' ? '削减 60%' : '削减 25%';
+            var volumeLabel = fromItem.volumeLabel || getStageConfig(ACTIVE_STAGE).volumeLabel;
+            var metricCostLabel = fromItem.metricCostLabel || getStageConfig(ACTIVE_STAGE).costLabel;
 
             // 构建分配目标列表
             var toItemsHtml = sug.toItems.map(function (to) {
                 return '<div class="bs-realloc-to-item">' +
                     '<span class="bs-realloc-to-name">' + escapeHtml(to.name) + '</span>' +
                     '<span class="bs-realloc-to-amount">+' + formatMoney(to.addAmount) + '</span>' +
-                    '<span class="bs-realloc-to-meta">成交 ' + formatInt(to.orders) + ' 单 · 成本 ' + formatOrderCost(to.orderCost) + '</span>' +
+                    '<span class="bs-realloc-to-meta">' + escapeHtml(to.volumeLabel || volumeLabel) + ' ' + formatInt(to.volume) + ' · ' + escapeHtml(to.metricCostLabel || metricCostLabel) + ' ' + formatOrderCost(to.metricCost) + '</span>' +
                     '</div>';
             }).join('');
 
@@ -403,12 +485,12 @@
                             '<span class="bs-realloc-row-value">' + formatMoney(fromItem.spend) + '</span>' +
                         '</div>' +
                         '<div class="bs-realloc-row">' +
-                            '<span class="bs-realloc-row-label">成交笔数</span>' +
-                            '<span class="bs-realloc-row-value">' + formatInt(fromItem.orders) + ' 单</span>' +
+                            '<span class="bs-realloc-row-label">' + escapeHtml(volumeLabel) + '</span>' +
+                            '<span class="bs-realloc-row-value">' + formatInt(fromItem.volume) + '</span>' +
                         '</div>' +
                         '<div class="bs-realloc-row">' +
-                            '<span class="bs-realloc-row-label">订单成本</span>' +
-                            '<span class="bs-realloc-row-value">' + formatOrderCost(fromItem.orderCost) + '</span>' +
+                            '<span class="bs-realloc-row-label">' + escapeHtml(metricCostLabel) + '</span>' +
+                            '<span class="bs-realloc-row-value">' + formatOrderCost(fromItem.metricCost) + '</span>' +
                         '</div>' +
                         '<div class="bs-realloc-row">' +
                             '<span class="bs-realloc-row-label">建议削减</span>' +
@@ -465,7 +547,7 @@
             } else if (item.status === 'executed') {
                 effectText = '执行第 ' + daysSince + ' 天（满 7 天验证）';
             } else {
-                effectText = '执行前成本 ' + formatOrderCost(item.fromOrderCost);
+                effectText = '执行前' + escapeHtml(item.metricCostLabel || '成本') + ' ' + formatOrderCost(item.fromMetricCost);
             }
 
             var verifyBtnHtml = '';
@@ -503,7 +585,13 @@
         var result;
         try {
             result = await authHelpers.fetchFunctionJson('dashboard-data', {
-                query: { start_date: startDate, end_date: endDate, sections: 'crowd' },
+                query: {
+                    start_date: startDate,
+                    end_date: endDate,
+                    sections: 'crowd',
+                    force_raw_crowd: '1',
+                    crowd_plan_name_includes: '规则',
+                },
                 parseErrorMessage: '数据接口返回了无法解析的响应',
                 onUnauthorized: function () {
                     setStatus('error', '登录状态已失效，请重新登录');
@@ -557,6 +645,10 @@
                         spend: toNum(group.summary.cost || group.summary['花费']),
                         orders: toNum(group.summary.orders),
                         orderCost: toNum(group.summary.orderCost),
+                        cart: toNum(group.summary.cart),
+                        cartCost: toNum(group.summary.cartCost),
+                        preOrders: toNum(group.summary.preOrders),
+                        preOrderCost: toNum(group.summary.preOrderCost),
                         amount: toNum(group.summary.amount),
                     });
                 }
@@ -568,6 +660,10 @@
                             spend: toNum(sub.cost || sub['花费']),
                             orders: toNum(sub.orders),
                             orderCost: toNum(sub.orderCost),
+                            cart: toNum(sub.cart),
+                            cartCost: toNum(sub.cartCost),
+                            preOrders: toNum(sub.preOrders),
+                            preOrderCost: toNum(sub.preOrderCost),
                             amount: toNum(sub.amount),
                         });
                     });
@@ -591,6 +687,7 @@
     }
 
     function renderActiveTab() {
+        updateStageCopy();
         var scored = state.scoredCrowds;
         renderOverview(scored);
         renderScoreTable(scored);
@@ -666,9 +763,12 @@
                 statusText: '待执行',
                 adoptedAt: Date.now(),
                 adoptedDate: formatDateInput(new Date()),
-                fromOrderCost: fromItem.orderCost,
-                fromOrders: fromItem.orders,
-                targetOrderCost: ORDER_COST_TARGET,
+                stage: ACTIVE_STAGE,
+                metricCostLabel: fromItem.metricCostLabel,
+                volumeLabel: fromItem.volumeLabel,
+                fromMetricCost: fromItem.metricCost,
+                fromVolume: fromItem.volume,
+                targetCost: TARGET_COST,
                 startDate: state.startDate,
                 endDate: state.endDate,
             };
@@ -726,14 +826,16 @@
             var scored = state.scoredCrowds;
             if (scored.length === 0) return;
 
-            var header = '等级,人群,花费,成交笔数,订单成本,成本健康分,花费占比,ROI,建议动作\n';
+            var stage = getStageConfig(ACTIVE_STAGE);
+            var header = '阶段,等级,人群,花费,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,花费占比,ROI,建议动作\n';
             var rows = scored.map(function (s) {
                 return [
+                    stage.label,
                     s.grade,
                     '"' + String(s.name).replace(/"/g, '""') + '"',
                     s.spend.toFixed(2),
-                    s.orders.toFixed(0),
-                    s.orderCost.toFixed(2),
+                    s.volume.toFixed(0),
+                    s.metricCost.toFixed(2),
                     s.score.toFixed(1),
                     (s.spendPct * 100).toFixed(1) + '%',
                     s.roi.toFixed(4),
@@ -758,8 +860,10 @@
 
     function applyConfig(newConfig) {
         scoreConfig = newConfig;
-        ORDER_COST_TARGET = newConfig.orderCostTarget;
+        ACTIVE_STAGE = newConfig.analysisStage;
+        TARGET_COST = getTargetCost(ACTIVE_STAGE);
         saveConfig(newConfig);
+        updateStageCopy();
     }
 
     // 基于当前已加载数据重新计算(不重新请求API)
@@ -782,7 +886,8 @@
         var section = $('bs-config-section');
         var saveBtn = $('bs-config-save');
         var resetBtn = $('bs-config-reset');
-        var orderCostInput = $('cfg-order-cost-target');
+        var stageInput = $('cfg-analysis-stage');
+        var targetCostInput = $('cfg-target-cost');
         var minOrdersInput = $('cfg-min-orders');
         var aInput = $('cfg-grade-a');
         var bInput = $('cfg-grade-b');
@@ -794,7 +899,8 @@
         }
 
         // 填充当前配置
-        if (orderCostInput) orderCostInput.value = scoreConfig.orderCostTarget;
+        if (stageInput) stageInput.value = ACTIVE_STAGE;
+        updateStageCopy();
         if (minOrdersInput) minOrdersInput.value = scoreConfig.minOrdersForDecision;
         if (aInput) aInput.value = scoreConfig.gradeAThreshold;
         if (bInput) bInput.value = scoreConfig.gradeBThreshold;
@@ -808,19 +914,37 @@
             body.style.display = isExpanded ? '' : 'none';
         });
 
+        if (stageInput) {
+            stageInput.addEventListener('change', function () {
+                var nextStage = STAGE_CONFIG[stageInput.value] ? stageInput.value : DEFAULT_CONFIG.analysisStage;
+                var nextConfig = Object.assign({}, scoreConfig, {
+                    analysisStage: nextStage,
+                    targetCosts: Object.assign({}, scoreConfig.targetCosts),
+                });
+                applyConfig(nextConfig);
+                recomputeScores();
+                setStatus('success', '已切换到' + getStageConfig(nextStage).label + '，评分口径已更新');
+                setTimeout(hideStatus, 2500);
+            });
+        }
+
         // 保存配置并重新计算
         if (saveBtn) {
             saveBtn.addEventListener('click', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                var orderCostValue = parseFloat(orderCostInput.value);
+                var selectedStage = stageInput && STAGE_CONFIG[stageInput.value] ? stageInput.value : ACTIVE_STAGE;
+                var targetCostValue = parseFloat(targetCostInput.value);
                 var minOrdersValue = parseInt(minOrdersInput.value, 10);
                 var gradeAValue = parseInt(aInput.value, 10);
                 var gradeBValue = parseInt(bInput.value, 10);
                 var gradeCValue = parseInt(cInput.value, 10);
+                var nextTargetCosts = Object.assign({}, scoreConfig.targetCosts);
+                nextTargetCosts[selectedStage] = isFinite(targetCostValue) ? targetCostValue : getTargetCost(selectedStage);
                 var newConfig = {
-                    orderCostTarget: isFinite(orderCostValue) ? orderCostValue : 80,
+                    analysisStage: selectedStage,
+                    targetCosts: nextTargetCosts,
                     minOrdersForDecision: isFinite(minOrdersValue) ? minOrdersValue : 5,
                     gradeAThreshold: isFinite(gradeAValue) ? gradeAValue : 80,
                     gradeBThreshold: isFinite(gradeBValue) ? gradeBValue : 60,
@@ -836,8 +960,8 @@
                     setStatus('error', 'B级阈值必须大于C级阈值');
                     return;
                 }
-                if (newConfig.orderCostTarget <= 0) {
-                    setStatus('error', '目标订单成本必须大于 0');
+                if (newConfig.targetCosts[selectedStage] <= 0) {
+                    setStatus('error', getStageConfig(selectedStage).targetLabel + '必须大于 0');
                     return;
                 }
                 if (newConfig.minOrdersForDecision <= 0) {
@@ -866,7 +990,8 @@
 
                 applyConfig(Object.assign({}, DEFAULT_CONFIG));
 
-                if (orderCostInput) orderCostInput.value = DEFAULT_CONFIG.orderCostTarget;
+                if (stageInput) stageInput.value = DEFAULT_CONFIG.analysisStage;
+                if (targetCostInput) targetCostInput.value = DEFAULT_CONFIG.targetCosts[DEFAULT_CONFIG.analysisStage];
                 if (minOrdersInput) minOrdersInput.value = DEFAULT_CONFIG.minOrdersForDecision;
                 if (aInput) aInput.value = DEFAULT_CONFIG.gradeAThreshold;
                 if (bInput) bInput.value = DEFAULT_CONFIG.gradeBThreshold;

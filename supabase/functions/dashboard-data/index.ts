@@ -1,5 +1,6 @@
 import {
   getDashboardPayload as getSharedDashboardPayload,
+  type DashboardPayloadOptions,
   isValidDateString,
   type RequestedSections,
 } from '../_shared/dashboard-payload.ts';
@@ -96,6 +97,10 @@ Deno.serve(async (req: Request) => {
     const startDate = requestUrl.searchParams.get('start_date');
     const endDate = requestUrl.searchParams.get('end_date');
     const sections = parseRequestedSections(requestUrl.searchParams.get('sections'));
+    const payloadOptions: DashboardPayloadOptions = {
+      crowdPlanNameIncludes: requestUrl.searchParams.get('crowd_plan_name_includes'),
+      forceRawCrowd: requestUrl.searchParams.get('force_raw_crowd') === '1',
+    };
 
     if (!startDate || !endDate) {
       return new Response(JSON.stringify({ error: '缺少 start_date 或 end_date' }), {
@@ -118,7 +123,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const payload = await getSharedDashboardPayload(startDate, endDate, sections);
+    const payload = await getSharedDashboardPayload(startDate, endDate, sections, payloadOptions);
     return new Response(JSON.stringify({ success: true, ...payload }), {
       status: 200,
       headers: corsHeaders,
