@@ -96,15 +96,6 @@
     };
   }
 
-  function readFileAsDataUrl(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = () => reject(new Error('图片读取失败'));
-      reader.readAsDataURL(file);
-    });
-  }
-
   function resizeImageFile(file, options = {}) {
     const maxSide = options.maxSide || 1600;
     const quality = options.quality || 0.88;
