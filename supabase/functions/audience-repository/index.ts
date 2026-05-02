@@ -9,6 +9,7 @@ const MAX_METRICS = 20000;
 const MAX_PARSE_IMAGES = 10;
 const MINIMAX_API_KEY = Deno.env.get('MINIMAX_API_KEY') ?? '';
 const MINIMAX_MODEL = 'MiniMax-M2.7';
+const MINIMAX_MAX_TOKENS = 32768;
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get('Origin') ?? '';
@@ -131,6 +132,7 @@ function extractResponseText(result: Record<string, unknown>) {
 function parseJsonFromText(text: string) {
   const cleaned = text
     .trim()
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```$/i, '')
     .trim();
@@ -203,9 +205,11 @@ async function parseSingleImage(audienceId: number, image: Record<string, unknow
       '任务：从上传的中文截图中抽取所有可见的分类占比，输出 JSON。',
       '每张图片会在前一段文字里标明维度名称。请使用该维度名称作为 dimension。',
       '只抽取图片里真实出现的分类和百分比，不要推断、补全或编造。',
+      '必须抽取这张图片中所有可见分类，不要只返回第一条。',
       'share 必须是 0-1 的小数，例如 46.27% 输出 0.4627。',
       '如果某张图无法识别，跳过该图。',
-      '输出格式必须严格为：{"metrics":[{"dimension":"月均消费金额","category":"0-499元","share":0.0436,"share_text":"4.36%"}]}',
+      '输出只能是 JSON，不要输出解释、Markdown 或思考过程。',
+      '输出格式必须严格为：{"metrics":[{"dimension":"月均消费金额","category":"0-499元","share":0.0436,"share_text":"4.36%"},{"dimension":"月均消费金额","category":"500-999元","share":0.0628,"share_text":"6.28%"}]}',
     ].join('\n'),
   }];
   content.push({
@@ -226,7 +230,7 @@ async function parseSingleImage(audienceId: number, image: Record<string, unknow
     body: JSON.stringify({
       model: MINIMAX_MODEL,
       messages: [{ role: 'user', content }],
-      max_completion_tokens: 2048,
+      max_tokens: MINIMAX_MAX_TOKENS,
       temperature: 0.1,
     }),
   });
@@ -244,6 +248,9 @@ async function parseSingleImage(audienceId: number, image: Record<string, unknow
   }
 
   const outputText = extractResponseText(result);
+  if (!outputText) {
+    throw new Error('MiniMax 未返回可解析文本');
+  }
   const parsed = parseJsonFromText(outputText);
   return normalizeParsedMetrics(audienceId, parsed);
 }
