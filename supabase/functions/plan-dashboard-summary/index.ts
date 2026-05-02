@@ -74,7 +74,7 @@ async function fetchRowsByDateFilters(
 
   for (const chunk of chunkArray(normalizedDates, DATE_FILTERS_PER_REQUEST)) {
     let from = 0;
-    while (true) {
+    for (;;) {
       const { data, error } = await client
         .from(table)
         .select(select)
@@ -108,7 +108,7 @@ async function fetchRowsByDateRange(
   const pageSize = 1000;
   let from = 0;
   const rows: Record<string, unknown>[] = [];
-  while (true) {
+  for (;;) {
     const { data, error } = await client
       .from(table)
       .select(select)

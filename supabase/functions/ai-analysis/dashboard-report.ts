@@ -43,9 +43,9 @@ export function buildFullDataContext(payload: DashboardPayloadLike, rankedProduc
       `- 总花费：¥${fmtMoney(kpi.totalCost)}`,
       `- 总成交额：¥${fmtMoney(kpi.totalAmount)}`,
       `- 总订单：${fmtNum(kpi.totalOrders, 0)}`,
-      `- ROI：${fmtNum(kpi.avgRoi, 2)}　直接ROI：${fmtNum(kpi.avgDirectRoi, 2)}　去退ROI：${fmtNum(kpi.totalReturnRoi, 2)}`,
-      `- 退货率：${fmtPct(kpi.totalReturnRate)}　观看成本：¥${fmtNum(kpi.avgViewCost, 3)}　订单成本：¥${fmtNum(kpi.avgOrderCost, 2)}`,
-      `- 广告成交占比：${fmtPct(kpi.totalAdShare)}　千次展现成本：¥${fmtNum(kpi.avgCpm, 2)}`,
+      `- ROI：${fmtNum(kpi.avgRoi, 2)} / 直接ROI：${fmtNum(kpi.avgDirectRoi, 2)} / 去退ROI：${fmtNum(kpi.totalReturnRoi, 2)}`,
+      `- 退货率：${fmtPct(kpi.totalReturnRate)} / 观看成本：¥${fmtNum(kpi.avgViewCost, 3)} / 订单成本：¥${fmtNum(kpi.avgOrderCost, 2)}`,
+      `- 广告成交占比：${fmtPct(kpi.totalAdShare)} / 千次展现成本：¥${fmtNum(kpi.avgCpm, 2)}`,
     ].join('\n'));
   }
 
@@ -53,9 +53,9 @@ export function buildFullDataContext(payload: DashboardPayloadLike, rankedProduc
   if (kpi && (kpi.totalFinRevenue || kpi.finRevenue)) {
     sections.push([
       '## 财务数据',
-      `- 收入：¥${fmtMoney(kpi.totalFinRevenue ?? kpi.finRevenue)}　成本：¥${fmtMoney(kpi.finCost)}　毛利：¥${fmtMoney(kpi.finProfit)}　毛利率：${kpi.finMargin ?? '-'}`,
-      `- 保量佣金：¥${fmtMoney(kpi.finGuarantee)}　线下佣金：¥${fmtMoney(kpi.finOffline)}　机构佣金：¥${fmtMoney(kpi.finAgency)}`,
-      `- 直播间红包：¥${fmtMoney(kpi.finRedPacket)}　严选红包：¥${fmtMoney(kpi.finYanxuanRed)}`,
+      `- 收入：¥${fmtMoney(kpi.totalFinRevenue ?? kpi.finRevenue)} / 成本：¥${fmtMoney(kpi.finCost)} / 毛利：¥${fmtMoney(kpi.finProfit)} / 毛利率：${kpi.finMargin ?? '-'}`,
+      `- 保量佣金：¥${fmtMoney(kpi.finGuarantee)} / 线下佣金：¥${fmtMoney(kpi.finOffline)} / 机构佣金：¥${fmtMoney(kpi.finAgency)}`,
+      `- 直播间红包：¥${fmtMoney(kpi.finRedPacket)} / 严选红包：¥${fmtMoney(kpi.finYanxuanRed)}`,
     ].join('\n'));
   }
 
@@ -129,7 +129,7 @@ export function buildFullDataContext(payload: DashboardPayloadLike, rankedProduc
   if (kpi && (kpi.totalTaobaoOrders || kpi.taobaoOrders)) {
     sections.push([
       '## 淘宝直播参考',
-      `- 成交笔数：${fmtNum(kpi.totalTaobaoOrders ?? kpi.taobaoOrders, 0)}　成交金额：¥${fmtMoney(kpi.taobaoSales ?? kpi.totalTaobaoSales)}　退款金额：¥${fmtMoney(kpi.totalReturnAmount)}`,
+      `- 成交笔数：${fmtNum(kpi.totalTaobaoOrders ?? kpi.taobaoOrders, 0)} / 成交金额：¥${fmtMoney(kpi.taobaoSales ?? kpi.totalTaobaoSales)} / 退款金额：¥${fmtMoney(kpi.totalReturnAmount)}`,
     ].join('\n'));
   }
 

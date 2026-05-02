@@ -8,6 +8,11 @@ export interface ValidationResult {
   errors: string[];
 }
 
+function isDisallowedControlChar(char: string): boolean {
+  const code = char.charCodeAt(0);
+  return (code >= 0 && code <= 8) || code === 11 || code === 12 || (code >= 14 && code <= 31) || code === 127;
+}
+
 /** Prompt 输入验证 */
 export function validatePromptInput(input: string | null | undefined): ValidationResult {
   const errors: string[] = [];
@@ -22,7 +27,7 @@ export function validatePromptInput(input: string | null | undefined): Validatio
   }
 
   // 过滤控制字符（保留换行和制表符）
-  if (/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(input)) {
+  if ([...input].some(isDisallowedControlChar)) {
     errors.push('内容包含非法控制字符');
   }
 
@@ -39,7 +44,7 @@ export function validatePromptInput(input: string | null | undefined): Validatio
 
 /** Prompt 内容清理（去除控制字符） */
 export function sanitizePromptInput(input: string): string {
-  return input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+  return [...input].filter((char) => !isDisallowedControlChar(char)).join('').trim();
 }
 
 /** 日期格式验证 */

@@ -183,7 +183,7 @@ export function buildDynamicAnswer(
 
   // ============ 高级排序逻辑 ============
   
-  let sortedData = [...filteredData];
+  const sortedData = [...filteredData];
   const sortArray = Array.isArray(config.sort) ? config.sort : [];
   
   // 支持多字段排序（用于 weakProducts）

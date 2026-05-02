@@ -450,7 +450,7 @@ async function fetchSingleProductRows(startDate: string, endDate: string): Promi
 
   for (const { table } of getSingleProductAdTablesForDateRange(startDate, endDate)) {
     let offset = 0;
-    while (true) {
+    for (;;) {
       const url = new URL(`${SB_URL}/rest/v1/${table}`);
       url.searchParams.set('select', '日期,商品id,商品名称,img_url,花费,直接成交笔数,直接成交金额,该商品直接成交笔数,该商品直接成交金额,该商品加购数,该商品收藏数,观看人数');
       url.searchParams.append('日期', `gte.${startDate}`);
@@ -713,7 +713,7 @@ Deno.serve(async (req: Request) => {
       ? 'single'
       : requestedTemplateKey;
     const promptAdminToken = req.headers.get('x-prompt-admin-token') ?? promptAdminTokenFromBody ?? '';
-    const shouldPublish = Boolean(publish) && !Boolean(previewOnly);
+    const shouldPublish = Boolean(publish) && !previewOnly;
 
     // 限流：每分钟请求数限制
     const rateLimitKey = auth.type === 'prompt_admin'

@@ -67,7 +67,7 @@ function stripMarkdown(text: string): string {
     .replace(/\*([^*]+)\*/g, '$1')
     .replace(/#+\s*/g, '')
     .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
-    .replace(/^[\-\d.\s]+/, '')
+    .replace(/^[\d.\s-]+/, '')
     .replace(/\s+/g, ' ')
     .trim();
 }

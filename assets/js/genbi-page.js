@@ -30,14 +30,18 @@
                 var parsed = JSON.parse(raw);
                 if (Array.isArray(parsed) && parsed.length > 0) return parsed;
             }
-        } catch (e) {}
+        } catch (e) {
+            // Ignore invalid localStorage data and fall back to defaults.
+        }
         return DEFAULT_EXAMPLES.slice();
     }
 
     function saveExamples(list) {
         try {
             localStorage.setItem(EXAMPLE_LS_KEY, JSON.stringify(list));
-        } catch (e) {}
+        } catch (e) {
+            // Ignore storage failures so the page remains usable in restricted browsers.
+        }
     }
 
     function getReferenceLabel(sourceType) {

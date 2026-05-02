@@ -42,7 +42,7 @@ function sanitizeAiOutput(text: string): { answer: string; thinking: string } {
     : '';
 
   // 移除所有 think 标签和内容
-  let clean = raw
+  const clean = raw
     .replace(/<think>[\s\S]*?<\/think>/gi, '')
     .replace(/<\/?think>/gi, '')
     .replace(/```thinking[\s\S]*?```/gi, '')
