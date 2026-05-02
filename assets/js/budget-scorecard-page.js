@@ -3,15 +3,13 @@
  *
  * 核心流程:
  *  1. 调用 dashboard-data API 获取人群数据
- *  2. 基于订单成本计算成本健康分
- *  3. A/B/C/D 分级 + 再分配建议
- *  4. 建议追踪 (localStorage)
+ *  2. 按阶段基于加购成本/预售订单成本/订单成本计算成本健康分
+ *  3. A/B/C/D/N 分级 + 建议花费占比
  */
 (function (window) {
     'use strict';
 
     var authHelpers = window.authHelpers || {};
-    var STORAGE_KEY = 'bs_track_items';
     var CONFIG_KEY = 'bs_score_config';
     var STAGE_CONFIG = {
         warmup: {
@@ -107,6 +105,18 @@
         return (n * 100).toFixed(1) + '%';
     }
 
+    function formatDeltaPct(n) {
+        if (!isFinite(n)) return '--';
+        var pct = n * 100;
+        if (Math.abs(pct) < 0.05) return '持平';
+        return (pct > 0 ? '+' : '') + pct.toFixed(1) + 'pct';
+    }
+
+    function getDeltaClass(n) {
+        if (!isFinite(n) || Math.abs(n * 100) < 0.05) return 'neutral';
+        return n > 0 ? 'positive' : 'negative';
+    }
+
     function formatInt(n) {
         if (!isFinite(n)) return '--';
         return String(Math.round(n));
@@ -157,27 +167,7 @@
         endDate: '',
         crowdItems: [],
         scoredCrowds: [],
-        trackedItems: loadTrackedItems(),
     };
-
-    // ── 追踪数据持久化 (localStorage) ──
-
-    function loadTrackedItems() {
-        try {
-            var raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-            return [];
-        }
-    }
-
-    function saveTrackedItems() {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.trackedItems));
-        } catch (e) {
-            // ignore
-        }
-    }
 
     // ── 评分算法 ──
 
@@ -201,26 +191,56 @@
         return 'D';
     }
 
-    function getActionForGrade(grade) {
-        switch (grade) {
-            case 'A': return '加预算';
-            case 'B': return '维持';
-            case 'C': return '减预算';
-            case 'D': return '暂停';
-            case 'N': return '观察';
-            default: return '--';
+    function getSuggestedShareMultiplier(item) {
+        var minVolume = Math.max(scoreConfig.minOrdersForDecision, 1);
+        var confidence = Math.min(item.volume / minVolume, 1);
+
+        switch (item.grade) {
+            case 'A':
+                return (1.25 + Math.min(Math.max((item.score - scoreConfig.gradeAThreshold) / 100, 0), 0.25)) * (0.9 + confidence * 0.1);
+            case 'B':
+                return 1;
+            case 'C':
+                return 0.65;
+            case 'D':
+                return item.volume <= 0 ? 0.05 : 0.25;
+            case 'N':
+                return Math.min(0.75, 0.5 + confidence * 0.25);
+            default:
+                return 1;
         }
     }
 
-    function getActionClass(grade) {
-        switch (grade) {
-            case 'A': return 'increase';
-            case 'B': return 'maintain';
-            case 'C': return 'decrease';
-            case 'D': return 'pause';
-            case 'N': return 'observe';
-            default: return '';
-        }
+    function getActionForSuggestion(item) {
+        if (item.grade === 'D' && item.volume <= 0) return '暂停';
+        if (item.grade === 'N') return '观察';
+        if (item.adjustPct >= 0.02) return '提高占比';
+        if (item.adjustPct <= -0.02) return '降低占比';
+        return '维持';
+    }
+
+    function getActionClassForSuggestion(item) {
+        if (item.grade === 'D' && item.volume <= 0) return 'pause';
+        if (item.grade === 'N') return 'observe';
+        if (item.adjustPct >= 0.02) return 'increase';
+        if (item.adjustPct <= -0.02) return 'decrease';
+        return 'maintain';
+    }
+
+    function applySuggestedSpendShares(scored) {
+        var totalWeight = scored.reduce(function (sum, item) {
+            item.suggestedWeight = item.spendPct * getSuggestedShareMultiplier(item);
+            return sum + item.suggestedWeight;
+        }, 0);
+
+        scored.forEach(function (item) {
+            item.suggestedSpendPct = totalWeight > 0 ? item.suggestedWeight / totalWeight : item.spendPct;
+            item.adjustPct = item.suggestedSpendPct - item.spendPct;
+            item.action = getActionForSuggestion(item);
+            item.actionClass = getActionClassForSuggestion(item);
+        });
+
+        return scored;
     }
 
     function scoreItems(items, type) {
@@ -228,7 +248,7 @@
         if (totalSpend <= 0) return [];
         var stage = getStageConfig(ACTIVE_STAGE);
 
-        return items.map(function (item) {
+        var scored = items.map(function (item) {
             var roi = toNum(item.roi);
             var spend = toNum(item.spend);
             var volume = toNum(item[stage.volumeKey]);
@@ -255,72 +275,11 @@
                 spendPct: spend / totalSpend,
                 score: score,
                 grade: grade,
-                action: getActionForGrade(grade),
-                actionClass: getActionClass(grade),
+                action: '--',
+                actionClass: '',
             };
         }).sort(function (a, b) { return b.score - a.score; });
-    }
-
-    // ── 再分配建议生成 ──
-
-    function generateReallocations(scored) {
-        var donors = scored.filter(function (s) { return s.grade === 'C' || s.grade === 'D'; });
-        var receivers = scored.filter(function (s) {
-            return s.grade === 'A' && s.volume >= scoreConfig.minOrdersForDecision;
-        });
-        if (donors.length === 0 || receivers.length === 0) return [];
-
-        var totalReallocatable = donors.reduce(function (s, d) {
-            var cutPct = d.grade === 'D' ? 0.6 : 0.25;
-            return s + d.spend * cutPct;
-        }, 0);
-
-        if (totalReallocatable <= 0) return [];
-
-        var totalReceiverVolume = receivers.reduce(function (s, r) { return s + r.volume; }, 0);
-        var totalReceiverSpend = receivers.reduce(function (s, r) { return s + r.spend; }, 0);
-        if (totalReceiverVolume <= 0 && totalReceiverSpend <= 0) return [];
-
-        // 按来源分组:每个C/D级人群是一个建议项。
-        var suggestions = [];
-        donors.forEach(function (donor) {
-            var cutPct = donor.grade === 'D' ? 0.6 : 0.25;
-            var cutAmount = donor.spend * cutPct;
-
-            // 优先按接收方当前阶段有效量占比分配；无有效量时才退回花费占比。
-            var toItems = receivers.map(function (receiver) {
-                var share = totalReceiverVolume > 0 ? receiver.volume / totalReceiverVolume : receiver.spend / totalReceiverSpend;
-                return {
-                    name: receiver.name,
-                    grade: receiver.grade,
-                    roi: receiver.roi,
-                    volume: receiver.volume,
-                    metricCost: receiver.metricCost,
-                    metricCostLabel: receiver.metricCostLabel,
-                    volumeLabel: receiver.volumeLabel,
-                    addAmount: cutAmount * share,
-                };
-            });
-
-            suggestions.push({
-                fromItem: {
-                    name: donor.name,
-                    grade: donor.grade,
-                    roi: donor.roi,
-                    spend: donor.spend,
-                    volume: donor.volume,
-                    metricCost: donor.metricCost,
-                    metricCostLabel: donor.metricCostLabel,
-                    volumeLabel: donor.volumeLabel,
-                    cutPct: cutPct,
-                    cutAmount: cutAmount,
-                },
-                toItems: toItems,
-                totalCutAmount: cutAmount,
-            });
-        });
-
-        return suggestions;
+        return applySuggestedSpendShares(scored);
     }
 
     // ── UI 渲染 ──
@@ -344,7 +303,7 @@
     }
 
     function showContent() {
-        ['bs-overview', 'bs-detail-section', 'bs-realloc-section', 'bs-track-section'].forEach(function (id) {
+        ['bs-overview', 'bs-detail-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = '';
         });
@@ -353,7 +312,7 @@
     }
 
     function hideContent() {
-        ['bs-overview', 'bs-detail-section', 'bs-realloc-section'].forEach(function (id) {
+        ['bs-overview', 'bs-detail-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = 'none';
         });
@@ -366,18 +325,20 @@
         var targetLabel = $('cfg-target-label');
         var targetHint = $('cfg-target-hint');
         var targetInput = $('cfg-target-cost');
+        var minVolumeLabel = $('cfg-min-volume-label');
+        var minVolumeHint = $('cfg-min-volume-hint');
         var overviewTitle = $('bs-overview-title');
         var volumeTh = $('bs-volume-th');
         var costTh = $('bs-cost-th');
-        var trackHint = $('bs-track-hint');
 
         if (targetLabel) targetLabel.textContent = stage.targetLabel;
         if (targetHint) targetHint.textContent = stage.targetHint;
         if (targetInput) targetInput.value = getTargetCost(ACTIVE_STAGE);
+        if (minVolumeLabel) minVolumeLabel.textContent = '最低样本量（' + stage.volumeLabel + '）';
+        if (minVolumeHint) minVolumeHint.textContent = '低于该样本量标记为观察';
         if (overviewTitle) overviewTitle.textContent = stage.label + '人群成本健康总览';
         if (volumeTh) volumeTh.textContent = stage.volumeLabel;
         if (costTh) costTh.textContent = stage.costLabel;
-        if (trackHint) trackHint.textContent = '标记建议状态后，7天复盘' + stage.costLabel + '变化';
     }
 
     function renderOverview(scored) {
@@ -420,7 +381,7 @@
         tbody.innerHTML = '';
 
         if (scored.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
             return;
         }
 
@@ -431,151 +392,14 @@
                 '<td class="bs-td-grade"><span class="bs-grade-badge ' + s.grade.toLowerCase() + '">' + s.grade + '</span></td>' +
                 '<td>' + escapeHtml(s.name) + '</td>' +
                 '<td class="bs-td-num">' + formatMoney(s.spend) + '</td>' +
+                '<td class="bs-td-num">' + formatPct(s.spendPct) + '</td>' +
+                '<td class="bs-td-num bs-td-suggested-share">' + formatPct(s.suggestedSpendPct) + '</td>' +
+                '<td class="bs-td-num bs-td-delta ' + getDeltaClass(s.adjustPct) + '">' + formatDeltaPct(s.adjustPct) + '</td>' +
                 '<td class="bs-td-num">' + formatInt(s.volume) + '</td>' +
                 '<td class="bs-td-num">' + formatOrderCost(s.metricCost) + '</td>' +
                 '<td class="bs-td-num"><span class="bs-score-bar"><span class="bs-score-bar-track"><span class="bs-score-bar-fill ' + s.grade.toLowerCase() + '" style="width:' + scorePct + '%"></span></span> ' + s.score.toFixed(1) + '</span></td>' +
-                '<td class="bs-td-num">' + formatPct(s.spendPct) + '</td>' +
                 '<td class="bs-td-action"><span class="bs-action-label ' + s.actionClass + '">' + s.action + '</span></td>';
             tbody.appendChild(tr);
-        });
-    }
-
-    function renderReallocations(suggestions) {
-        var list = $('bs-realloc-list');
-        var summary = $('bs-realloc-summary');
-        if (!list) return;
-        list.innerHTML = '';
-
-        if (suggestions.length === 0) {
-            list.innerHTML = '<div class="bs-track-empty">当前评分数据无需再分配，或没有成交样本足够的 A 级人群。</div>';
-            if (summary) summary.textContent = '';
-            return;
-        }
-
-        var totalRealloc = suggestions.reduce(function (sum, s) { return sum + s.totalCutAmount; }, 0);
-        if (summary) summary.textContent = '共 ' + suggestions.length + ' 个高成本人群可优化，总计可再分配 ' + formatMoney(totalRealloc);
-
-        suggestions.forEach(function (sug, idx) {
-            var fromItem = sug.fromItem;
-            var gradeLabel = fromItem.grade === 'D' ? '低效' : '成本偏高';
-            var cutLabel = fromItem.grade === 'D' ? '削减 60%' : '削减 25%';
-            var volumeLabel = fromItem.volumeLabel || getStageConfig(ACTIVE_STAGE).volumeLabel;
-            var metricCostLabel = fromItem.metricCostLabel || getStageConfig(ACTIVE_STAGE).costLabel;
-
-            // 构建分配目标列表
-            var toItemsHtml = sug.toItems.map(function (to) {
-                return '<div class="bs-realloc-to-item">' +
-                    '<span class="bs-realloc-to-name">' + escapeHtml(to.name) + '</span>' +
-                    '<span class="bs-realloc-to-amount">+' + formatMoney(to.addAmount) + '</span>' +
-                    '<span class="bs-realloc-to-meta">' + escapeHtml(to.volumeLabel || volumeLabel) + ' ' + formatInt(to.volume) + ' · ' + escapeHtml(to.metricCostLabel || metricCostLabel) + ' ' + formatOrderCost(to.metricCost) + '</span>' +
-                    '</div>';
-            }).join('');
-
-            var card = document.createElement('div');
-            card.className = 'bs-realloc-card';
-            card.innerHTML =
-                '<div class="bs-realloc-from">' +
-                    '<div class="bs-realloc-from-header">' +
-                        '<span class="bs-realloc-grade-badge ' + fromItem.grade.toLowerCase() + '">' + fromItem.grade + ' ' + gradeLabel + '</span>' +
-                        '<div class="bs-realloc-name">' + escapeHtml(fromItem.name) + '</div>' +
-                    '</div>' +
-                    '<div class="bs-realloc-from-body">' +
-                        '<div class="bs-realloc-row">' +
-                            '<span class="bs-realloc-row-label">当前花费</span>' +
-                            '<span class="bs-realloc-row-value">' + formatMoney(fromItem.spend) + '</span>' +
-                        '</div>' +
-                        '<div class="bs-realloc-row">' +
-                            '<span class="bs-realloc-row-label">' + escapeHtml(volumeLabel) + '</span>' +
-                            '<span class="bs-realloc-row-value">' + formatInt(fromItem.volume) + '</span>' +
-                        '</div>' +
-                        '<div class="bs-realloc-row">' +
-                            '<span class="bs-realloc-row-label">' + escapeHtml(metricCostLabel) + '</span>' +
-                            '<span class="bs-realloc-row-value">' + formatOrderCost(fromItem.metricCost) + '</span>' +
-                        '</div>' +
-                        '<div class="bs-realloc-row">' +
-                            '<span class="bs-realloc-row-label">建议削减</span>' +
-                            '<span class="bs-realloc-row-value cut">-' + formatMoney(fromItem.cutAmount) + ' (' + cutLabel + ')</span>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="bs-realloc-arrow">&#10132;</div>' +
-                '<div class="bs-realloc-to">' +
-                    '<div class="bs-realloc-to-header">分配至 A 级人群</div>' +
-                    '<div class="bs-realloc-to-list">' + toItemsHtml + '</div>' +
-                '</div>' +
-                '<div class="bs-realloc-actions">' +
-                    '<button class="bs-adopt-btn" data-idx="' + idx + '" type="button">采纳</button>' +
-                '</div>';
-            list.appendChild(card);
-        });
-    }
-
-    function renderTracking() {
-        var list = $('bs-track-list');
-        var empty = $('bs-track-empty');
-        if (!list) return;
-
-        var items = state.trackedItems;
-        if (items.length === 0) {
-            if (empty) empty.style.display = '';
-            list.innerHTML = '';
-            return;
-        }
-        if (empty) empty.style.display = 'none';
-
-        list.innerHTML = '';
-
-        items.forEach(function (item, idx) {
-            var card = document.createElement('div');
-            card.className = 'bs-track-card';
-
-            var daysSince = Math.floor((Date.now() - item.adoptedAt) / 86400000);
-            var needsVerify = item.status === 'executed' && daysSince >= 7;
-            var effectText = '';
-            var effectClass = 'neutral';
-
-            if (item.status === 'verified') {
-                effectText = '已确认成本改善';
-                effectClass = 'positive';
-            } else if (item.status === 'rejected') {
-                effectText = '已确认无效';
-                effectClass = 'negative';
-            } else if (item.status === 'verifying') {
-                effectText = '等待复盘订单成本';
-            } else if (needsVerify) {
-                effectText = '已满 ' + daysSince + ' 天，请验证效果';
-            } else if (item.status === 'executed') {
-                effectText = '执行第 ' + daysSince + ' 天（满 7 天验证）';
-            } else {
-                effectText = '执行前' + escapeHtml(item.metricCostLabel || '成本') + ' ' + formatOrderCost(item.fromMetricCost);
-            }
-
-            var verifyBtnHtml = '';
-            if (item.status === 'executed' && needsVerify) {
-                verifyBtnHtml = '<button class="bs-track-btn" data-track-idx="' + idx + '" data-action="verify">验证效果</button>';
-            } else if (item.status === 'verifying') {
-                verifyBtnHtml =
-                    '<button class="bs-track-btn" data-track-idx="' + idx + '" data-action="confirm">确认有效</button>' +
-                    '<button class="bs-track-btn" data-track-idx="' + idx + '" data-action="reject">确认无效</button>';
-            }
-
-            var executeBtnHtml = '';
-            if (item.status === 'pending') {
-                executeBtnHtml = '<button class="bs-track-btn" data-track-idx="' + idx + '" data-action="execute">标记已执行</button>';
-            }
-
-            card.innerHTML =
-                '<div class="bs-track-status ' + item.status + '"></div>' +
-                '<div class="bs-track-info">' +
-                    '<div class="bs-track-title">' + escapeHtml(item.title) + '</div>' +
-                    '<div class="bs-track-meta">采纳于 ' + escapeHtml(item.adoptedDate) + ' · ' + escapeHtml(item.statusText) + '</div>' +
-                '</div>' +
-                '<div class="bs-track-effect ' + effectClass + '">' + effectText + '</div>' +
-                '<div class="bs-track-actions">' +
-                    executeBtnHtml +
-                    verifyBtnHtml +
-                '</div>';
-            list.appendChild(card);
         });
     }
 
@@ -691,8 +515,6 @@
         var scored = state.scoredCrowds;
         renderOverview(scored);
         renderScoreTable(scored);
-        renderReallocations(generateReallocations(scored));
-        renderTracking();
     }
 
     // ── 事件绑定 ──
@@ -740,85 +562,6 @@
         });
     }
 
-    function initAdoptButtons() {
-        document.addEventListener('click', function (e) {
-            var adoptBtn = e.target.closest('.bs-adopt-btn');
-            if (!adoptBtn || adoptBtn.classList.contains('adopted')) return;
-
-            var idx = parseInt(adoptBtn.dataset.idx, 10);
-            var scored = state.scoredCrowds;
-            var suggestions = generateReallocations(scored);
-            var sug = suggestions[idx];
-            if (!sug) return;
-
-            var fromItem = sug.fromItem;
-            var toNames = sug.toItems.map(function (t) { return t.name; }).join('、');
-            var totalAdd = sug.toItems.reduce(function (sum, t) { return sum + t.addAmount; }, 0);
-
-            var trackItem = {
-                id: 'rec-' + Date.now(),
-                title: fromItem.name + ' → ' + toNames,
-                amount: formatMoney(totalAdd),
-                status: 'pending',
-                statusText: '待执行',
-                adoptedAt: Date.now(),
-                adoptedDate: formatDateInput(new Date()),
-                stage: ACTIVE_STAGE,
-                metricCostLabel: fromItem.metricCostLabel,
-                volumeLabel: fromItem.volumeLabel,
-                fromMetricCost: fromItem.metricCost,
-                fromVolume: fromItem.volume,
-                targetCost: TARGET_COST,
-                startDate: state.startDate,
-                endDate: state.endDate,
-            };
-
-            state.trackedItems.unshift(trackItem);
-            saveTrackedItems();
-            adoptBtn.textContent = '已采纳';
-            adoptBtn.classList.add('adopted');
-            renderTracking();
-
-            var trackSection = $('bs-track-section');
-            if (trackSection) trackSection.style.display = '';
-        });
-    }
-
-    function initTrackButtons() {
-        document.addEventListener('click', function (e) {
-            var trackBtn = e.target.closest('.bs-track-btn');
-            if (!trackBtn) return;
-
-            var idx = parseInt(trackBtn.dataset.trackIdx, 10);
-            var action = trackBtn.dataset.action;
-            if (!state.trackedItems[idx]) return;
-
-            var item = state.trackedItems[idx];
-
-            switch (action) {
-                case 'execute':
-                    item.status = 'executed';
-                    item.statusText = '已执行，7天后验证';
-                    break;
-                case 'verify':
-                    item.status = 'verifying';
-                    item.statusText = '验证中，请确认效果';
-                    break;
-                case 'confirm':
-                    item.status = 'verified';
-                    item.statusText = '已验证有效';
-                    break;
-                case 'reject':
-                    item.status = 'rejected';
-                    item.statusText = '已验证无效';
-                    break;
-            }
-
-            saveTrackedItems();
-            renderTracking();
-        });
-    }
-
     function initExport() {
         var btn = $('bs-export-btn');
         if (!btn) return;
@@ -827,17 +570,19 @@
             if (scored.length === 0) return;
 
             var stage = getStageConfig(ACTIVE_STAGE);
-            var header = '阶段,等级,人群,花费,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,花费占比,ROI,建议动作\n';
+            var header = '阶段,等级,人群,花费,当前花费占比,建议花费占比,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,ROI,建议动作\n';
             var rows = scored.map(function (s) {
                 return [
                     stage.label,
                     s.grade,
                     '"' + String(s.name).replace(/"/g, '""') + '"',
                     s.spend.toFixed(2),
+                    (s.spendPct * 100).toFixed(1) + '%',
+                    (s.suggestedSpendPct * 100).toFixed(1) + '%',
+                    formatDeltaPct(s.adjustPct),
                     s.volume.toFixed(0),
                     s.metricCost.toFixed(2),
                     s.score.toFixed(1),
-                    (s.spendPct * 100).toFixed(1) + '%',
                     s.roi.toFixed(4),
                     s.action,
                 ].join(',');
@@ -965,7 +710,7 @@
                     return;
                 }
                 if (newConfig.minOrdersForDecision <= 0) {
-                    setStatus('error', '最低成交样本必须大于 0');
+                    setStatus('error', '最低样本量必须大于 0');
                     return;
                 }
 
@@ -1014,15 +759,7 @@
         initConfigPanel();
         initDatePresets();
         initLoadButton();
-        initAdoptButtons();
-        initTrackButtons();
         initExport();
-
-        if (state.trackedItems.length > 0) {
-            var trackSection = $('bs-track-section');
-            if (trackSection) trackSection.style.display = '';
-            renderTracking();
-        }
     });
 
 })(window);

@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>人群预算评分卡 - 交个朋友·广告智投工作台</title>
-    <meta name="description" content="基于订单成本的人群预算评分与再分配建议">
+    <meta name="description" content="基于阶段成本的人群预算占比评分建议">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="assets/css/budget-scorecard.css?v=202605021200">
@@ -95,9 +95,9 @@
                         <span class="bs-config-hint" id="cfg-target-hint">期望每成交一单的花费（元）</span>
                     </div>
                     <div class="bs-config-item">
-                        <label class="bs-config-label">最低成交样本</label>
+                        <label class="bs-config-label" id="cfg-min-volume-label">最低样本量（成交笔数）</label>
                         <input type="number" id="cfg-min-orders" class="bs-config-input" step="1" min="1" max="1000" value="5">
-                        <span class="bs-config-hint">低于该成交数标记为观察</span>
+                        <span class="bs-config-hint" id="cfg-min-volume-hint">低于该样本量标记为观察</span>
                     </div>
                     <div class="bs-config-item">
                         <label class="bs-config-label">A 级阈值 (优质)</label>
@@ -183,10 +183,12 @@
                             <th class="bs-th-grade">等级</th>
                             <th class="bs-th-name">人群</th>
                             <th class="bs-th-num">花费</th>
+                            <th class="bs-th-num">当前花费占比</th>
+                            <th class="bs-th-num">建议花费占比</th>
+                            <th class="bs-th-num">调整幅度</th>
                             <th class="bs-th-num" id="bs-volume-th">成交笔数</th>
                             <th class="bs-th-num" id="bs-cost-th">订单成本</th>
                             <th class="bs-th-num">成本健康分</th>
-                            <th class="bs-th-num">花费占比</th>
                             <th class="bs-th-action">建议动作</th>
                         </tr>
                     </thead>
@@ -195,32 +197,11 @@
             </div>
         </section>
 
-        <!-- 再分配建议 -->
-        <section class="bs-realloc-section" id="bs-realloc-section" style="display:none;">
-            <div class="bs-detail-header">
-                <h2 class="bs-section-title">再分配建议</h2>
-                <span class="bs-realloc-summary" id="bs-realloc-summary"></span>
-            </div>
-            <div id="bs-realloc-list" class="bs-realloc-list"></div>
-        </section>
-
-        <!-- 执行追踪 -->
-        <section class="bs-track-section" id="bs-track-section" style="display:none;">
-            <div class="bs-detail-header">
-                <h2 class="bs-section-title">执行追踪</h2>
-                <span class="bs-track-hint" id="bs-track-hint">标记建议状态后，7天复盘订单成本变化</span>
-            </div>
-            <div id="bs-track-list" class="bs-track-list"></div>
-            <div id="bs-track-empty" class="bs-track-empty" style="display:none;">
-                <p>暂无执行中的建议。采纳再分配建议后，可在此追踪效果。</p>
-            </div>
-        </section>
-
         <!-- 空状态 -->
         <section class="bs-empty" id="bs-empty">
             <div class="bs-empty-icon">📊</div>
             <h2 class="bs-empty-title">选择日期范围，计算人群预算评分</h2>
-            <p class="bs-empty-desc">评分卡按阶段切换加购成本、预售订单成本、订单成本，只分析直播间规则计划的人群</p>
+            <p class="bs-empty-desc">评分卡按阶段切换加购成本、预售订单成本、订单成本，并输出建议花费占比</p>
         </section>
     </main>
 
