@@ -172,6 +172,21 @@ async function handleParseImages(body: Record<string, unknown>, headers: Record<
   if (!images.length) return json({ error: '请至少上传一张图片' }, 400, headers);
   if (images.length > MAX_PARSE_IMAGES) return json({ error: `单次最多解析 ${MAX_PARSE_IMAGES} 张图片` }, 400, headers);
 
+  const metrics: NonNullable<ReturnType<typeof normalizeMetric>>[] = [];
+  for (const image of images) {
+    const parsedMetrics = await parseSingleImage(audienceId, image);
+    metrics.push(...parsedMetrics);
+  }
+  return json({ success: true, metrics, raw_count: metrics.length }, 200, headers);
+}
+
+async function parseSingleImage(audienceId: number, image: Record<string, unknown>) {
+  const dimension = String(image.dimension || '').trim();
+  const dataUrl = String(image.data_url || '').trim();
+  if (!dimension || !dataUrl.startsWith('data:image/')) {
+    return [];
+  }
+
   const content: Record<string, unknown>[] = [{
     type: 'text',
     text: [
@@ -184,24 +199,14 @@ async function handleParseImages(body: Record<string, unknown>, headers: Record<
       '输出格式必须严格为：{"metrics":[{"dimension":"月均消费金额","category":"0-499元","share":0.0436,"share_text":"4.36%"}]}',
     ].join('\n'),
   }];
-
-  images.forEach((image, index) => {
-    const dimension = String(image.dimension || '').trim();
-    const dataUrl = String(image.data_url || '').trim();
-    if (!dimension || !dataUrl.startsWith('data:image/')) {
-      return;
-    }
-    content.push({
-      type: 'text',
-      text: `图片 ${index + 1} 的维度名称：${dimension}`,
-    });
-    content.push({
-      type: 'image_url',
-      image_url: { url: dataUrl },
-    });
+  content.push({
+    type: 'text',
+    text: `图片维度名称：${dimension}`,
   });
-
-  if (content.length <= 1) return json({ error: '没有可解析的图片 data URL' }, 400, headers);
+  content.push({
+    type: 'image_url',
+    image_url: { url: dataUrl },
+  });
 
   const response = await fetch('https://api.minimax.chat/v1/chat/completions', {
     method: 'POST',
@@ -231,8 +236,7 @@ async function handleParseImages(body: Record<string, unknown>, headers: Record<
 
   const outputText = extractResponseText(result);
   const parsed = parseJsonFromText(outputText);
-  const metrics = normalizeParsedMetrics(audienceId, parsed);
-  return json({ success: true, metrics, raw_count: metrics.length }, 200, headers);
+  return normalizeParsedMetrics(audienceId, parsed);
 }
 
 async function handleGet(req: Request, client: ReturnType<typeof createClient>, headers: Record<string, string>) {

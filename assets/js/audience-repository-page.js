@@ -278,9 +278,14 @@
         setStatus('请至少上传一张维度截图。', 'error');
         return;
       }
-      setStatus('AI 正在解析图片...', 'warn');
-      const result = await api.parseImages({ audience_id: audience.audience_id, images });
-      const metrics = normalizeParsedMetrics(audience.audience_id, result.metrics || []);
+      const parsedItems = [];
+      for (let index = 0; index < images.length; index += 1) {
+        const image = images[index];
+        setStatus(`AI 正在解析图片 ${index + 1}/${images.length}：${image.dimension}`, 'warn');
+        const result = await api.parseImages({ audience_id: audience.audience_id, images: [image] });
+        parsedItems.push(...(result.metrics || []));
+      }
+      const metrics = normalizeParsedMetrics(audience.audience_id, parsedItems);
       audience.image_formula_map = images.reduce((acc, image) => {
         acc[image.dimension] = { image_file: image.file_name, source: 'web_upload' };
         return acc;
