@@ -105,6 +105,34 @@
     });
   }
 
+  function resizeImageFile(file, options = {}) {
+    const maxSide = options.maxSide || 1600;
+    const quality = options.quality || 0.88;
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('图片读取失败'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('图片预览加载失败'));
+        img.onload = () => {
+          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const width = Math.max(1, Math.round(img.width * scale));
+          const height = Math.max(1, Math.round(img.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = String(reader.result || '');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function collectImageUploads() {
     const uploads = [];
     for (const dimension of DIMENSIONS) {
@@ -112,12 +140,11 @@
       const file = input?.files?.[0] || null;
       if (!file) continue;
       if (!/^image\//.test(file.type)) throw new Error(`${dimension} 上传的不是图片文件`);
-      if (file.size > 4 * 1024 * 1024) throw new Error(`${dimension} 图片超过 4MB，请压缩后再上传`);
       uploads.push({
         dimension,
         file_name: file.name,
-        mime_type: file.type,
-        data_url: await readFileAsDataUrl(file),
+        mime_type: 'image/jpeg',
+        data_url: await resizeImageFile(file),
       });
     }
     return uploads;
@@ -279,11 +306,17 @@
         return;
       }
       const parsedItems = [];
+      const failedImages = [];
       for (let index = 0; index < images.length; index += 1) {
         const image = images[index];
         setStatus(`AI 正在解析图片 ${index + 1}/${images.length}：${image.dimension}`, 'warn');
-        const result = await api.parseImages({ audience_id: audience.audience_id, images: [image] });
-        parsedItems.push(...(result.metrics || []));
+        try {
+          const result = await api.parseImages({ audience_id: audience.audience_id, images: [image] });
+          parsedItems.push(...(result.metrics || []));
+          (result.parse_errors || []).forEach((item) => failedImages.push(item.dimension || image.dimension));
+        } catch (error) {
+          failedImages.push(image.dimension);
+        }
       }
       const metrics = normalizeParsedMetrics(audience.audience_id, parsedItems);
       audience.image_formula_map = images.reduce((acc, image) => {
@@ -293,7 +326,8 @@
       audience.metric_summary = buildMetricSummary(metrics);
       state.draft = { audience, metrics };
       renderDraftPreview();
-      setStatus(`已解析 ${metrics.length} 条维度占比，确认无误后可写入 Supabase。`, metrics.length ? 'success' : 'warn');
+      const failedText = failedImages.length ? `；未解析成功：${Array.from(new Set(failedImages)).join('、')}` : '';
+      setStatus(`已解析 ${metrics.length} 条维度占比${failedText}。`, metrics.length ? (failedImages.length ? 'warn' : 'success') : 'error');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'AI 解析失败', 'error');
     }

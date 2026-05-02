@@ -173,11 +173,20 @@ async function handleParseImages(body: Record<string, unknown>, headers: Record<
   if (images.length > MAX_PARSE_IMAGES) return json({ error: `单次最多解析 ${MAX_PARSE_IMAGES} 张图片` }, 400, headers);
 
   const metrics: NonNullable<ReturnType<typeof normalizeMetric>>[] = [];
+  const parseErrors: { dimension: string; message: string }[] = [];
   for (const image of images) {
-    const parsedMetrics = await parseSingleImage(audienceId, image);
-    metrics.push(...parsedMetrics);
+    const dimension = String(image.dimension || '').trim();
+    try {
+      const parsedMetrics = await parseSingleImage(audienceId, image);
+      metrics.push(...parsedMetrics);
+    } catch (error) {
+      parseErrors.push({
+        dimension: dimension || '未知维度',
+        message: error instanceof Error ? error.message : String(error || '解析失败'),
+      });
+    }
   }
-  return json({ success: true, metrics, raw_count: metrics.length }, 200, headers);
+  return json({ success: true, metrics, parse_errors: parseErrors, raw_count: metrics.length }, 200, headers);
 }
 
 async function parseSingleImage(audienceId: number, image: Record<string, unknown>) {
