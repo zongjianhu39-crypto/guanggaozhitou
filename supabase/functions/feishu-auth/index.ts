@@ -45,6 +45,15 @@ function resolveUserIdentity(userTokenData: Record<string, unknown>, userInfoDat
   return { id: '', type: 'missing' };
 }
 
+function safeErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error || '');
+  const cleaned = message
+    .replace(/app_secret[=:]\s*[^,\s}]+/gi, 'app_secret=***')
+    .replace(/access_token[=:]\s*[^,\s}]+/gi, 'access_token=***')
+    .trim();
+  return cleaned || '飞书登录失败，请稍后重试';
+}
+
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
 
 function getCorsHeaders(req: Request) {
@@ -92,7 +101,7 @@ Deno.serve(async (req) => {
     const tokenData = await tokenRes.json();
 
     if (tokenData.code !== 0) {
-      throw new Error(tokenData.msg || '获取 app_access_token 失败');
+      throw new Error(`获取 app_access_token 失败：${tokenData.msg || tokenData.code || '未知错误'}`);
     }
 
     const appAccessToken = tokenData.app_access_token;
@@ -112,7 +121,7 @@ Deno.serve(async (req) => {
     const userData = await userRes.json();
 
     if (userData.code !== 0) {
-      throw new Error(userData.msg || '获取 user_access_token 失败');
+      throw new Error(`获取 user_access_token 失败：${userData.msg || userData.code || '未知错误'}`);
     }
 
     const tokenPayload = userData.data || {};
@@ -127,7 +136,7 @@ Deno.serve(async (req) => {
     const infoData = await infoRes.json();
 
     if (infoData.code !== 0) {
-      throw new Error(infoData.msg || '获取用户信息失败');
+      throw new Error(`获取用户信息失败：${infoData.msg || infoData.code || '未知错误'}`);
     }
 
     const infoPayload = infoData.data || {};
@@ -176,9 +185,10 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[feishu-auth] error:', error.message || error);
+    const safeMessage = safeErrorMessage(error);
+    console.error('[feishu-auth] error:', safeMessage);
     return new Response(
-      JSON.stringify({ error: '飞书登录失败，请稍后重试' }),
+      JSON.stringify({ error: safeMessage }),
       { status: 500, headers }
     );
   }
