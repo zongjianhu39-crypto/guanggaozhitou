@@ -4,7 +4,7 @@
  * 详细错误自动打到 Supabase 日志
  */
 
-export type ErrorContext = 'ai-analysis' | 'ai-prompt-admin' | 'genbi-rule-admin' | 'dashboard-data' | 'ai-reports' | 'genbi-query' | 'save-insight-report' | 'plan-dashboard-summary' | 'feishu-auth';
+export type ErrorContext = 'ai-analysis' | 'ai-prompt-admin' | 'genbi-rule-admin' | 'dashboard-data' | 'ai-reports' | 'genbi-query' | 'save-insight-report' | 'plan-dashboard-summary' | 'feishu-auth' | 'audience-repository';
 
 const USER_FRIENDLY_MESSAGES: Record<string, string> = {
   'ai-analysis': 'AI 分析失败，请稍后重试',
@@ -16,6 +16,7 @@ const USER_FRIENDLY_MESSAGES: Record<string, string> = {
   'save-insight-report': '保存洞察报告失败，请稍后重试',
   'plan-dashboard-summary': '计划看板查询失败，请刷新页面后重试',
   'feishu-auth': '飞书认证失败，请稍后重试',
+  'audience-repository': '人群仓库请求失败，请稍后重试',
 };
 
 export function createErrorResponse(error: unknown, context: ErrorContext): Response {
