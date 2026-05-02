@@ -256,8 +256,9 @@
             var score = computeCostHealthScore(metricCost, TARGET_COST);
             var grade = getGrade(score, volume, spend);
             return {
-                id: type + ':' + item.name,
+                id: type + ':' + (item.planName || '') + ':' + item.name,
                 name: item.name,
+                planName: item.planName || '未标注计划',
                 type: type,
                 roi: roi,
                 spend: spend,
@@ -381,7 +382,7 @@
         tbody.innerHTML = '';
 
         if (scored.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
             return;
         }
 
@@ -390,6 +391,7 @@
             var scorePct = Math.min(s.score, 100);
             tr.innerHTML =
                 '<td class="bs-td-grade"><span class="bs-grade-badge ' + s.grade.toLowerCase() + '">' + s.grade + '</span></td>' +
+                '<td class="bs-td-plan">' + escapeHtml(s.planName) + '</td>' +
                 '<td>' + escapeHtml(s.name) + '</td>' +
                 '<td class="bs-td-num">' + formatMoney(s.spend) + '</td>' +
                 '<td class="bs-td-num">' + formatPct(s.spendPct) + '</td>' +
@@ -462,24 +464,11 @@
             var crowdRaw = data && data.crowd && data.crowd.summary ? data.crowd.summary : [];
             state.crowdItems = [];
             crowdRaw.forEach(function (group) {
-                if (group.crowd && group.summary) {
-                    state.crowdItems.push({
-                        name: group.crowd,
-                        roi: toNum(group.summary.roi),
-                        spend: toNum(group.summary.cost || group.summary['花费']),
-                        orders: toNum(group.summary.orders),
-                        orderCost: toNum(group.summary.orderCost),
-                        cart: toNum(group.summary.cart),
-                        cartCost: toNum(group.summary.cartCost),
-                        preOrders: toNum(group.summary.preOrders),
-                        preOrderCost: toNum(group.summary.preOrderCost),
-                        amount: toNum(group.summary.amount),
-                    });
-                }
                 if (group.subRows && group.subRows.length > 0) {
                     group.subRows.forEach(function (sub) {
                         state.crowdItems.push({
                             name: sub.label || sub.name || '未命名人群',
+                            planName: sub.planName || sub.plan || '未标注计划',
                             roi: toNum(sub.roi),
                             spend: toNum(sub.cost || sub['花费']),
                             orders: toNum(sub.orders),
@@ -570,11 +559,12 @@
             if (scored.length === 0) return;
 
             var stage = getStageConfig(ACTIVE_STAGE);
-            var header = '阶段,等级,人群,花费,当前花费占比,建议花费占比,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,ROI,建议动作\n';
+            var header = '阶段,等级,计划,人群,花费,当前花费占比,建议花费占比,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,ROI,建议动作\n';
             var rows = scored.map(function (s) {
                 return [
                     stage.label,
                     s.grade,
+                    '"' + String(s.planName || '未标注计划').replace(/"/g, '""') + '"',
                     '"' + String(s.name).replace(/"/g, '""') + '"',
                     s.spend.toFixed(2),
                     (s.spendPct * 100).toFixed(1) + '%',

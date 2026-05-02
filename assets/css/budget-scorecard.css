@@ -432,6 +432,14 @@
     text-align: center;
 }
 
+.bs-table tbody td.bs-td-plan {
+    max-width: 260px;
+    color: var(--gray-600);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
 .bs-table tbody td.bs-td-suggested-share {
     font-weight: var(--font-semibold);
     color: var(--indigo-700);
