@@ -94,12 +94,17 @@ body.audience-repository-page {
   line-height: 1.7;
 }
 
-.audience-upload-stack {
+.audience-form-grid {
   display: grid;
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.audience-file-label {
+.audience-field-wide {
+  grid-column: 1 / -1;
+}
+
+.audience-field {
   display: grid;
   gap: 7px;
   font-size: 13px;
@@ -107,7 +112,8 @@ body.audience-repository-page {
   color: #475467;
 }
 
-.audience-file-label input,
+.audience-field input,
+.audience-field textarea,
 .audience-search input {
   width: 100%;
   min-width: 0;
@@ -119,7 +125,39 @@ body.audience-repository-page {
   font: inherit;
 }
 
-.audience-file-label small {
+.audience-field textarea {
+  resize: vertical;
+  min-height: 76px;
+  line-height: 1.6;
+}
+
+.audience-image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.audience-image-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.audience-image-card input {
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.audience-image-card small {
   color: #7a8598;
   font-weight: 500;
   line-height: 1.5;
@@ -213,6 +251,27 @@ body.audience-repository-page {
   font-size: 13px;
 }
 
+.audience-preview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.audience-preview-head h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.audience-preview-head span {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .audience-list-toolbar {
   display: flex;
   gap: 10px;
@@ -297,6 +356,8 @@ body.audience-repository-page {
 
   .audience-hero,
   .audience-grid,
+  .audience-form-grid,
+  .audience-image-grid,
   .audience-row-main {
     grid-template-columns: 1fr;
   }

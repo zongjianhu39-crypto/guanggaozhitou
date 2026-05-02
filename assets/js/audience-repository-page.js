@@ -1,6 +1,6 @@
 (function attachAudienceRepositoryPage(window) {
   const api = window.AudienceRepositoryApi;
-  const FIELD_COLUMNS = [
+  const DIMENSIONS = [
     '月均消费金额',
     '预测购买力',
     '88会员等级',
@@ -11,12 +11,11 @@
   ];
 
   const state = {
-    parsed: { audiences: [], metrics: [] },
+    draft: { audience: null, metrics: [] },
     saved: { audiences: [], metrics: [] },
     loading: false,
     saving: false,
-    error: '',
-    message: '',
+    searchTimer: null,
   };
 
   function $(id) {
@@ -51,30 +50,6 @@
     return `${(numeric * 100).toFixed(2)}%`;
   }
 
-  function normalizeHeader(value) {
-    return String(value ?? '').trim();
-  }
-
-  function getCell(sheet, rowIndex, colIndex) {
-    const address = window.XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
-    return sheet[address] || null;
-  }
-
-  function getCellText(sheet, rowIndex, colIndex) {
-    const cell = getCell(sheet, rowIndex, colIndex);
-    if (!cell) return '';
-    if (cell.f) return `=${cell.f}`;
-    if (cell.w !== undefined) return String(cell.w).trim();
-    if (cell.v !== undefined) return String(cell.v).trim();
-    return '';
-  }
-
-  function getCellValue(sheet, rowIndex, colIndex) {
-    const cell = getCell(sheet, rowIndex, colIndex);
-    if (!cell) return '';
-    return cell.v !== undefined ? cell.v : getCellText(sheet, rowIndex, colIndex);
-  }
-
   function parseNumber(value) {
     if (value === null || value === undefined || value === '') return null;
     const numeric = Number(String(value).replace(/,/g, '').trim());
@@ -91,133 +66,68 @@
     return text.includes('%') ? numeric / 100 : numeric;
   }
 
-  function parseImageId(value) {
-    const text = String(value || '');
-    const quoted = text.match(/DISPIMG\("([^"]+)"/i);
-    if (quoted) return quoted[1];
-    const id = text.match(/ID_[A-Z0-9]+/i);
-    return id ? id[0] : '';
+  function buildValidRangeText(validFrom, validTo) {
+    if (validFrom && validTo) return `起：${validFrom}\n止：${validTo}`;
+    if (validFrom) return `起：${validFrom}`;
+    if (validTo) return `止：${validTo}`;
+    return '';
   }
 
-  function parseDateRange(value) {
-    const text = String(value || '').trim();
-    const dates = text.match(/\d{4}-\d{2}-\d{2}/g) || [];
+  function collectAudienceForm() {
+    const audienceId = parseNumber($('audience-id')?.value);
+    const audienceName = String($('audience-name')?.value || '').trim();
+    if (!audienceId) throw new Error('请填写达摩盘人群包 ID');
+    if (!audienceName) throw new Error('请填写达摩盘人群名称');
+    const validFrom = $('audience-valid-from')?.value || '';
+    const validTo = $('audience-valid-to')?.value || '';
     return {
-      valid_from: dates[0] || null,
-      valid_to: dates[1] || null,
-      valid_range_text: text || null,
+      audience_id: audienceId,
+      audience_name: audienceName,
+      valid_from: validFrom || null,
+      valid_to: validTo || null,
+      valid_range_text: buildValidRangeText(validFrom, validTo),
+      audience_size: parseNumber($('audience-size')?.value),
+      selection_logic: String($('audience-selection-logic')?.value || '').trim(),
+      audience_definition: String($('audience-definition')?.value || '').trim(),
+      image_formula_map: {},
+      metric_summary: {},
+      raw_row: { input_source: 'web_manual_image_upload' },
+      source_filename: 'web_manual_image_upload',
     };
   }
 
-  async function extractImageManifest(buffer) {
-    if (!window.JSZip) return {};
-    const zip = await window.JSZip.loadAsync(buffer);
-    const [cellImagesXml, relsXml] = await Promise.all([
-      zip.file('xl/cellimages.xml')?.async('text'),
-      zip.file('xl/_rels/cellimages.xml.rels')?.async('text'),
-    ]);
-    if (!cellImagesXml || !relsXml) return {};
-
-    const relTargetById = {};
-    Array.from(relsXml.matchAll(/<Relationship[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g)).forEach((match) => {
-      relTargetById[match[1]] = match[2].replace(/^\/?xl\//, '');
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('图片读取失败'));
+      reader.readAsDataURL(file);
     });
-
-    const manifest = {};
-    Array.from(cellImagesXml.matchAll(/<etc:cellImage>[\s\S]*?<xdr:cNvPr[^>]*name="([^"]+)"[\s\S]*?<a:blip[^>]*r:embed="([^"]+)"[\s\S]*?<\/etc:cellImage>/g)).forEach((match) => {
-      const imageId = match[1];
-      const relId = match[2];
-      const target = relTargetById[relId] || '';
-      manifest[imageId] = target ? target.split('/').pop() : '';
-    });
-    return manifest;
   }
 
-  async function readWorkbook(file) {
-    if (!file) return { workbook: null, imageManifest: {} };
-    if (!window.XLSX) throw new Error('Excel 解析库未加载，请刷新页面后重试');
-    const buffer = await file.arrayBuffer();
-    const workbook = window.XLSX.read(buffer, {
-      type: 'array',
-      cellFormula: true,
-      cellNF: false,
-      cellText: true,
-      cellDates: false,
-    });
-    const imageManifest = await extractImageManifest(buffer).catch(() => ({}));
-    return { workbook, imageManifest };
-  }
-
-  function parseMainWorkbook(workbook, filename, imageManifest) {
-    if (!workbook) return [];
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    if (!sheet || !sheet['!ref']) return [];
-    const range = window.XLSX.utils.decode_range(sheet['!ref']);
-    const headers = [];
-    for (let col = range.s.c; col <= range.e.c; col += 1) {
-      headers.push(normalizeHeader(getCellText(sheet, range.s.r, col)));
-    }
-    const colByHeader = new Map(headers.map((header, index) => [header, index]));
-
-    const rows = [];
-    for (let row = range.s.r + 1; row <= range.e.r; row += 1) {
-      const id = parseNumber(getCellValue(sheet, row, colByHeader.get('达摩盘人群包ID') ?? 0));
-      const name = getCellText(sheet, row, colByHeader.get('达摩盘人群名称') ?? 1);
-      if (!id || !name) continue;
-
-      const valid = parseDateRange(getCellText(sheet, row, colByHeader.get('有效日期') ?? 2));
-      const imageMap = {};
-      const rawRow = {};
-      headers.forEach((header, col) => {
-        if (header) rawRow[header] = getCellText(sheet, row, col);
-      });
-      FIELD_COLUMNS.forEach((field) => {
-        const col = colByHeader.get(field);
-        if (col === undefined) return;
-        const rawValue = getCellText(sheet, row, col);
-        const imageId = parseImageId(rawValue);
-        imageMap[field] = {
-          image_id: imageId,
-          image_file: imageId ? (imageManifest[imageId] || '') : '',
-          raw_formula: rawValue || null,
-        };
-      });
-
-      rows.push({
-        audience_id: id,
-        audience_name: name,
-        valid_from: valid.valid_from,
-        valid_to: valid.valid_to,
-        valid_range_text: valid.valid_range_text,
-        audience_size: parseNumber(getCellValue(sheet, row, colByHeader.get('人群规模') ?? 3)),
-        selection_logic: getCellText(sheet, row, colByHeader.get('圈选逻辑') ?? 4),
-        audience_definition: getCellText(sheet, row, colByHeader.get('人群定义') ?? 5),
-        image_formula_map: imageMap,
-        metric_summary: {},
-        raw_row: rawRow,
-        source_filename: filename || '',
+  async function collectImageUploads() {
+    const uploads = [];
+    for (const dimension of DIMENSIONS) {
+      const input = document.querySelector(`input[data-dimension="${dimension}"]`);
+      const file = input?.files?.[0] || null;
+      if (!file) continue;
+      if (!/^image\//.test(file.type)) throw new Error(`${dimension} 上传的不是图片文件`);
+      if (file.size > 4 * 1024 * 1024) throw new Error(`${dimension} 图片超过 4MB，请压缩后再上传`);
+      uploads.push({
+        dimension,
+        file_name: file.name,
+        mime_type: file.type,
+        data_url: await readFileAsDataUrl(file),
       });
     }
-    return rows;
+    return uploads;
   }
 
-  function sheetRows(workbook, sheetName) {
-    if (!workbook || !sheetName || !workbook.Sheets[sheetName]) return [];
-    return window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '', raw: true });
-  }
-
-  function findSheetName(workbook, preferred, fallbackPattern) {
-    if (!workbook) return '';
-    if (workbook.SheetNames.includes(preferred)) return preferred;
-    return workbook.SheetNames.find((name) => fallbackPattern.test(name)) || '';
-  }
-
-  function addMetric(metrics, seen, item) {
-    const audienceId = parseNumber(item.audience_id);
+  function addMetric(metrics, seen, audienceId, item) {
     const dimension = String(item.dimension || '').trim();
     const category = String(item.category || '').trim();
     const share = parseShare(item.share);
-    if (!audienceId || !dimension || !category || share === null) return;
+    if (!dimension || !category || share === null) return;
     const key = `${audienceId}::${dimension}::${category}`;
     if (seen.has(key)) return;
     seen.add(key);
@@ -227,106 +137,78 @@
       category,
       share,
       share_text: item.share_text || formatPercent(share),
-      source: item.source || 'image_extract',
+      source: item.source || 'ai_image_extract',
     });
   }
 
-  function parseLongMetrics(workbook) {
-    const sheetName = findSheetName(workbook, '人群图片数据提取', /图片|提取|长表/);
-    const rows = sheetRows(workbook, sheetName);
+  function normalizeParsedMetrics(audienceId, parsedItems) {
     const metrics = [];
     const seen = new Set();
-    rows.forEach((row) => {
-      addMetric(metrics, seen, {
-        audience_id: row['人群仓库ID'] || row['达摩盘人群包ID'] || row['人群ID'],
-        dimension: row['维度'],
-        category: row['分类'],
-        share: row['分析人群占比'] || row['占比'],
-        source: 'image_extract_long',
-      });
-    });
-    return { metrics, seen };
-  }
-
-  function parseWideMetrics(workbook, seen) {
-    const sheetName = findSheetName(workbook, '宽表格式', /宽表|wide/i);
-    if (!workbook || !sheetName) return [];
-    const rows = sheetRows(workbook, sheetName);
-    const metrics = [];
-    rows.forEach((row) => {
-      const audienceId = row['人群仓库ID'] || row['达摩盘人群包ID'] || row['人群ID'];
-      Object.entries(row).forEach(([key, value]) => {
-        if (['人群仓库ID', '达摩盘人群包ID', '人群ID'].includes(key)) return;
-        const splitAt = key.indexOf('_');
-        if (splitAt <= 0) return;
-        addMetric(metrics, seen, {
-          audience_id: audienceId,
-          dimension: key.slice(0, splitAt),
-          category: key.slice(splitAt + 1),
-          share: value,
-          source: 'image_extract_wide',
-        });
-      });
-    });
+    (parsedItems || []).forEach((item) => addMetric(metrics, seen, audienceId, item));
     return metrics;
   }
 
-  function parseExtractWorkbook(workbook) {
-    const longParsed = parseLongMetrics(workbook);
-    const wideMetrics = parseWideMetrics(workbook, longParsed.seen);
-    return longParsed.metrics.concat(wideMetrics);
-  }
-
   function buildMetricSummary(metrics) {
-    const summaryByAudience = new Map();
-    metrics.forEach((metric) => {
-      if (!summaryByAudience.has(metric.audience_id)) summaryByAudience.set(metric.audience_id, {});
-      const summary = summaryByAudience.get(metric.audience_id);
+    return metrics.reduce((summary, metric) => {
       summary[`${metric.dimension}_${metric.category}`] = metric.share;
-    });
-    return summaryByAudience;
+      return summary;
+    }, {});
   }
 
-  function renderParsedPreview() {
-    const audiences = state.parsed.audiences;
-    const metrics = state.parsed.metrics;
-    const metricCounts = metrics.reduce((acc, metric) => {
-      acc[metric.audience_id] = (acc[metric.audience_id] || 0) + 1;
-      return acc;
-    }, {});
+  function renderImageUploadGrid() {
+    const container = $('audience-image-grid');
+    if (!container) return;
+    container.innerHTML = DIMENSIONS.map((dimension) => `
+      <label class="audience-image-card">
+        <span>${escapeHtml(dimension)}</span>
+        <input type="file" accept="image/*" data-dimension="${escapeHtml(dimension)}">
+        <small>上传该维度截图</small>
+      </label>
+    `).join('');
+  }
+
+  function renderDraftPreview() {
     const container = $('audience-preview');
     if (!container) return;
-    if (!audiences.length) {
-      container.innerHTML = '<div class="audience-empty">上传表格后，这里会显示待入库的人群明细。</div>';
+    const audience = state.draft.audience;
+    const metrics = state.draft.metrics;
+    if (!audience) {
+      container.innerHTML = '<div class="audience-empty">填写人群信息并上传图片后，点击“AI 解析图片”生成待入库预览。</div>';
       return;
     }
+
     container.innerHTML = `
-      <div class="audience-table-wrap">
-        <table class="audience-table">
-          <thead>
-            <tr>
-              <th>人群ID</th>
-              <th>人群名称</th>
-              <th>有效期</th>
-              <th>规模</th>
-              <th>图片维度</th>
-              <th>圈选逻辑</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${audiences.map((item) => `
-              <tr>
-                <td>${escapeHtml(item.audience_id)}</td>
-                <td>${escapeHtml(item.audience_name)}</td>
-                <td>${escapeHtml(item.valid_from || '-')}${item.valid_to ? ` 至 ${escapeHtml(item.valid_to)}` : ''}</td>
-                <td>${formatNumber(item.audience_size)}</td>
-                <td>${formatNumber(metricCounts[item.audience_id] || 0)}</td>
-                <td>${escapeHtml(item.selection_logic || '-')}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+      <div class="audience-preview-head">
+        <div>
+          <div class="audience-id">${escapeHtml(audience.audience_id)}</div>
+          <h3>${escapeHtml(audience.audience_name)}</h3>
+        </div>
+        <span>${formatNumber(metrics.length)} 条维度占比</span>
       </div>
+      ${metrics.length ? `
+        <div class="audience-table-wrap">
+          <table class="audience-table">
+            <thead>
+              <tr>
+                <th>维度</th>
+                <th>分类</th>
+                <th>分析人群占比</th>
+                <th>来源</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${metrics.map((metric) => `
+                <tr>
+                  <td>${escapeHtml(metric.dimension)}</td>
+                  <td>${escapeHtml(metric.category)}</td>
+                  <td>${formatPercent(metric.share)}</td>
+                  <td>${escapeHtml(metric.source)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : '<div class="audience-empty">还没有解析到维度占比，请检查图片是否包含分类和百分比。</div>'}
     `;
   }
 
@@ -388,42 +270,42 @@
     }).join('');
   }
 
-  async function handleParse() {
+  async function handleAiParse() {
     try {
-      setStatus('正在解析 Excel...', 'warn');
-      const mainFile = $('audience-main-file')?.files?.[0] || null;
-      const extractFile = $('audience-extract-file')?.files?.[0] || null;
-      if (!mainFile) {
-        setStatus('请先选择人群仓库主表。', 'error');
+      const audience = collectAudienceForm();
+      const images = await collectImageUploads();
+      if (!images.length) {
+        setStatus('请至少上传一张维度截图。', 'error');
         return;
       }
-      const [mainWorkbook, extractWorkbook] = await Promise.all([
-        readWorkbook(mainFile),
-        readWorkbook(extractFile),
-      ]);
-      const audiences = parseMainWorkbook(mainWorkbook.workbook, mainFile.name, mainWorkbook.imageManifest);
-      const metrics = parseExtractWorkbook(extractWorkbook.workbook);
-      const summaryByAudience = buildMetricSummary(metrics);
-      audiences.forEach((audience) => {
-        audience.metric_summary = summaryByAudience.get(audience.audience_id) || {};
-      });
-      state.parsed = { audiences, metrics };
-      renderParsedPreview();
-      setStatus(`已解析 ${audiences.length} 条人群、${metrics.length} 条图片维度数据。`, audiences.length ? 'success' : 'warn');
+      setStatus('AI 正在解析图片...', 'warn');
+      const result = await api.parseImages({ audience_id: audience.audience_id, images });
+      const metrics = normalizeParsedMetrics(audience.audience_id, result.metrics || []);
+      audience.image_formula_map = images.reduce((acc, image) => {
+        acc[image.dimension] = { image_file: image.file_name, source: 'web_upload' };
+        return acc;
+      }, {});
+      audience.metric_summary = buildMetricSummary(metrics);
+      state.draft = { audience, metrics };
+      renderDraftPreview();
+      setStatus(`已解析 ${metrics.length} 条维度占比，确认无误后可写入 Supabase。`, metrics.length ? 'success' : 'warn');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : '解析失败', 'error');
+      setStatus(error instanceof Error ? error.message : 'AI 解析失败', 'error');
     }
   }
 
-  async function handleImport() {
-    if (!state.parsed.audiences.length) {
-      setStatus('没有可入库的数据，请先解析表格。', 'error');
+  async function handleSave() {
+    if (!state.draft.audience) {
+      setStatus('没有可入库的数据，请先解析图片。', 'error');
       return;
     }
     try {
       state.saving = true;
       setStatus('正在写入 Supabase...', 'warn');
-      const result = await api.importAudiences(state.parsed);
+      const result = await api.importAudiences({
+        audiences: [state.draft.audience],
+        metrics: state.draft.metrics,
+      });
       setStatus(`入库完成：${result.audience_count || 0} 条人群，${result.metric_count || 0} 条维度数据。`, 'success');
       await loadRepository();
     } catch (error) {
@@ -452,8 +334,8 @@
   }
 
   function bind() {
-    $('parse-audience-btn')?.addEventListener('click', handleParse);
-    $('save-audience-btn')?.addEventListener('click', handleImport);
+    $('parse-audience-btn')?.addEventListener('click', handleAiParse);
+    $('save-audience-btn')?.addEventListener('click', handleSave);
     $('refresh-audience-btn')?.addEventListener('click', loadRepository);
     $('audience-search')?.addEventListener('input', () => {
       window.clearTimeout(state.searchTimer);
@@ -462,7 +344,8 @@
   }
 
   function init() {
-    renderParsedPreview();
+    renderImageUploadGrid();
+    renderDraftPreview();
     renderSavedRepository();
     bind();
     loadRepository();

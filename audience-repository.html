@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>人群仓库 - 交个朋友·广告智投工作台</title>
-    <meta name="description" content="人群基础信息、图片维度数据解析与 Supabase 入库">
+    <meta name="description" content="人群基础信息录入、维度图片 AI 解析与 Supabase 入库">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="style.css?v=202605030900">
     <link rel="stylesheet" href="assets/css/audience-repository.css?v=202605030900">
@@ -47,7 +47,7 @@
         <section class="audience-hero">
             <div>
                 <h1>人群仓库</h1>
-                <p>沉淀达摩盘人群包、圈选逻辑、人群定义和图片维度占比，后续可直接被投放分析、GenBI 和策略复盘调用。</p>
+                <p>录入达摩盘人群包信息，上传各维度截图，由 AI 解析成结构化占比数据，后续可直接被投放分析、GenBI 和策略复盘调用。</p>
             </div>
             <div id="audience-stats" class="audience-stats" aria-live="polite"></div>
         </section>
@@ -55,22 +55,41 @@
         <div class="audience-grid">
             <div>
                 <section class="audience-panel">
-                    <h2>导入数据</h2>
-                    <p>主表负责基础字段，图片提取表负责把图片中的占比转成结构化维度。</p>
-                    <div class="audience-upload-stack">
-                        <label class="audience-file-label">
-                            人群仓库主表
-                            <input id="audience-main-file" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
-                            <small>例如：人群仓库.xlsx</small>
+                    <h2>新增人群</h2>
+                    <p>直接填写人群基础信息，并上传各维度截图，系统会解析成“人群仓库ID / 维度 / 分类 / 分析人群占比”的格式。</p>
+                    <div class="audience-form-grid">
+                        <label class="audience-field">
+                            达摩盘人群包 ID
+                            <input id="audience-id" type="number" inputmode="numeric" placeholder="例如 51532258">
                         </label>
-                        <label class="audience-file-label">
-                            图片数据提取表
-                            <input id="audience-extract-file" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
-                            <small>例如：人群仓库_图片数据提取.xlsx；未上传时只导入基础字段、图片公式 ID 和图片文件映射。</small>
+                        <label class="audience-field">
+                            人群规模
+                            <input id="audience-size" type="number" inputmode="numeric" placeholder="例如 451015">
+                        </label>
+                        <label class="audience-field audience-field-wide">
+                            达摩盘人群名称
+                            <input id="audience-name" type="text" placeholder="例如 交个朋友活跃成交复购人群_电商部">
+                        </label>
+                        <label class="audience-field">
+                            有效期开始
+                            <input id="audience-valid-from" type="date">
+                        </label>
+                        <label class="audience-field">
+                            有效期结束
+                            <input id="audience-valid-to" type="date">
+                        </label>
+                        <label class="audience-field audience-field-wide">
+                            圈选逻辑
+                            <textarea id="audience-selection-logic" rows="3" placeholder="例如 数据银行（直播通用人群筛选...）"></textarea>
+                        </label>
+                        <label class="audience-field audience-field-wide">
+                            人群定义
+                            <textarea id="audience-definition" rows="4" placeholder="填写这类人群的定义、成交/访问/复购等条件"></textarea>
                         </label>
                     </div>
+                    <div id="audience-image-grid" class="audience-image-grid"></div>
                     <div class="audience-actions">
-                        <button id="parse-audience-btn" type="button" class="audience-button">解析预览</button>
+                        <button id="parse-audience-btn" type="button" class="audience-button">AI 解析图片</button>
                         <button id="save-audience-btn" type="button" class="audience-button audience-button-primary">写入 Supabase</button>
                     </div>
                     <div id="audience-status" class="audience-status" aria-live="polite"></div>
@@ -94,8 +113,6 @@
         </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
     <script src="assets/js/config.js"></script>
     <script src="script.js?v=202605030900"></script>
     <script src="assets/js/audience-repository-api.js?v=202605030900" defer></script>
