@@ -304,9 +304,13 @@
         try {
           const result = await api.parseImages({ audience_id: audience.audience_id, images: [image] });
           parsedItems.push(...(result.metrics || []));
-          (result.parse_errors || []).forEach((item) => failedImages.push(item.dimension || image.dimension));
+          (result.parse_errors || []).forEach((item) => {
+            const detail = item.message ? `${item.dimension || image.dimension}（${item.message}）` : (item.dimension || image.dimension);
+            failedImages.push(detail);
+          });
         } catch (error) {
-          failedImages.push(image.dimension);
+          const message = error instanceof Error ? error.message : '请求失败';
+          failedImages.push(`${image.dimension}（${message}）`);
         }
       }
       const metrics = normalizeParsedMetrics(audience.audience_id, parsedItems);

@@ -148,19 +148,55 @@ function parseJsonFromText(text: string) {
   }
 }
 
+function pickMetricField(item: Record<string, unknown>, ...keys: string[]) {
+  for (const key of keys) {
+    if (item[key] !== undefined && item[key] !== null && item[key] !== '') {
+      return item[key];
+    }
+  }
+  return undefined;
+}
+
 function normalizeParsedMetrics(audienceId: number, parsed: unknown) {
   const body = parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {};
-  const items = Array.isArray(body.metrics) ? body.metrics as Record<string, unknown>[] : [];
+  const items = Array.isArray(parsed)
+    ? parsed as Record<string, unknown>[]
+    : Array.isArray(body.metrics)
+      ? body.metrics as Record<string, unknown>[]
+      : Array.isArray(body.data)
+        ? body.data as Record<string, unknown>[]
+        : Array.isArray(body.rows)
+          ? body.rows as Record<string, unknown>[]
+          : [];
   return items
     .map((item) => normalizeMetric({
       audience_id: audienceId,
-      dimension: item.dimension,
-      category: item.category,
-      share: item.share,
-      share_text: item.share_text,
+      dimension: pickMetricField(item, 'dimension', '维度'),
+      category: pickMetricField(item, 'category', '分类', '类别', '等级'),
+      share: pickMetricField(item, 'share', '分析人群占比', '占比', 'percentage', 'percent'),
+      share_text: pickMetricField(item, 'share_text', '占比文本', '分析人群占比文本'),
       source: 'ai_image_extract',
     }))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
+}
+
+function buildParsePrompt(dimension: string, strictRetry = false) {
+  const dimensionHint = dimension === '88会员等级'
+    ? '特别注意：88会员等级截图可能只有一个分类，例如“超级会员 94.56%”。这种单条结果也必须抽取，category 写“超级会员”。'
+    : '';
+  return [
+    '你是电商广告人群画像图片的数据抽取助手。',
+    '任务：从上传的中文截图中抽取所有可见的分类占比，输出 JSON。',
+    '每张图片会在前一段文字里标明维度名称。请使用该维度名称作为 dimension。',
+    '只抽取图片里真实出现的分类和百分比，不要推断、补全或编造。',
+    '必须抽取这张图片中所有可见分类，不要只返回第一条。',
+    dimensionHint,
+    strictRetry ? '这是重试请求。请忽略除图表/标签/百分比以外的所有装饰，只要看到一个分类和百分比就返回一条。' : '',
+    'share 必须是 0-1 的小数，例如 46.27% 输出 0.4627。',
+    '如果只有一个可见分类，也必须返回 metrics 数组且包含这一条。',
+    '输出只能是 JSON，不要输出解释、Markdown 或思考过程。',
+    '输出格式必须严格为：{"metrics":[{"dimension":"月均消费金额","category":"0-499元","share":0.0436,"share_text":"4.36%"},{"dimension":"月均消费金额","category":"500-999元","share":0.0628,"share_text":"6.28%"}]}',
+  ].filter(Boolean).join('\n');
 }
 
 async function handleParseImages(body: Record<string, unknown>, headers: Record<string, string>) {
@@ -198,19 +234,23 @@ async function parseSingleImage(audienceId: number, image: Record<string, unknow
     return [];
   }
 
+  let lastError: Error | null = null;
+  for (const strictRetry of [false, true]) {
+    try {
+      const metrics = await parseSingleImageOnce(audienceId, dimension, dataUrl, strictRetry);
+      if (metrics.length) return metrics;
+      lastError = new Error('AI 未抽取到任何分类占比');
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error || '解析失败'));
+    }
+  }
+  throw lastError || new Error('解析失败');
+}
+
+async function parseSingleImageOnce(audienceId: number, dimension: string, dataUrl: string, strictRetry: boolean) {
   const content: Record<string, unknown>[] = [{
     type: 'text',
-    text: [
-      '你是电商广告人群画像图片的数据抽取助手。',
-      '任务：从上传的中文截图中抽取所有可见的分类占比，输出 JSON。',
-      '每张图片会在前一段文字里标明维度名称。请使用该维度名称作为 dimension。',
-      '只抽取图片里真实出现的分类和百分比，不要推断、补全或编造。',
-      '必须抽取这张图片中所有可见分类，不要只返回第一条。',
-      'share 必须是 0-1 的小数，例如 46.27% 输出 0.4627。',
-      '如果某张图无法识别，跳过该图。',
-      '输出只能是 JSON，不要输出解释、Markdown 或思考过程。',
-      '输出格式必须严格为：{"metrics":[{"dimension":"月均消费金额","category":"0-499元","share":0.0436,"share_text":"4.36%"},{"dimension":"月均消费金额","category":"500-999元","share":0.0628,"share_text":"6.28%"}]}',
-    ].join('\n'),
+    text: buildParsePrompt(dimension, strictRetry),
   }];
   content.push({
     type: 'text',
