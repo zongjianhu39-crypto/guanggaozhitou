@@ -174,7 +174,10 @@
         <section class="bs-detail-section" id="bs-detail-section" style="display:none;">
             <div class="bs-detail-header">
                 <h2 class="bs-section-title">评分明细</h2>
-                <button id="bs-export-btn" class="btn btn-outline btn-sm" type="button">导出 CSV</button>
+                <div class="bs-detail-actions">
+                    <button id="bs-save-snapshot-btn" class="btn btn-primary btn-sm" type="button">保存本次建议快照</button>
+                    <button id="bs-export-btn" class="btn btn-outline btn-sm" type="button">导出 CSV</button>
+                </div>
             </div>
             <div class="bs-table-wrap">
                 <table class="bs-table" id="bs-score-table">
@@ -196,6 +199,17 @@
                     <tbody id="bs-score-tbody"></tbody>
                 </table>
             </div>
+        </section>
+
+        <!-- 建议复盘 -->
+        <section class="bs-review-section" id="bs-review-section" style="display:none;">
+            <div class="bs-detail-header">
+                <div>
+                    <h2 class="bs-section-title">建议复盘</h2>
+                    <p class="bs-review-hint" id="bs-review-hint">保存建议快照后，重新计算后续日期即可自动对比。</p>
+                </div>
+            </div>
+            <div id="bs-review-list" class="bs-review-list"></div>
         </section>
 
         <!-- 空状态 -->

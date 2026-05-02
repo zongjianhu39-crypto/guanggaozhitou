@@ -376,6 +376,13 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: var(--space-3);
+    gap: var(--space-3);
+}
+
+.bs-detail-actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
 }
 
 .bs-table-wrap {
@@ -521,6 +528,104 @@
 .bs-score-bar-fill.d { background: #f87171; }
 .bs-score-bar-fill.n { background: #94a3b8; }
 
+/* Review section */
+.bs-review-section {
+    margin-bottom: var(--space-8);
+}
+
+.bs-review-hint {
+    margin: var(--space-1) 0 0;
+    color: var(--gray-500);
+    font-size: var(--text-xs);
+}
+
+.bs-review-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.bs-review-card {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    background: var(--surface-base);
+    overflow: hidden;
+}
+
+.bs-review-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-raised);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.bs-review-title {
+    font-weight: var(--font-semibold);
+    color: var(--gray-800);
+}
+
+.bs-review-meta,
+.bs-review-summary {
+    color: var(--gray-500);
+    font-size: var(--text-xs);
+}
+
+.bs-review-summary {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.bs-review-summary span {
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: var(--surface-base);
+    border: 1px solid var(--gray-200);
+    white-space: nowrap;
+}
+
+.bs-review-table-wrap {
+    border: none;
+    border-radius: 0;
+}
+
+.bs-review-table {
+    font-size: var(--text-xs);
+}
+
+.bs-review-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    white-space: nowrap;
+}
+
+.bs-review-pill.good {
+    background: #dcfce7;
+    color: #18794e;
+}
+
+.bs-review-pill.warn {
+    background: #fef9c3;
+    color: #92400e;
+}
+
+.bs-review-pill.bad {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.bs-review-pill.neutral {
+    background: #e2e8f0;
+    color: #475569;
+}
+
 /* Empty state */
 .bs-empty {
     text-align: center;
@@ -566,5 +671,13 @@
     }
     .bs-grade-row {
         grid-template-columns: repeat(2, 1fr);
+    }
+    .bs-detail-header,
+    .bs-review-card-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .bs-review-summary {
+        justify-content: flex-start;
     }
 }
