@@ -7,8 +7,8 @@ const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang'
 const MAX_IMPORT_ROWS = 500;
 const MAX_METRICS = 20000;
 const MAX_PARSE_IMAGES = 10;
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
-const OPENAI_MODEL = Deno.env.get('OPENAI_MODEL') ?? 'gpt-4.1-mini';
+const MINIMAX_API_KEY = Deno.env.get('MINIMAX_API_KEY') ?? '';
+const MINIMAX_MODEL = 'MiniMax-M2.7';
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get('Origin') ?? '';
@@ -105,6 +105,17 @@ function extractResponseText(result: Record<string, unknown>) {
   const direct = String(result.output_text || '').trim();
   if (direct) return direct;
 
+  const choices = Array.isArray(result.choices) ? result.choices as Record<string, unknown>[] : [];
+  const choiceText = choices
+    .map((choice) => {
+      const message = choice.message && typeof choice.message === 'object' ? choice.message as Record<string, unknown> : {};
+      return String(message.content || '').trim();
+    })
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+  if (choiceText) return choiceText;
+
   const output = Array.isArray(result.output) ? result.output as Record<string, unknown>[] : [];
   const chunks: string[] = [];
   output.forEach((item) => {
@@ -151,8 +162,8 @@ function normalizeParsedMetrics(audienceId: number, parsed: unknown) {
 }
 
 async function handleParseImages(body: Record<string, unknown>, headers: Record<string, string>) {
-  if (!OPENAI_API_KEY) {
-    return json({ error: '缺少 OPENAI_API_KEY，无法使用 AI 解析图片' }, 500, headers);
+  if (!MINIMAX_API_KEY) {
+    return json({ error: '缺少 MINIMAX_API_KEY，无法使用 AI 解析图片' }, 500, headers);
   }
 
   const audienceId = toBigintLike(body.audience_id);
@@ -162,7 +173,7 @@ async function handleParseImages(body: Record<string, unknown>, headers: Record<
   if (images.length > MAX_PARSE_IMAGES) return json({ error: `单次最多解析 ${MAX_PARSE_IMAGES} 张图片` }, 400, headers);
 
   const content: Record<string, unknown>[] = [{
-    type: 'input_text',
+    type: 'text',
     text: [
       '你是电商广告人群画像图片的数据抽取助手。',
       '任务：从上传的中文截图中抽取所有可见的分类占比，输出 JSON。',
@@ -181,28 +192,28 @@ async function handleParseImages(body: Record<string, unknown>, headers: Record<
       return;
     }
     content.push({
-      type: 'input_text',
+      type: 'text',
       text: `图片 ${index + 1} 的维度名称：${dimension}`,
     });
     content.push({
-      type: 'input_image',
-      image_url: dataUrl,
-      detail: 'high',
+      type: 'image_url',
+      image_url: { url: dataUrl },
     });
   });
 
   if (content.length <= 1) return json({ error: '没有可解析的图片 data URL' }, 400, headers);
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const response = await fetch('https://api.minimax.chat/v1/chat/completions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      Authorization: `Bearer ${MINIMAX_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: OPENAI_MODEL,
-      input: [{ role: 'user', content }],
-      temperature: 0,
+      model: MINIMAX_MODEL,
+      messages: [{ role: 'user', content }],
+      max_completion_tokens: 2048,
+      temperature: 0.1,
     }),
   });
 
@@ -211,10 +222,10 @@ async function handleParseImages(body: Record<string, unknown>, headers: Record<
   try {
     result = rawText ? JSON.parse(rawText) : {};
   } catch {
-    throw new Error(`OpenAI 返回了无法解析的响应（HTTP ${response.status}）`);
+    throw new Error(`MiniMax 返回了无法解析的响应（HTTP ${response.status}）`);
   }
   if (!response.ok) {
-    const message = String((result.error as Record<string, unknown> | undefined)?.message || `OpenAI API error ${response.status}`);
+    const message = String((result.error as Record<string, unknown> | undefined)?.message || `MiniMax API error ${response.status}`);
     throw new Error(message);
   }
 
