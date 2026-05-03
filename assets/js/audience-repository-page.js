@@ -131,9 +131,34 @@
     };
   }
 
-  function resizeImageFile(file, options = {}) {
-    const maxSide = options.maxSide || 1600;
-    const quality = options.quality || 0.88;
+  function estimateDataUrlBytes(dataUrl) {
+    const base64 = String(dataUrl || '').split(',')[1] || '';
+    return Math.ceil((base64.length * 3) / 4);
+  }
+
+  function renderImageToDataUrl(img, maxSide, quality) {
+    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+    const width = Math.max(1, Math.round(img.width * scale));
+    const height = Math.max(1, Math.round(img.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL('image/jpeg', quality);
+  }
+
+  function resizeImageFile(file) {
+    const targetBytes = 850 * 1024;
+    const attempts = [
+      { maxSide: 1200, quality: 0.78 },
+      { maxSide: 1000, quality: 0.72 },
+      { maxSide: 850, quality: 0.68 },
+      { maxSide: 720, quality: 0.64 },
+      { maxSide: 640, quality: 0.6 },
+    ];
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onerror = () => reject(new Error('图片读取失败'));
@@ -141,17 +166,12 @@
         const img = new Image();
         img.onerror = () => reject(new Error('图片预览加载失败'));
         img.onload = () => {
-          const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-          const width = Math.max(1, Math.round(img.width * scale));
-          const height = Math.max(1, Math.round(img.height * scale));
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#fff';
-          ctx.fillRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
+          let selected = '';
+          for (const attempt of attempts) {
+            selected = renderImageToDataUrl(img, attempt.maxSide, attempt.quality);
+            if (estimateDataUrlBytes(selected) <= targetBytes) break;
+          }
+          resolve(selected);
         };
         img.src = String(reader.result || '');
       };
@@ -166,11 +186,14 @@
       const file = input?.files?.[0] || null;
       if (!file) continue;
       if (!/^image\//.test(file.type)) throw new Error(`${dimension} 上传的不是图片文件`);
+      setStatus(`正在压缩图片：${dimension}`, 'warn');
+      const dataUrl = await resizeImageFile(file);
       uploads.push({
         dimension,
         file_name: file.name,
         mime_type: 'image/jpeg',
-        data_url: await resizeImageFile(file),
+        data_url: dataUrl,
+        compressed_kb: Math.round(estimateDataUrlBytes(dataUrl) / 1024),
       });
     }
     return uploads;
@@ -357,7 +380,7 @@
       const failedImages = [];
       for (let index = 0; index < images.length; index += 1) {
         const image = images[index];
-        setStatus(`AI 正在解析图片 ${index + 1}/${images.length}：${image.dimension}`, 'warn');
+        setStatus(`AI 正在解析图片 ${index + 1}/${images.length}：${image.dimension}（约 ${image.compressed_kb || '-'}KB）`, 'warn');
         try {
           const result = await api.parseImages({ audience_id: audience.audience_id, images: [image] });
           parsedItems.push(...(result.metrics || []));

@@ -14,6 +14,8 @@ const MAX_PARSE_IMAGES = 10;
 const MINIMAX_API_KEY = Deno.env.get('MINIMAX_API_KEY') ?? '';
 const MINIMAX_MODEL = 'MiniMax-M2.7';
 const MINIMAX_MAX_TOKENS = 32768;
+const MINIMAX_TIMEOUT_MS = 45_000;
+const MAX_IMAGE_DATA_URL_CHARS = 1_500_000;
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get('Origin') ?? '';
@@ -245,6 +247,9 @@ async function parseSingleImage(audienceId: number, image: Record<string, unknow
   if (!dimension || !dataUrl.startsWith('data:image/')) {
     return [];
   }
+  if (dataUrl.length > MAX_IMAGE_DATA_URL_CHARS) {
+    throw new Error('图片压缩后仍过大，请裁剪截图后重试');
+  }
 
   let lastError: Error | null = null;
   for (const strictRetry of [false, true]) {
@@ -254,6 +259,7 @@ async function parseSingleImage(audienceId: number, image: Record<string, unknow
       lastError = new Error('AI 未抽取到任何分类占比');
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error || '解析失败'));
+      if (/超时|timeout/i.test(lastError.message)) throw lastError;
     }
   }
   throw lastError || new Error('解析失败');
@@ -273,19 +279,32 @@ async function parseSingleImageOnce(audienceId: number, dimension: string, dataU
     image_url: { url: dataUrl },
   });
 
-  const response = await fetch('https://api.minimax.chat/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${MINIMAX_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: MINIMAX_MODEL,
-      messages: [{ role: 'user', content }],
-      max_tokens: MINIMAX_MAX_TOKENS,
-      temperature: 0.1,
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), MINIMAX_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch('https://api.minimax.chat/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${MINIMAX_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: MINIMAX_MODEL,
+        messages: [{ role: 'user', content }],
+        max_tokens: MINIMAX_MAX_TOKENS,
+        temperature: 0.1,
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('MiniMax 解析超时，请稍后重试或裁剪截图');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const rawText = await response.text();
   let result: Record<string, unknown> = {};
