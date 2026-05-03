@@ -205,15 +205,28 @@
             }
             
             try {
+                const authController = new AbortController();
+                const authTimeoutId = window.setTimeout(() => authController.abort(), 20000);
                 // 调用 Supabase Edge Function 处理飞书 OAuth
-                const authResponse = await window.authHelpers.fetchFunctionJson('feishu-auth', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: { code: code },
-                    publicAuth: true,
-                    anonKey: SUPABASE_ANON_KEY,
-                    parseErrorMessage: '登录接口返回了无法解析的响应，请稍后重试',
-                });
+                let authResponse;
+                try {
+                    authResponse = await window.authHelpers.fetchFunctionJson('feishu-auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: { code: code },
+                        publicAuth: true,
+                        anonKey: SUPABASE_ANON_KEY,
+                        parseErrorMessage: '登录接口返回了无法解析的响应，请稍后重试',
+                        signal: authController.signal,
+                    });
+                } catch (requestError) {
+                    if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+                        throw new Error('登录请求超时，请刷新登录页重新发起飞书登录');
+                    }
+                    throw requestError;
+                } finally {
+                    window.clearTimeout(authTimeoutId);
+                }
 
                 const supabaseRes = authResponse.response;
                 const rawResponseText = authResponse.rawText || '';

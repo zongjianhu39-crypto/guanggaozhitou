@@ -134,11 +134,8 @@
     <script>
         const APP_ID = 'cli_a93911f3a9ba5bd1';
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const REDIRECT_URI = encodeURIComponent(
-            isLocal
-                ? 'http://localhost:3000/auth/feishu/callback.html'
-                : 'https://www.friends.wang/auth/feishu/callback.html'
-        );
+        const redirectOrigin = isLocal ? 'http://localhost:3000' : window.location.origin;
+        const REDIRECT_URI = encodeURIComponent(`${redirectOrigin}/auth/feishu/callback.html`);
         
         function loginWithFeishu() {
             const state = generateState();

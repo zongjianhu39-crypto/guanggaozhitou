@@ -55,15 +55,27 @@ function safeErrorMessage(error: unknown): string {
 }
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
+const EXTRA_ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('Origin') ?? '';
-  const allowed = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ? origin : PROD_ORIGIN;
+  const allowedOrigins = new Set([PROD_ORIGIN, 'https://www.friends.wang', 'https://friends.wang', ...EXTRA_ALLOWED_ORIGINS]);
+  const allowed = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    ? origin
+    : origin === 'null'
+      ? 'null'
+      : allowedOrigins.has(origin)
+        ? origin
+        : PROD_ORIGIN;
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-prompt-admin-token',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
+    'Vary': 'Origin',
   };
 }
 
