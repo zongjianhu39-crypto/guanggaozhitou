@@ -58,16 +58,83 @@ function clearPromptAdminSession(reason = '') {
   localStorage.removeItem('prompt_admin_token');
   localStorage.removeItem('prompt_admin_expires_at');
   if (reason) {
-    localStorage.setItem('prompt_admin_reason', reason);
+    safeSetStorage(localStorage, 'prompt_admin_reason', reason);
   } else {
     localStorage.removeItem('prompt_admin_reason');
   }
 }
 
+function isStorageQuotaError(error) {
+  return error instanceof DOMException && (
+    error.name === 'QuotaExceededError'
+    || error.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+    || error.code === 22
+    || error.code === 1014
+  );
+}
+
+function collectStorageKeys(storage) {
+  const keys = [];
+  try {
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index);
+      if (key) keys.push(key);
+    }
+  } catch {
+    return keys;
+  }
+  return keys;
+}
+
+function pruneStorageForQuota(storage) {
+  const removablePatterns = [
+    /^dashboard_summary_cache_/,
+    /^ai_analysis_/,
+    /^pending_ai_analysis/,
+    /^budget_scorecard_.*snapshot/i,
+    /^feishu_last_/,
+    /^feishu_login_last_/,
+    /^prompt_admin_last_login_meta$/,
+  ];
+
+  collectStorageKeys(storage).forEach((key) => {
+    if (removablePatterns.some((pattern) => pattern.test(key))) {
+      try {
+        storage.removeItem(key);
+      } catch (error) {
+        console.warn('failed to prune storage key', key, error);
+      }
+    }
+  });
+}
+
+function safeSetStorage(storage, key, value) {
+  try {
+    storage.setItem(key, value);
+    return true;
+  } catch (error) {
+    if (!isStorageQuotaError(error)) {
+      console.warn('failed to write storage', key, error);
+      return false;
+    }
+  }
+
+  pruneStorageForQuota(localStorage);
+  pruneStorageForQuota(sessionStorage);
+  try {
+    storage.setItem(key, value);
+    return true;
+  } catch (retryError) {
+    console.warn('storage quota exceeded, skipped writing', key, retryError);
+    return false;
+  }
+}
+
 function rememberRedirect(targetUrl) {
-  const normalized = normalizeRedirectTarget(targetUrl);
+  const normalized = compactRedirectTarget(normalizeRedirectTarget(targetUrl));
   if (!normalized) return;
-  localStorage.setItem('feishu_redirect', normalized);
+  if (safeSetStorage(localStorage, 'feishu_redirect', normalized)) return;
+  safeSetStorage(sessionStorage, 'feishu_redirect', normalized);
 }
 
 function normalizeRedirectTarget(targetUrl) {
@@ -83,6 +150,25 @@ function normalizeRedirectTarget(targetUrl) {
   } catch {
     return '';
   }
+}
+
+function compactRedirectTarget(targetUrl) {
+  const maxLength = 2048;
+  const normalized = String(targetUrl || '');
+  if (!normalized || normalized.length <= maxLength) return normalized;
+
+  try {
+    const resolved = new URL(normalized, window.location.origin);
+    const withoutHash = `${resolved.pathname}${resolved.search}`;
+    if (withoutHash.length <= maxLength) return withoutHash;
+    return resolved.pathname || '/index.html';
+  } catch {
+    return normalized.slice(0, maxLength);
+  }
+}
+
+function getRememberedRedirect() {
+  return localStorage.getItem('feishu_redirect') || sessionStorage.getItem('feishu_redirect') || '';
 }
 
 function getSafeRedirectUrl(targetUrl, fallbackPath = '/index.html') {
@@ -450,6 +536,8 @@ window.authHelpers.isPromptAdminTokenExpired = isPromptAdminTokenExpired;
 window.authHelpers.getPromptAdminToken = getPromptAdminToken;
 window.authHelpers.clearPromptAdminSession = clearPromptAdminSession;
 window.authHelpers.rememberRedirect = rememberRedirect;
+window.authHelpers.getRememberedRedirect = getRememberedRedirect;
+window.authHelpers.safeSetStorage = safeSetStorage;
 window.authHelpers.normalizeRedirectTarget = normalizeRedirectTarget;
 window.authHelpers.getSafeRedirectUrl = getSafeRedirectUrl;
 window.authHelpers.extractAccessToken = extractAccessToken;

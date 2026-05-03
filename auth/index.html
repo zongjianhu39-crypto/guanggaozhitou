@@ -93,7 +93,7 @@
     </div>
 
     <script src="../assets/js/config.js"></script>
-    <script src="../assets/js/auth-helpers.js?v=202604301830"></script>
+    <script src="../assets/js/auth-helpers.js?v=202605031120"></script>
     <script>
         const authParams = new URLSearchParams(window.location.search);
         const forceLogin = authParams.get('force') === '1';
@@ -109,8 +109,14 @@
 
         const sessionState = authHelpers.getSessionState ? authHelpers.getSessionState('/index.html') : null;
         if (sessionState && sessionState.user && sessionState.isAuthenticated) {
-            localStorage.setItem('feishu_user', JSON.stringify(sessionState.user));
-            const savedRedirect = localStorage.getItem('feishu_redirect');
+            if (authHelpers.safeSetStorage) {
+                authHelpers.safeSetStorage(localStorage, 'feishu_user', JSON.stringify(sessionState.user));
+            } else {
+                try { localStorage.setItem('feishu_user', JSON.stringify(sessionState.user)); } catch (error) { console.warn('failed to cache feishu_user', error); }
+            }
+            const savedRedirect = authHelpers.getRememberedRedirect
+                ? authHelpers.getRememberedRedirect()
+                : (localStorage.getItem('feishu_redirect') || sessionStorage.getItem('feishu_redirect') || '');
             const redirectUrl = authHelpers.getSafeRedirectUrl
                 ? authHelpers.getSafeRedirectUrl(savedRedirect, '/index.html')
                 : (window.location.origin + '/index.html');
@@ -136,15 +142,25 @@
         
         function loginWithFeishu() {
             const state = generateState();
-            localStorage.setItem('oauth_state', state);
+            if (authHelpers.safeSetStorage) {
+                authHelpers.safeSetStorage(localStorage, 'oauth_state', state);
+            } else {
+                try { localStorage.setItem('oauth_state', state); } catch (error) { console.warn('failed to write oauth_state', error); }
+            }
 
             const authUrl = `https://open.feishu.cn/open-apis/authen/v1/authorize?app_id=${APP_ID}&redirect_uri=${REDIRECT_URI}&state=${state}`;
 
             // Debug: 保存并打印 authUrl 与 state，便于定位回调不带 state 的问题
             try {
-                localStorage.setItem('feishu_last_auth_url', authUrl);
-                localStorage.setItem('feishu_last_state', state);
-                localStorage.setItem('feishu_last_auth_at', new Date().toISOString());
+                if (authHelpers.safeSetStorage) {
+                    authHelpers.safeSetStorage(localStorage, 'feishu_last_auth_url', authUrl);
+                    authHelpers.safeSetStorage(localStorage, 'feishu_last_state', state);
+                    authHelpers.safeSetStorage(localStorage, 'feishu_last_auth_at', new Date().toISOString());
+                } else {
+                    localStorage.setItem('feishu_last_auth_url', authUrl);
+                    localStorage.setItem('feishu_last_state', state);
+                    localStorage.setItem('feishu_last_auth_at', new Date().toISOString());
+                }
             } catch (e) {
                 console.warn('failed to write debug localStorage', e);
             }

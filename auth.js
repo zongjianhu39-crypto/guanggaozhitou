@@ -8,7 +8,11 @@
 
     var state = helpers.getSessionState(window.location.pathname);
     if (state.isAuthenticated) {
-        localStorage.setItem('feishu_user', JSON.stringify(state.user));
+        if (helpers.safeSetStorage) {
+            helpers.safeSetStorage(localStorage, 'feishu_user', JSON.stringify(state.user));
+        } else {
+            try { localStorage.setItem('feishu_user', JSON.stringify(state.user)); } catch (error) { console.warn('failed to cache feishu_user', error); }
+        }
         return;
     }
 

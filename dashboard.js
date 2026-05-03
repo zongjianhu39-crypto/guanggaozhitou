@@ -321,7 +321,11 @@ function redirectToPromptAdminLogin(message) {
     body.style.display = 'block';
     text.textContent = `${message}\n\n正在跳转到登录页，请稍候...`;
 
-    localStorage.setItem('feishu_redirect', window.location.href);
+    if (window.authHelpers && window.authHelpers.rememberRedirect) {
+        window.authHelpers.rememberRedirect(window.location.href);
+    } else {
+        try { localStorage.setItem('feishu_redirect', window.location.href); } catch (error) { console.warn('failed to remember redirect', error); }
+    }
     localStorage.removeItem('prompt_admin_token');
     localStorage.removeItem('prompt_admin_expires_at');
 

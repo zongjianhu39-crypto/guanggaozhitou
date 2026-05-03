@@ -166,7 +166,7 @@ function rememberPromptAdminRedirect() {
     if (authHelpers.rememberRedirect) {
         authHelpers.rememberRedirect(currentUrl);
     } else {
-        localStorage.setItem('feishu_redirect', currentUrl);
+        try { localStorage.setItem('feishu_redirect', currentUrl); } catch (error) { console.warn('failed to remember redirect', error); }
     }
 }
 

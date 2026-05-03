@@ -62,7 +62,7 @@
     </div>
 
     <script src="../../assets/js/config.js"></script>
-    <script src="../../assets/js/auth-helpers.js?v=202604301830"></script>
+    <script src="../../assets/js/auth-helpers.js?v=202605031120"></script>
     <script>
         // Load runtime config from assets/js/config.js
         if (typeof CONFIG === 'undefined' || !CONFIG || !CONFIG.SUPABASE_ANON_KEY || !CONFIG.SB_URL) {
@@ -72,6 +72,19 @@
         const SUPABASE_URL = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SB_URL) ? CONFIG.SB_URL : '';
 
         // use authHelpers.normalizeUser from assets/js/auth-helpers.js
+
+        function safeSetLocalStorage(key, value) {
+            if (window.authHelpers && window.authHelpers.safeSetStorage) {
+                return window.authHelpers.safeSetStorage(localStorage, key, value);
+            }
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (error) {
+                console.warn('failed to write localStorage', key, error);
+                return false;
+            }
+        }
 
         function extractUserPayload(result) {
             if (!result || typeof result !== 'object') {
@@ -205,7 +218,7 @@
                 const supabaseRes = authResponse.response;
                 const rawResponseText = authResponse.rawText || '';
                 const responseContentType = supabaseRes.headers.get('content-type') || '';
-                localStorage.setItem('feishu_login_last_http_meta', JSON.stringify({
+                safeSetLocalStorage('feishu_login_last_http_meta', JSON.stringify({
                     status: supabaseRes.status,
                     ok: supabaseRes.ok,
                     content_type: responseContentType,
@@ -218,7 +231,7 @@
                 const promptAdmin = extractPromptAdminPayload(result);
                 const loginDebug = extractLoginDebugPayload(result);
 
-                localStorage.setItem('prompt_admin_last_login_meta', JSON.stringify({
+                safeSetLocalStorage('prompt_admin_last_login_meta', JSON.stringify({
                     success: Boolean(result.success),
                     has_user: Boolean(resolvedUser),
                     user_open_id: resolvedUser?.open_id || resolvedUser?.user_id || resolvedUser?.union_id || resolvedUser?.sub || resolvedUser?.email || '',
@@ -238,7 +251,7 @@
                 }
 
                 // 保存完整的调试信息
-                localStorage.setItem('feishu_login_last_response', JSON.stringify({
+                safeSetLocalStorage('feishu_login_last_response', JSON.stringify({
                     success: result.success,
                     user: resolvedUser,
                     login_debug: loginDebug,
@@ -252,7 +265,7 @@
                     : (function(u){ if(!u||typeof u!=='object')return null; const rid=u.open_id||u.user_id||u.union_id||u.sub||u.email; if(!rid) return null; return Object.assign({},u,{open_id:String(rid)}); })(resolvedUser);
                 if (!normalizedUser) {
                     // 把完整响应保存到 localStorage，方便排查
-                    localStorage.setItem('feishu_login_error', JSON.stringify({
+                    safeSetLocalStorage('feishu_login_error', JSON.stringify({
                         has_user: Boolean(resolvedUser),
                         user_keys: resolvedUser ? Object.keys(resolvedUser) : [],
                         user: resolvedUser,
@@ -264,23 +277,25 @@
                 }
                 
                 // 登录成功！保存用户信息到 localStorage
-                localStorage.setItem('feishu_user', JSON.stringify(normalizedUser));
+                safeSetLocalStorage('feishu_user', JSON.stringify(normalizedUser));
                 localStorage.removeItem('feishu_login_error');
                 if (promptAdmin && promptAdmin.enabled && promptAdmin.token) {
-                    localStorage.setItem('prompt_admin_token', promptAdmin.token);
-                    localStorage.setItem('prompt_admin_expires_at', String(promptAdmin.expires_at || ''));
+                    safeSetLocalStorage('prompt_admin_token', promptAdmin.token);
+                    safeSetLocalStorage('prompt_admin_expires_at', String(promptAdmin.expires_at || ''));
                     localStorage.removeItem('prompt_admin_reason');
                 } else {
                     localStorage.removeItem('prompt_admin_token');
                     localStorage.removeItem('prompt_admin_expires_at');
-                    localStorage.setItem('prompt_admin_reason', String(promptAdmin?.reason || 'prompt_admin_token_missing'));
+                    safeSetLocalStorage('prompt_admin_reason', String(promptAdmin?.reason || 'prompt_admin_token_missing'));
                 }
                 
                 // 清除 state
                 localStorage.removeItem('oauth_state');
                 
                 // 跳转到原请求页面
-                const savedRedirect = localStorage.getItem('feishu_redirect');
+                const savedRedirect = authHelpers.getRememberedRedirect
+                    ? authHelpers.getRememberedRedirect()
+                    : (localStorage.getItem('feishu_redirect') || sessionStorage.getItem('feishu_redirect') || '');
                 const redirectUrl = authHelpers.getSafeRedirectUrl
                     ? authHelpers.getSafeRedirectUrl(savedRedirect, '/index.html')
                     : (window.location.origin + '/index.html');

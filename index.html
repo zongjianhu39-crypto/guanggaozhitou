@@ -15,7 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body class="home-page">
-    <script src="assets/js/auth-helpers.js?v=202604301830"></script>
+    <script src="assets/js/auth-helpers.js?v=202605031120"></script>
     <script src="auth.js?v=202604301830"></script>
 
     <!-- 导航栏 -->
@@ -538,7 +538,7 @@
             if (authHelpers.rememberRedirect) {
                 authHelpers.rememberRedirect(currentUrl);
             } else {
-                localStorage.setItem('feishu_redirect', currentUrl);
+                try { localStorage.setItem('feishu_redirect', currentUrl); } catch (error) { console.warn('failed to remember redirect', error); }
             }
         }
 
