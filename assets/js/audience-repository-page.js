@@ -224,6 +224,24 @@
     return metrics;
   }
 
+  function getDraftMetricsForAudience(audienceId) {
+    return state.draft.audience && Number(state.draft.audience.audience_id) === Number(audienceId)
+      ? state.draft.metrics
+      : [];
+  }
+
+  function mergeParsedMetrics(existingMetrics, parsedMetrics, parsedDimensions) {
+    const dimensions = new Set(parsedDimensions || []);
+    const merged = [];
+    const seen = new Set();
+    existingMetrics.forEach((metric) => {
+      if (dimensions.has(metric.dimension)) return;
+      addMetric(merged, seen, metric.audience_id, metric);
+    });
+    parsedMetrics.forEach((metric) => addMetric(merged, seen, metric.audience_id, metric));
+    return merged;
+  }
+
   function buildMetricSummary(metrics) {
     return metrics.reduce((summary, metric) => {
       if (!metric.dimension || !metric.category || metric.share === null || metric.share === undefined) return summary;
@@ -393,11 +411,15 @@
           failedImages.push(`${image.dimension}（${message}）`);
         }
       }
-      const metrics = normalizeParsedMetrics(audience.audience_id, parsedItems);
+      const parsedMetrics = normalizeParsedMetrics(audience.audience_id, parsedItems);
+      const parsedDimensions = new Set(parsedMetrics.map((metric) => metric.dimension));
+      const metrics = mergeParsedMetrics(getDraftMetricsForAudience(audience.audience_id), parsedMetrics, parsedDimensions);
       audience.image_formula_map = images.reduce((acc, image) => {
         acc[image.dimension] = { image_file: image.file_name, source: 'web_upload' };
         return acc;
-      }, {});
+      }, Object.assign({}, state.draft.audience?.image_formula_map || {}));
+      audience.raw_row = state.draft.audience?.raw_row || audience.raw_row;
+      audience.source_filename = state.draft.audience?.source_filename || audience.source_filename;
       audience.metric_summary = buildMetricSummary(metrics);
       state.draft = { audience, metrics };
       state.editingAudienceId = audience.audience_id;

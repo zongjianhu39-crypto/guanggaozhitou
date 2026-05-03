@@ -144,22 +144,82 @@ function extractResponseText(result: Record<string, unknown>) {
 }
 
 function parseJsonFromText(text: string) {
-  const cleaned = text
+  const cleaned = stripAiThinking(text);
+  const candidates = [
+    cleaned,
+    ...extractFencedJsonCandidates(cleaned),
+    extractBalancedJsonCandidate(cleaned, '{', '}'),
+    extractBalancedJsonCandidate(cleaned, '[', ']'),
+  ].filter((item): item is string => Boolean(item && item.trim()));
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate.trim());
+    } catch {
+      continue;
+    }
+  }
+
+  throw new Error('AI 返回内容不是合法 JSON');
+}
+
+function stripAiThinking(text: string) {
+  let cleaned = String(text || '')
     .trim()
     .replace(/<think>[\s\S]*?<\/think>/gi, '')
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/i, '')
     .trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const start = cleaned.indexOf('{');
-    const end = cleaned.lastIndexOf('}');
-    if (start >= 0 && end > start) {
-      return JSON.parse(cleaned.slice(start, end + 1));
-    }
-    throw new Error('AI 返回内容不是合法 JSON');
+  const closingThink = cleaned.lastIndexOf('</think>');
+  if (closingThink >= 0) {
+    cleaned = cleaned.slice(closingThink + '</think>'.length).trim();
   }
+  const openingThink = cleaned.lastIndexOf('<think>');
+  if (openingThink >= 0) {
+    const afterThink = cleaned.slice(openingThink + '<think>'.length);
+    const jsonStart = afterThink.search(/[\[{]/);
+    cleaned = jsonStart >= 0 ? afterThink.slice(jsonStart).trim() : cleaned.slice(0, openingThink).trim();
+  }
+  return cleaned;
+}
+
+function extractFencedJsonCandidates(text: string) {
+  const candidates: string[] = [];
+  const regex = /```(?:json)?\s*([\s\S]*?)```/gi;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    if (match[1]?.trim()) candidates.push(match[1].trim());
+  }
+  return candidates;
+}
+
+function extractBalancedJsonCandidate(text: string, open: '{' | '[', close: '}' | ']') {
+  const start = text.indexOf(open);
+  if (start < 0) return '';
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (char === open) depth += 1;
+    if (char === close) {
+      depth -= 1;
+      if (depth === 0) return text.slice(start, index + 1);
+    }
+  }
+  return '';
 }
 
 function pickMetricField(item: Record<string, unknown>, ...keys: string[]) {
@@ -181,13 +241,15 @@ function normalizeParsedMetrics(audienceId: number, parsed: unknown) {
         ? body.data as Record<string, unknown>[]
         : Array.isArray(body.rows)
           ? body.rows as Record<string, unknown>[]
-          : [];
+          : pickMetricField(body, 'dimension', '维度') && pickMetricField(body, 'category', '分类', '类别', '等级', '会员等级', '标签')
+            ? [body]
+            : [];
   return items
     .map((item) => normalizeMetric({
       audience_id: audienceId,
       dimension: pickMetricField(item, 'dimension', '维度'),
-      category: pickMetricField(item, 'category', '分类', '类别', '等级'),
-      share: pickMetricField(item, 'share', '分析人群占比', '占比', 'percentage', 'percent'),
+      category: pickMetricField(item, 'category', '分类', '类别', '等级', '会员等级', '标签', '人群标签'),
+      share: pickMetricField(item, 'share', '分析人群占比', '占比', 'percentage', 'percent', 'value', '占比数值'),
       share_text: pickMetricField(item, 'share_text', '占比文本', '分析人群占比文本'),
       source: 'ai_image_extract',
     }))
