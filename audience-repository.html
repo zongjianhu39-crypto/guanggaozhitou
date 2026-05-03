@@ -8,7 +8,7 @@
     <meta name="description" content="人群基础信息录入、维度图片 AI 解析与 Supabase 入库">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="style.css?v=202605030900">
-    <link rel="stylesheet" href="assets/css/audience-repository.css?v=202605030900">
+    <link rel="stylesheet" href="assets/css/audience-repository.css?v=202605031030">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body class="audience-repository-page">
@@ -55,7 +55,7 @@
         <div class="audience-grid">
             <div>
                 <section class="audience-panel">
-                    <h2>新增人群</h2>
+                    <h2 id="audience-form-title">新增人群</h2>
                     <p>直接填写人群基础信息，并上传各维度截图，系统会解析成“人群仓库ID / 维度 / 分类 / 分析人群占比”的格式。</p>
                     <div class="audience-form-grid">
                         <label class="audience-field">
@@ -91,6 +91,7 @@
                     <div class="audience-actions">
                         <button id="parse-audience-btn" type="button" class="audience-button">AI 解析图片</button>
                         <button id="save-audience-btn" type="button" class="audience-button audience-button-primary">写入 Supabase</button>
+                        <button id="reset-audience-btn" type="button" class="audience-button">新建 / 清空</button>
                     </div>
                     <div id="audience-status" class="audience-status" aria-live="polite"></div>
                 </section>
@@ -116,6 +117,6 @@
     <script src="assets/js/config.js"></script>
     <script src="script.js?v=202605030900"></script>
     <script src="assets/js/audience-repository-api.js?v=202605030900" defer></script>
-    <script src="assets/js/audience-repository-page.js?v=202605030900" defer></script>
+    <script src="assets/js/audience-repository-page.js?v=202605031030" defer></script>
 </body>
 </html>

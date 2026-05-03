@@ -16,6 +16,7 @@
     loading: false,
     saving: false,
     searchTimer: null,
+    editingAudienceId: null,
   };
 
   function $(id) {
@@ -71,6 +72,40 @@
     if (validFrom) return `起：${validFrom}`;
     if (validTo) return `止：${validTo}`;
     return '';
+  }
+
+  function setInputValue(id, value) {
+    const el = $(id);
+    if (!el) return;
+    el.value = value ?? '';
+  }
+
+  function updateFormTitle() {
+    const title = $('audience-form-title');
+    if (!title) return;
+    title.textContent = state.editingAudienceId ? '编辑人群' : '新增人群';
+  }
+
+  function fillAudienceForm(audience) {
+    setInputValue('audience-id', audience?.audience_id || '');
+    setInputValue('audience-size', audience?.audience_size || '');
+    setInputValue('audience-name', audience?.audience_name || '');
+    setInputValue('audience-valid-from', audience?.valid_from || '');
+    setInputValue('audience-valid-to', audience?.valid_to || '');
+    setInputValue('audience-selection-logic', audience?.selection_logic || '');
+    setInputValue('audience-definition', audience?.audience_definition || '');
+  }
+
+  function resetAudienceForm() {
+    fillAudienceForm({});
+    document.querySelectorAll('#audience-image-grid input[type="file"]').forEach((input) => {
+      input.value = '';
+    });
+    state.draft = { audience: null, metrics: [] };
+    state.editingAudienceId = null;
+    updateFormTitle();
+    renderDraftPreview();
+    setStatus('已清空，可以录入新的人群。', 'success');
   }
 
   function collectAudienceForm() {
@@ -168,9 +203,25 @@
 
   function buildMetricSummary(metrics) {
     return metrics.reduce((summary, metric) => {
+      if (!metric.dimension || !metric.category || metric.share === null || metric.share === undefined) return summary;
       summary[`${metric.dimension}_${metric.category}`] = metric.share;
       return summary;
     }, {});
+  }
+
+  function getMetricsForAudience(audienceId) {
+    const id = Number(audienceId);
+    return state.saved.metrics
+      .filter((metric) => Number(metric.audience_id) === id)
+      .map((metric) => ({
+        audience_id: id,
+        dimension: metric.dimension || '',
+        category: metric.category || '',
+        share: parseShare(metric.share),
+        share_text: metric.share_text || formatPercent(metric.share),
+        source: metric.source || 'manual_edit',
+      }))
+      .filter((metric) => metric.dimension && metric.category && metric.share !== null);
   }
 
   function renderImageUploadGrid() {
@@ -191,7 +242,7 @@
     const audience = state.draft.audience;
     const metrics = state.draft.metrics;
     if (!audience) {
-      container.innerHTML = '<div class="audience-empty">填写人群信息并上传图片后，点击“AI 解析图片”生成待入库预览。</div>';
+      container.innerHTML = '<div class="audience-empty">填写新的人群信息，或点击右侧仓库卡片的“编辑”，这里会显示待保存的数据。</div>';
       return;
     }
 
@@ -201,7 +252,10 @@
           <div class="audience-id">${escapeHtml(audience.audience_id)}</div>
           <h3>${escapeHtml(audience.audience_name)}</h3>
         </div>
-        <span>${formatNumber(metrics.length)} 条维度占比</span>
+        <div class="audience-preview-actions">
+          <span>${formatNumber(metrics.length)} 条维度占比</span>
+          <button type="button" class="audience-button audience-button-compact" data-action="add-metric">新增维度</button>
+        </div>
       </div>
       ${metrics.length ? `
         <div class="audience-table-wrap">
@@ -210,23 +264,25 @@
               <tr>
                 <th>维度</th>
                 <th>分类</th>
-                <th>分析人群占比</th>
+                <th>分析人群占比(%)</th>
                 <th>来源</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
-              ${metrics.map((metric) => `
+              ${metrics.map((metric, index) => `
                 <tr>
-                  <td>${escapeHtml(metric.dimension)}</td>
-                  <td>${escapeHtml(metric.category)}</td>
-                  <td>${formatPercent(metric.share)}</td>
+                  <td><input class="audience-table-input" data-metric-index="${index}" data-metric-field="dimension" value="${escapeHtml(metric.dimension)}"></td>
+                  <td><input class="audience-table-input" data-metric-index="${index}" data-metric-field="category" value="${escapeHtml(metric.category)}"></td>
+                  <td><input class="audience-table-input" type="number" step="0.01" min="0" max="100" data-metric-index="${index}" data-metric-field="share" value="${escapeHtml((Number(metric.share) * 100).toFixed(2))}"></td>
                   <td>${escapeHtml(metric.source)}</td>
+                  <td><button type="button" class="audience-link-button" data-action="remove-metric" data-metric-index="${index}">删除</button></td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
-      ` : '<div class="audience-empty">还没有解析到维度占比，请检查图片是否包含分类和百分比。</div>'}
+      ` : '<div class="audience-empty">还没有维度占比，可以上传图片 AI 解析，也可以点击“新增维度”手动补充。</div>'}
     `;
   }
 
@@ -277,6 +333,7 @@
             <div class="audience-row-meta">
               <span>${formatNumber(item.audience_size)} 人</span>
               <span>${escapeHtml(item.valid_from || '-')}${item.valid_to ? ` 至 ${escapeHtml(item.valid_to)}` : ''}</span>
+              <button type="button" class="audience-link-button" data-action="edit-audience" data-audience-id="${escapeHtml(item.audience_id)}">编辑</button>
             </div>
           </div>
           <div class="audience-tags">
@@ -320,6 +377,8 @@
       }, {});
       audience.metric_summary = buildMetricSummary(metrics);
       state.draft = { audience, metrics };
+      state.editingAudienceId = audience.audience_id;
+      updateFormTitle();
       renderDraftPreview();
       const failedText = failedImages.length ? `；未解析成功：${Array.from(new Set(failedImages)).join('、')}` : '';
       setStatus(`已解析 ${metrics.length} 条维度占比${failedText}。`, metrics.length ? (failedImages.length ? 'warn' : 'success') : 'error');
@@ -329,18 +388,26 @@
   }
 
   async function handleSave() {
-    if (!state.draft.audience) {
-      setStatus('没有可入库的数据，请先解析图片。', 'error');
-      return;
-    }
     try {
+      const audience = collectAudienceForm();
+      const metrics = state.draft.audience && Number(state.draft.audience.audience_id) === Number(audience.audience_id)
+        ? state.draft.metrics
+        : [];
+      audience.image_formula_map = state.draft.audience?.image_formula_map || audience.image_formula_map;
+      audience.raw_row = state.draft.audience?.raw_row || audience.raw_row;
+      audience.source_filename = state.draft.audience?.source_filename || audience.source_filename;
+      audience.metric_summary = buildMetricSummary(metrics);
+      state.draft = { audience, metrics };
       state.saving = true;
       setStatus('正在写入 Supabase...', 'warn');
       const result = await api.importAudiences({
-        audiences: [state.draft.audience],
-        metrics: state.draft.metrics,
+        audiences: [audience],
+        metrics,
       });
       setStatus(`入库完成：${result.audience_count || 0} 条人群，${result.metric_count || 0} 条维度数据。`, 'success');
+      state.editingAudienceId = audience.audience_id;
+      updateFormTitle();
+      renderDraftPreview();
       await loadRepository();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '入库失败', 'error');
@@ -367,13 +434,112 @@
     }
   }
 
+  function handleEditAudience(audienceId) {
+    const id = Number(audienceId);
+    const audience = state.saved.audiences.find((item) => Number(item.audience_id) === id);
+    if (!audience) {
+      setStatus('没有找到这条人群数据，请刷新后再试。', 'error');
+      return;
+    }
+    const draftAudience = {
+      audience_id: Number(audience.audience_id),
+      audience_name: audience.audience_name || '',
+      valid_from: audience.valid_from || null,
+      valid_to: audience.valid_to || null,
+      valid_range_text: audience.valid_range_text || buildValidRangeText(audience.valid_from, audience.valid_to),
+      audience_size: parseNumber(audience.audience_size),
+      selection_logic: audience.selection_logic || '',
+      audience_definition: audience.audience_definition || '',
+      image_formula_map: audience.image_formula_map || {},
+      metric_summary: audience.metric_summary || {},
+      raw_row: audience.raw_row || { input_source: 'web_manual_edit' },
+      source_filename: audience.source_filename || 'web_manual_edit',
+    };
+    state.draft = { audience: draftAudience, metrics: getMetricsForAudience(id) };
+    state.editingAudienceId = id;
+    fillAudienceForm(draftAudience);
+    updateFormTitle();
+    renderDraftPreview();
+    setStatus(`已载入 ${id}，可以修改基础信息或维度明细后重新写入 Supabase。`, 'success');
+    $('audience-form-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function handleAddMetric() {
+    let audience;
+    try {
+      audience = collectAudienceForm();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : '请先填写人群基础信息', 'error');
+      return;
+    }
+    const metrics = state.draft.audience && Number(state.draft.audience.audience_id) === Number(audience.audience_id)
+      ? state.draft.metrics
+      : [];
+    metrics.push({
+      audience_id: audience.audience_id,
+      dimension: DIMENSIONS[0],
+      category: '',
+      share: 0,
+      share_text: '0.00%',
+      source: 'manual_edit',
+    });
+    audience.metric_summary = buildMetricSummary(metrics);
+    state.draft = { audience, metrics };
+    state.editingAudienceId = audience.audience_id;
+    updateFormTitle();
+    renderDraftPreview();
+    setStatus('已新增一行维度明细，填写后可以直接入库。', 'success');
+  }
+
+  function handleRemoveMetric(index) {
+    if (!state.draft.audience) return;
+    state.draft.metrics.splice(index, 1);
+    state.draft.audience.metric_summary = buildMetricSummary(state.draft.metrics);
+    renderDraftPreview();
+    setStatus('已删除该维度明细，保存后会同步覆盖 Supabase。', 'success');
+  }
+
+  function handleMetricInput(target) {
+    const index = Number(target.dataset.metricIndex);
+    const field = target.dataset.metricField;
+    const metric = state.draft.metrics[index];
+    if (!metric || !field) return;
+    if (field === 'share') {
+      const numeric = parseShare(`${target.value}%`);
+      metric.share = numeric === null ? 0 : numeric;
+      metric.share_text = formatPercent(metric.share);
+      return;
+    }
+    metric[field] = target.value;
+  }
+
   function bind() {
     $('parse-audience-btn')?.addEventListener('click', handleAiParse);
     $('save-audience-btn')?.addEventListener('click', handleSave);
+    $('reset-audience-btn')?.addEventListener('click', resetAudienceForm);
     $('refresh-audience-btn')?.addEventListener('click', loadRepository);
     $('audience-search')?.addEventListener('input', () => {
       window.clearTimeout(state.searchTimer);
       state.searchTimer = window.setTimeout(loadRepository, 300);
+    });
+    $('audience-list')?.addEventListener('click', (event) => {
+      const target = event.target instanceof Element ? event.target.closest('[data-action="edit-audience"]') : null;
+      if (!target) return;
+      handleEditAudience(target.dataset.audienceId);
+    });
+    $('audience-preview')?.addEventListener('click', (event) => {
+      const eventTarget = event.target instanceof Element ? event.target : null;
+      const addTarget = eventTarget?.closest('[data-action="add-metric"]');
+      if (addTarget) {
+        handleAddMetric();
+        return;
+      }
+      const removeTarget = eventTarget?.closest('[data-action="remove-metric"]');
+      if (removeTarget) handleRemoveMetric(Number(removeTarget.dataset.metricIndex));
+    });
+    $('audience-preview')?.addEventListener('input', (event) => {
+      const target = event.target instanceof Element ? event.target.closest('[data-metric-field]') : null;
+      if (target) handleMetricInput(target);
     });
   }
 
