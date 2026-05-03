@@ -38,10 +38,6 @@
     return request('POST', Object.assign({ action: 'import' }, payload));
   }
 
-  function parseImages(payload) {
-    return request('POST', Object.assign({ action: 'parse_images' }, payload));
-  }
-
   function deleteAudience(audienceId) {
     return request('POST', { action: 'delete', audience_id: audienceId });
   }
@@ -49,7 +45,6 @@
   window.AudienceRepositoryApi = {
     fetchList,
     importAudiences,
-    parseImages,
     deleteAudience,
   };
 })(window);

@@ -5,10 +5,10 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>人群仓库 - 交个朋友·广告智投工作台</title>
-    <meta name="description" content="人群基础信息录入、维度图片 AI 解析与 Supabase 入库">
+    <meta name="description" content="人群基础信息录入、维度占比表上传与 Supabase 入库">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="style.css?v=202605030900">
-    <link rel="stylesheet" href="assets/css/audience-repository.css?v=202605031030">
+    <link rel="stylesheet" href="assets/css/audience-repository.css?v=202605031730">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body class="audience-repository-page">
@@ -47,7 +47,7 @@
         <section class="audience-hero">
             <div>
                 <h1>人群仓库</h1>
-                <p>录入达摩盘人群包信息，上传各维度截图，由 AI 解析成结构化占比数据，后续可直接被投放分析、GenBI 和策略复盘调用。</p>
+                <p>录入达摩盘人群包信息，上传已整理好的维度占比表，后续可直接被投放分析、GenBI 和策略复盘调用。</p>
             </div>
             <div id="audience-stats" class="audience-stats" aria-live="polite"></div>
         </section>
@@ -56,7 +56,7 @@
             <div>
                 <section class="audience-panel">
                     <h2 id="audience-form-title">新增人群</h2>
-                    <p>直接填写人群基础信息，并上传各维度截图，系统会解析成“人群仓库ID / 维度 / 分类 / 分析人群占比”的格式。</p>
+                    <p>直接填写人群基础信息，并上传“人群仓库_图片数据提取.xlsx”。系统会读取“人群仓库ID / 维度 / 分类 / 分析人群占比”的长表数据。</p>
                     <div class="audience-form-grid">
                         <label class="audience-field">
                             达摩盘人群包 ID
@@ -87,9 +87,13 @@
                             <textarea id="audience-definition" rows="4" placeholder="填写这类人群的定义、成交/访问/复购等条件"></textarea>
                         </label>
                     </div>
-                    <div id="audience-image-grid" class="audience-image-grid"></div>
+                    <label class="audience-upload-card">
+                        <span>维度占比数据表</span>
+                        <input id="audience-metrics-file" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+                        <small>上传“人群仓库_图片数据提取.xlsx”，优先读取“人群图片数据提取”sheet。</small>
+                    </label>
                     <div class="audience-actions">
-                        <button id="parse-audience-btn" type="button" class="audience-button">AI 解析图片</button>
+                        <button id="import-metrics-btn" type="button" class="audience-button">导入维度表</button>
                         <button id="save-audience-btn" type="button" class="audience-button audience-button-primary">写入 Supabase</button>
                         <button id="reset-audience-btn" type="button" class="audience-button">新建 / 清空</button>
                     </div>
@@ -117,6 +121,7 @@
     <script src="assets/js/config.js"></script>
     <script src="script.js?v=202605030900"></script>
     <script src="assets/js/audience-repository-api.js?v=202605030900" defer></script>
-    <script src="assets/js/audience-repository-page.js?v=202605031650" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+    <script src="assets/js/audience-repository-page.js?v=202605031730" defer></script>
 </body>
 </html>

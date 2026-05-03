@@ -131,16 +131,10 @@ body.audience-repository-page {
   line-height: 1.6;
 }
 
-.audience-image-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.audience-image-card {
+.audience-upload-card {
   display: grid;
   gap: 8px;
+  margin-top: 16px;
   padding: 12px;
   border: 1px solid #dbe4f0;
   border-radius: 8px;
@@ -150,14 +144,14 @@ body.audience-repository-page {
   font-weight: 800;
 }
 
-.audience-image-card input {
+.audience-upload-card input {
   width: 100%;
   min-width: 0;
   font-size: 12px;
   font-weight: 500;
 }
 
-.audience-image-card small {
+.audience-upload-card small {
   color: #7a8598;
   font-weight: 500;
   line-height: 1.5;
@@ -397,7 +391,6 @@ body.audience-repository-page {
   .audience-hero,
   .audience-grid,
   .audience-form-grid,
-  .audience-image-grid,
   .audience-row-main {
     grid-template-columns: 1fr;
   }

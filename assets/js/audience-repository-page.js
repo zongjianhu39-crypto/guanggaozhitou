@@ -1,14 +1,7 @@
 (function attachAudienceRepositoryPage(window) {
   const api = window.AudienceRepositoryApi;
-  const DIMENSIONS = [
-    '月均消费金额',
-    '预测购买力',
-    '88会员等级',
-    '月均购物频次偏好',
-    '月均直播观看场次',
-    '月均直播全量观看时长',
-    '月均品牌自播间观看时长',
-  ];
+  const DEFAULT_DIMENSION = '月均消费金额';
+  const METRICS_SHEET_NAME = '人群图片数据提取';
 
   const state = {
     draft: { audience: null, metrics: [] },
@@ -98,9 +91,7 @@
 
   function resetAudienceForm() {
     fillAudienceForm({});
-    document.querySelectorAll('#audience-image-grid input[type="file"]').forEach((input) => {
-      input.value = '';
-    });
+    setInputValue('audience-metrics-file', '');
     state.draft = { audience: null, metrics: [] };
     state.editingAudienceId = null;
     updateFormTitle();
@@ -126,77 +117,9 @@
       audience_definition: String($('audience-definition')?.value || '').trim(),
       image_formula_map: {},
       metric_summary: {},
-      raw_row: { input_source: 'web_manual_image_upload' },
-      source_filename: 'web_manual_image_upload',
+      raw_row: { input_source: 'web_manual_xlsx_upload' },
+      source_filename: 'web_manual_xlsx_upload',
     };
-  }
-
-  function estimateDataUrlBytes(dataUrl) {
-    const base64 = String(dataUrl || '').split(',')[1] || '';
-    return Math.ceil((base64.length * 3) / 4);
-  }
-
-  function renderImageToDataUrl(img, maxSide, quality) {
-    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-    const width = Math.max(1, Math.round(img.width * scale));
-    const height = Math.max(1, Math.round(img.height * scale));
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, width, height);
-    ctx.drawImage(img, 0, 0, width, height);
-    return canvas.toDataURL('image/jpeg', quality);
-  }
-
-  function resizeImageFile(file) {
-    const targetBytes = 850 * 1024;
-    const attempts = [
-      { maxSide: 1200, quality: 0.78 },
-      { maxSide: 1000, quality: 0.72 },
-      { maxSide: 850, quality: 0.68 },
-      { maxSide: 720, quality: 0.64 },
-      { maxSide: 640, quality: 0.6 },
-    ];
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('图片读取失败'));
-      reader.onload = () => {
-        const img = new Image();
-        img.onerror = () => reject(new Error('图片预览加载失败'));
-        img.onload = () => {
-          let selected = '';
-          for (const attempt of attempts) {
-            selected = renderImageToDataUrl(img, attempt.maxSide, attempt.quality);
-            if (estimateDataUrlBytes(selected) <= targetBytes) break;
-          }
-          resolve(selected);
-        };
-        img.src = String(reader.result || '');
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function collectImageUploads() {
-    const uploads = [];
-    for (const dimension of DIMENSIONS) {
-      const input = document.querySelector(`input[data-dimension="${dimension}"]`);
-      const file = input?.files?.[0] || null;
-      if (!file) continue;
-      if (!/^image\//.test(file.type)) throw new Error(`${dimension} 上传的不是图片文件`);
-      setStatus(`正在压缩图片：${dimension}`, 'warn');
-      const dataUrl = await resizeImageFile(file);
-      uploads.push({
-        dimension,
-        file_name: file.name,
-        mime_type: 'image/jpeg',
-        data_url: dataUrl,
-        compressed_kb: Math.round(estimateDataUrlBytes(dataUrl) / 1024),
-      });
-    }
-    return uploads;
   }
 
   function addMetric(metrics, seen, audienceId, item) {
@@ -217,29 +140,101 @@
     });
   }
 
-  function normalizeParsedMetrics(audienceId, parsedItems) {
-    const metrics = [];
-    const seen = new Set();
-    (parsedItems || []).forEach((item) => addMetric(metrics, seen, audienceId, item));
-    return metrics;
-  }
-
-  function getDraftMetricsForAudience(audienceId) {
-    return state.draft.audience && Number(state.draft.audience.audience_id) === Number(audienceId)
-      ? state.draft.metrics
-      : [];
-  }
-
-  function mergeParsedMetrics(existingMetrics, parsedMetrics, parsedDimensions) {
-    const dimensions = new Set(parsedDimensions || []);
-    const merged = [];
-    const seen = new Set();
-    existingMetrics.forEach((metric) => {
-      if (dimensions.has(metric.dimension)) return;
-      addMetric(merged, seen, metric.audience_id, metric);
+  function readWorkbookFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('维度表读取失败'));
+      reader.onload = () => resolve(reader.result);
+      reader.readAsArrayBuffer(file);
     });
-    parsedMetrics.forEach((metric) => addMetric(merged, seen, metric.audience_id, metric));
-    return merged;
+  }
+
+  function getRowValue(row, keys) {
+    for (const key of keys) {
+      if (row[key] !== undefined && row[key] !== null && row[key] !== '') return row[key];
+    }
+    return '';
+  }
+
+  function parseUploadShare(value) {
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) return null;
+      return value > 1 ? value / 100 : value;
+    }
+    return parseShare(value);
+  }
+
+  function normalizeWorkbookMetric(row, fallbackAudienceId) {
+    const rowAudienceId = parseNumber(getRowValue(row, ['人群仓库ID', '人群包ID', 'audience_id', 'Audience ID']));
+    const audienceId = rowAudienceId || fallbackAudienceId;
+    const dimension = String(getRowValue(row, ['维度', 'dimension']) || '').trim();
+    const category = String(getRowValue(row, ['分类', '类别', '等级', 'category']) || '').trim();
+    const share = parseUploadShare(getRowValue(row, ['分析人群占比', '占比', 'share', 'percentage', 'percent']));
+    if (!audienceId || !dimension || !category || share === null) return null;
+    return {
+      audience_id: audienceId,
+      dimension,
+      category,
+      share,
+      share_text: formatPercent(share),
+      source: 'xlsx_upload',
+    };
+  }
+
+  function parseLongMetricsSheet(workbook, audienceId) {
+    const sheetName = workbook.SheetNames.includes(METRICS_SHEET_NAME) ? METRICS_SHEET_NAME : workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    const metrics = [];
+    const skippedAudienceIds = new Set();
+    rows.forEach((row) => {
+      const metric = normalizeWorkbookMetric(row, audienceId);
+      if (!metric) return;
+      if (Number(metric.audience_id) !== Number(audienceId)) {
+        skippedAudienceIds.add(metric.audience_id);
+        return;
+      }
+      metrics.push(metric);
+    });
+    return { metrics, skippedAudienceIds };
+  }
+
+  function parseWideMetricsSheet(workbook, audienceId) {
+    const sheet = workbook.Sheets['宽表格式'] || workbook.Sheets[workbook.SheetNames[0]];
+    const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    const metrics = [];
+    const skippedAudienceIds = new Set();
+    rows.forEach((row) => {
+      const rowAudienceId = parseNumber(getRowValue(row, ['人群仓库ID', '人群包ID', 'audience_id', 'Audience ID'])) || audienceId;
+      if (Number(rowAudienceId) !== Number(audienceId)) {
+        skippedAudienceIds.add(rowAudienceId);
+        return;
+      }
+      Object.entries(row).forEach(([key, value]) => {
+        if (!key || key === '人群仓库ID' || key === '人群包ID' || key === 'audience_id' || !key.includes('_')) return;
+        const splitIndex = key.indexOf('_');
+        const dimension = key.slice(0, splitIndex).trim();
+        const category = key.slice(splitIndex + 1).trim();
+        const share = parseUploadShare(value);
+        if (!dimension || !category || share === null) return;
+        metrics.push({
+          audience_id: audienceId,
+          dimension,
+          category,
+          share,
+          share_text: formatPercent(share),
+          source: 'xlsx_upload',
+        });
+      });
+    });
+    return { metrics, skippedAudienceIds };
+  }
+
+  function dedupeMetrics(metrics, audienceId) {
+    const deduped = [];
+    const seen = new Set();
+    metrics.forEach((metric) => addMetric(deduped, seen, audienceId, metric));
+    return deduped;
   }
 
   function buildMetricSummary(metrics) {
@@ -265,25 +260,13 @@
       .filter((metric) => metric.dimension && metric.category && metric.share !== null);
   }
 
-  function renderImageUploadGrid() {
-    const container = $('audience-image-grid');
-    if (!container) return;
-    container.innerHTML = DIMENSIONS.map((dimension) => `
-      <label class="audience-image-card">
-        <span>${escapeHtml(dimension)}</span>
-        <input type="file" accept="image/*" data-dimension="${escapeHtml(dimension)}">
-        <small>上传该维度截图</small>
-      </label>
-    `).join('');
-  }
-
   function renderDraftPreview() {
     const container = $('audience-preview');
     if (!container) return;
     const audience = state.draft.audience;
     const metrics = state.draft.metrics;
     if (!audience) {
-      container.innerHTML = '<div class="audience-empty">填写新的人群信息，或点击右侧仓库卡片的“编辑”，这里会显示待保存的数据。</div>';
+      container.innerHTML = '<div class="audience-empty">填写新的人群信息，或点击右侧仓库卡片的“编辑”，再上传维度占比表，这里会显示待保存的数据。</div>';
       return;
     }
 
@@ -323,7 +306,7 @@
             </tbody>
           </table>
         </div>
-      ` : '<div class="audience-empty">还没有维度占比，可以上传图片 AI 解析，也可以点击“新增维度”手动补充。</div>'}
+      ` : '<div class="audience-empty">还没有维度占比，可以上传“人群仓库_图片数据提取.xlsx”，也可以点击“新增维度”手动补充。</div>'}
     `;
   }
 
@@ -386,49 +369,49 @@
     }).join('');
   }
 
-  async function handleAiParse() {
+  async function handleMetricsImport() {
     try {
       const audience = collectAudienceForm();
-      const images = await collectImageUploads();
-      if (!images.length) {
-        setStatus('请至少上传一张维度截图。', 'error');
+      const file = $('audience-metrics-file')?.files?.[0] || null;
+      if (!file) {
+        setStatus('请先上传“人群仓库_图片数据提取.xlsx”。', 'error');
         return;
       }
-      const parsedItems = [];
-      const failedImages = [];
-      for (let index = 0; index < images.length; index += 1) {
-        const image = images[index];
-        setStatus(`AI 正在解析图片 ${index + 1}/${images.length}：${image.dimension}（约 ${image.compressed_kb || '-'}KB）`, 'warn');
-        try {
-          const result = await api.parseImages({ audience_id: audience.audience_id, images: [image] });
-          parsedItems.push(...(result.metrics || []));
-          (result.parse_errors || []).forEach((item) => {
-            const detail = item.message ? `${item.dimension || image.dimension}（${item.message}）` : (item.dimension || image.dimension);
-            failedImages.push(detail);
-          });
-        } catch (error) {
-          const message = error instanceof Error ? error.message : '请求失败';
-          failedImages.push(`${image.dimension}（${message}）`);
-        }
+      if (!/\.xlsx?$/i.test(file.name)) {
+        setStatus('请上传 xlsx/xls 格式的数据表。', 'error');
+        return;
       }
-      const parsedMetrics = normalizeParsedMetrics(audience.audience_id, parsedItems);
-      const parsedDimensions = new Set(parsedMetrics.map((metric) => metric.dimension));
-      const metrics = mergeParsedMetrics(getDraftMetricsForAudience(audience.audience_id), parsedMetrics, parsedDimensions);
-      audience.image_formula_map = images.reduce((acc, image) => {
-        acc[image.dimension] = { image_file: image.file_name, source: 'web_upload' };
-        return acc;
-      }, Object.assign({}, state.draft.audience?.image_formula_map || {}));
+      if (!window.XLSX) {
+        setStatus('Excel 解析库还没有加载完成，请刷新页面后重试。', 'error');
+        return;
+      }
+
+      setStatus(`正在读取维度表：${file.name}`, 'warn');
+      const buffer = await readWorkbookFile(file);
+      const workbook = window.XLSX.read(buffer, { type: 'array' });
+      let { metrics, skippedAudienceIds } = parseLongMetricsSheet(workbook, audience.audience_id);
+      if (!metrics.length) {
+        ({ metrics, skippedAudienceIds } = parseWideMetricsSheet(workbook, audience.audience_id));
+      }
+      metrics = dedupeMetrics(metrics, audience.audience_id);
+      if (!metrics.length) {
+        const skipped = skippedAudienceIds.size ? `；表内其他人群ID：${Array.from(skippedAudienceIds).join('、')}` : '';
+        setStatus(`没有读取到当前人群 ${audience.audience_id} 的维度占比数据${skipped}。`, 'error');
+        return;
+      }
+
+      audience.image_formula_map = state.draft.audience?.image_formula_map || {};
       audience.raw_row = state.draft.audience?.raw_row || audience.raw_row;
-      audience.source_filename = state.draft.audience?.source_filename || audience.source_filename;
+      audience.source_filename = file.name;
       audience.metric_summary = buildMetricSummary(metrics);
       state.draft = { audience, metrics };
       state.editingAudienceId = audience.audience_id;
       updateFormTitle();
       renderDraftPreview();
-      const failedText = failedImages.length ? `；未解析成功：${Array.from(new Set(failedImages)).join('、')}` : '';
-      setStatus(`已解析 ${metrics.length} 条维度占比${failedText}。`, metrics.length ? (failedImages.length ? 'warn' : 'success') : 'error');
+      const skipped = skippedAudienceIds.size ? `；已忽略其他人群ID：${Array.from(skippedAudienceIds).join('、')}` : '';
+      setStatus(`已导入 ${metrics.length} 条维度占比${skipped}。`, skippedAudienceIds.size ? 'warn' : 'success');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'AI 解析失败', 'error');
+      setStatus(error instanceof Error ? error.message : '维度表导入失败', 'error');
     }
   }
 
@@ -522,7 +505,7 @@
       : [];
     metrics.push({
       audience_id: audience.audience_id,
-      dimension: DIMENSIONS[0],
+      dimension: DEFAULT_DIMENSION,
       category: '',
       share: 0,
       share_text: '0.00%',
@@ -559,7 +542,7 @@
   }
 
   function bind() {
-    $('parse-audience-btn')?.addEventListener('click', handleAiParse);
+    $('import-metrics-btn')?.addEventListener('click', handleMetricsImport);
     $('save-audience-btn')?.addEventListener('click', handleSave);
     $('reset-audience-btn')?.addEventListener('click', resetAudienceForm);
     $('refresh-audience-btn')?.addEventListener('click', loadRepository);
@@ -589,7 +572,6 @@
   }
 
   function init() {
-    renderImageUploadGrid();
     renderDraftPreview();
     renderSavedRepository();
     bind();
