@@ -2,6 +2,7 @@
   const api = window.AudienceRepositoryApi;
   const DEFAULT_DIMENSION = '月均消费金额';
   const METRICS_SHEET_NAME = '人群图片数据提取';
+  const LABEL_SHEET_NAME = '人群标签数据';
 
   const state = {
     draft: { audience: null, metrics: [] },
@@ -18,6 +19,13 @@
 
   function setStatus(message, type) {
     const el = $('audience-status');
+    if (!el) return;
+    el.className = `audience-status${type ? ` audience-status-${type}` : ''}`;
+    el.textContent = message || '';
+  }
+
+  function setBulkStatus(message, type) {
+    const el = $('audience-bulk-status');
     if (!el) return;
     el.className = `audience-status${type ? ` audience-status-${type}` : ''}`;
     el.textContent = message || '';
@@ -65,6 +73,35 @@
     if (validFrom) return `起：${validFrom}`;
     if (validTo) return `止：${validTo}`;
     return '';
+  }
+
+  function normalizeDateText(value) {
+    if (value === null || value === undefined || value === '') return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+    if (typeof value === 'number' && Number.isFinite(value) && value > 20000 && value < 70000) {
+      const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+      return date.toISOString().slice(0, 10);
+    }
+    const text = String(value).trim();
+    const match = text.match(/(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
+    if (!match) return null;
+    return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+  }
+
+  function parseValidRange(row) {
+    const rawRange = String(getRowValue(row, ['有效日期', '有效期', 'valid_range_text']) || '').trim();
+    const explicitFrom = normalizeDateText(getRowValue(row, ['有效期开始', '有效开始', 'valid_from']));
+    const explicitTo = normalizeDateText(getRowValue(row, ['有效期结束', '有效结束', 'valid_to']));
+    const dateMatches = Array.from(rawRange.matchAll(/(\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2})/g)).map((match) => normalizeDateText(match[1])).filter(Boolean);
+    const fromMatch = rawRange.match(/起[：:\s]*(\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2})/);
+    const toMatch = rawRange.match(/止[：:\s]*(\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2})/);
+    const validFrom = explicitFrom || normalizeDateText(fromMatch?.[1]) || dateMatches[0] || null;
+    const validTo = explicitTo || normalizeDateText(toMatch?.[1]) || dateMatches[1] || null;
+    return {
+      valid_from: validFrom,
+      valid_to: validTo,
+      valid_range_text: rawRange || buildValidRangeText(validFrom, validTo),
+    };
   }
 
   function setInputValue(id, value) {
@@ -165,7 +202,7 @@
   }
 
   function normalizeWorkbookMetric(row, fallbackAudienceId) {
-    const rowAudienceId = parseNumber(getRowValue(row, ['人群仓库ID', '人群包ID', 'audience_id', 'Audience ID']));
+    const rowAudienceId = parseNumber(getRowValue(row, ['达摩盘人群包ID', '达摩盘人群包 ID', '人群仓库ID', '人群包ID', 'audience_id', 'Audience ID']));
     const audienceId = rowAudienceId || fallbackAudienceId;
     const dimension = String(getRowValue(row, ['维度', 'dimension']) || '').trim();
     const category = String(getRowValue(row, ['分类', '类别', '等级', 'category']) || '').trim();
@@ -178,6 +215,74 @@
       share,
       share_text: formatPercent(share),
       source: 'xlsx_upload',
+    };
+  }
+
+  function buildAudienceFromLabelRow(row, audienceId, existing, fileName) {
+    const validRange = parseValidRange(row);
+    const audienceName = String(getRowValue(row, ['达摩盘人群名称', '人群名称', 'audience_name']) || existing?.audience_name || '').trim();
+    return {
+      audience_id: audienceId,
+      audience_name: audienceName,
+      valid_from: validRange.valid_from || existing?.valid_from || null,
+      valid_to: validRange.valid_to || existing?.valid_to || null,
+      valid_range_text: validRange.valid_range_text || existing?.valid_range_text || '',
+      audience_size: parseNumber(getRowValue(row, ['人群规模', '覆盖规模', 'audience_size'])) ?? existing?.audience_size ?? null,
+      selection_logic: String(getRowValue(row, ['圈选逻辑', 'selection_logic']) || existing?.selection_logic || '').trim(),
+      audience_definition: String(getRowValue(row, ['人群定义', 'audience_definition']) || existing?.audience_definition || '').trim(),
+      image_formula_map: existing?.image_formula_map || {},
+      metric_summary: existing?.metric_summary || {},
+      raw_row: existing?.raw_row || Object.assign({ input_source: 'label_extract_workbook' }, row),
+      source_filename: fileName,
+    };
+  }
+
+  function parseLabelExtractionWorkbook(workbook, fileName) {
+    const sheetName = workbook.SheetNames.includes(LABEL_SHEET_NAME) ? LABEL_SHEET_NAME : workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+    const audiencesById = new Map();
+    const metrics = [];
+    const seenMetrics = new Set();
+    let currentAudienceId = null;
+    let skippedRows = 0;
+
+    rows.forEach((row) => {
+      const rowAudienceId = parseNumber(getRowValue(row, ['达摩盘人群包ID', '达摩盘人群包 ID', '人群仓库ID', '人群包ID', 'audience_id', 'Audience ID']));
+      if (rowAudienceId) currentAudienceId = rowAudienceId;
+      const audienceId = rowAudienceId || currentAudienceId;
+      if (!audienceId) {
+        skippedRows += 1;
+        return;
+      }
+
+      const existingAudience = audiencesById.get(audienceId);
+      const audience = buildAudienceFromLabelRow(row, audienceId, existingAudience, fileName);
+      audiencesById.set(audienceId, audience);
+
+      const metric = normalizeWorkbookMetric(row, audienceId);
+      if (!metric) return;
+      metric.source = 'xlsx_label_extract';
+      const key = `${metric.audience_id}::${metric.dimension}::${metric.category}`;
+      if (seenMetrics.has(key)) return;
+      seenMetrics.add(key);
+      metrics.push(metric);
+    });
+
+    const audiences = Array.from(audiencesById.values())
+      .filter((audience) => audience.audience_id && audience.audience_name)
+      .map((audience) => {
+        const itemMetrics = metrics.filter((metric) => Number(metric.audience_id) === Number(audience.audience_id));
+        return Object.assign({}, audience, {
+          metric_summary: buildMetricSummary(itemMetrics),
+        });
+      });
+
+    return {
+      audiences,
+      metrics: metrics.filter((metric) => audiences.some((audience) => Number(audience.audience_id) === Number(metric.audience_id))),
+      skippedRows,
+      sheetName,
     };
   }
 
@@ -415,6 +520,44 @@
     }
   }
 
+  async function handleLabelWorkbookImport() {
+    try {
+      const file = $('audience-label-file')?.files?.[0] || null;
+      if (!file) {
+        setBulkStatus('请先选择“人群仓库_标签提取.xlsx”。', 'error');
+        return;
+      }
+      if (!/\.xlsx?$/i.test(file.name)) {
+        setBulkStatus('请上传 xlsx/xls 格式的数据表。', 'error');
+        return;
+      }
+      if (!window.XLSX) {
+        setBulkStatus('Excel 解析库还没有加载完成，请刷新页面后重试。', 'error');
+        return;
+      }
+
+      state.saving = true;
+      setBulkStatus(`正在读取标签提取表：${file.name}`, 'warn');
+      const buffer = await readWorkbookFile(file);
+      const workbook = window.XLSX.read(buffer, { type: 'array' });
+      const { audiences, metrics, skippedRows, sheetName } = parseLabelExtractionWorkbook(workbook, file.name);
+      if (!audiences.length) {
+        setBulkStatus(`没有读取到合法人群。请确认 ${sheetName || '表格'} 里包含“达摩盘人群包ID”和“达摩盘人群名称”。`, 'error');
+        return;
+      }
+
+      setBulkStatus(`已识别 ${audiences.length} 个人群、${metrics.length} 条标签占比，正在覆盖写入 Supabase...`, 'warn');
+      const result = await api.importAudiences({ audiences, metrics });
+      const skipped = skippedRows ? `；跳过 ${skippedRows} 行缺少人群 ID 的数据` : '';
+      setBulkStatus(`导入完成：已覆盖/新增 ${result.audience_count || 0} 个人群，写入 ${result.metric_count || 0} 条标签占比${skipped}。`, 'success');
+      await loadRepository();
+    } catch (error) {
+      setBulkStatus(error instanceof Error ? error.message : '标签提取表导入失败', 'error');
+    } finally {
+      state.saving = false;
+    }
+  }
+
   async function handleSave() {
     try {
       const audience = collectAudienceForm();
@@ -542,6 +685,7 @@
   }
 
   function bind() {
+    $('import-label-workbook-btn')?.addEventListener('click', handleLabelWorkbookImport);
     $('import-metrics-btn')?.addEventListener('click', handleMetricsImport);
     $('save-audience-btn')?.addEventListener('click', handleSave);
     $('reset-audience-btn')?.addEventListener('click', resetAudienceForm);

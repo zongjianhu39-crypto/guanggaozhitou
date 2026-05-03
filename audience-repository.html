@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>人群仓库 - 交个朋友·广告智投工作台</title>
-    <meta name="description" content="人群基础信息录入、维度占比表上传与 Supabase 入库">
+    <meta name="description" content="人群基础信息录入、标签提取表批量导入与 Supabase 入库">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="style.css?v=202605030900">
     <link rel="stylesheet" href="assets/css/audience-repository.css?v=202605031730">
@@ -54,6 +54,20 @@
 
         <div class="audience-grid">
             <div>
+                <section class="audience-panel">
+                    <h2>批量导入标签提取表</h2>
+                    <p>上传“人群仓库_标签提取.xlsx”，系统会按达摩盘人群包 ID 批量同步。表里已有的人群会自动覆盖旧记录，新的人群会新增。</p>
+                    <label class="audience-upload-card">
+                        <span>人群仓库标签提取表</span>
+                        <input id="audience-label-file" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+                        <small>读取“人群标签数据”sheet，字段包含“达摩盘人群包ID / 达摩盘人群名称 / 有效日期 / 人群规模 / 圈选逻辑 / 人群定义 / 维度 / 分类 / 分析人群占比”。</small>
+                    </label>
+                    <div class="audience-actions">
+                        <button id="import-label-workbook-btn" type="button" class="audience-button audience-button-primary">一键导入 / 覆盖仓库</button>
+                    </div>
+                    <div id="audience-bulk-status" class="audience-status" aria-live="polite"></div>
+                </section>
+
                 <section class="audience-panel">
                     <h2 id="audience-form-title">新增人群</h2>
                     <p>直接填写人群基础信息，并上传“人群仓库_图片数据提取.xlsx”。系统会读取“人群仓库ID / 维度 / 分类 / 分析人群占比”的长表数据。</p>
@@ -122,6 +136,6 @@
     <script src="script.js?v=202605030900"></script>
     <script src="assets/js/audience-repository-api.js?v=202605030900" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-    <script src="assets/js/audience-repository-page.js?v=202605031730" defer></script>
+    <script src="assets/js/audience-repository-page.js?v=202605041130" defer></script>
 </body>
 </html>
