@@ -4,6 +4,10 @@ import { SB_SERVICE_ROLE_KEY, SB_URL } from '../_shared/supabase-client.ts';
 import { createErrorResponseWithStatus } from '../_shared/error-handler.ts';
 
 const PROD_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? 'https://www.friends.wang';
+const EXTRA_ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
 const MAX_IMPORT_ROWS = 500;
 const MAX_METRICS = 20000;
 const MAX_PARSE_IMAGES = 10;
@@ -13,12 +17,20 @@ const MINIMAX_MAX_TOKENS = 32768;
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get('Origin') ?? '';
-  const allowed = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ? origin : PROD_ORIGIN;
+  const allowedOrigins = new Set([PROD_ORIGIN, 'https://www.friends.wang', 'https://friends.wang', ...EXTRA_ALLOWED_ORIGINS]);
+  const allowed = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    ? origin
+    : origin === 'null'
+      ? 'null'
+      : allowedOrigins.has(origin)
+        ? origin
+        : PROD_ORIGIN;
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-prompt-admin-token',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Content-Type': 'application/json; charset=utf-8',
+    'Vary': 'Origin',
   };
 }
 
