@@ -60,6 +60,12 @@ function toBigintLike(value: unknown) {
   return Math.trunc(numeric);
 }
 
+function normalizeAudienceType(value: unknown) {
+  const text = String(value ?? '').trim().toLowerCase();
+  if (text === 'split' || text === '子包' || text === '分裂子包' || text === '分裂子人群包') return 'split';
+  return 'master';
+}
+
 function toDate(value: unknown) {
   const text = String(value ?? '').trim();
   return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : null;
@@ -83,9 +89,13 @@ function normalizeAudience(item: Record<string, unknown>, updatedBy: string) {
   const audienceId = toBigintLike(item.audience_id);
   const audienceName = toNullableText(item.audience_name);
   if (!audienceId || !audienceName) return null;
+  const audienceType = normalizeAudienceType(item.audience_type);
+  const parentAudienceId = audienceType === 'split' ? toBigintLike(item.parent_audience_id) : null;
   return {
     audience_id: audienceId,
     audience_name: audienceName,
+    audience_type: audienceType,
+    parent_audience_id: parentAudienceId,
     valid_from: toDate(item.valid_from),
     valid_to: toDate(item.valid_to),
     valid_range_text: toNullableText(item.valid_range_text),
@@ -437,6 +447,10 @@ async function handleImport(
     .map((item) => normalizeAudience(item, updatedBy))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
   if (!audiences.length) return json({ error: '没有合法的人群 ID 和名称' }, 400, headers);
+  const invalidSplit = audiences.find((item) => item.audience_type === 'split' && !item.parent_audience_id);
+  if (invalidSplit) return json({ error: `分裂子人群包 ${invalidSplit.audience_id} 必须选择所属主人群包` }, 400, headers);
+  const selfParent = audiences.find((item) => item.parent_audience_id && item.parent_audience_id === item.audience_id);
+  if (selfParent) return json({ error: `人群包 ${selfParent.audience_id} 不能选择自己作为主人群包` }, 400, headers);
 
   const ids = Array.from(new Set(audiences.map((item) => item.audience_id)));
   const metrics = metricItems

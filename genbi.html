@@ -24,10 +24,10 @@
                 <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
                 <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
                 <li><a href="audience-repository.html" class="nav-link">人群仓库</a></li>
+                <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
                 <li class="nav-item-dropdown">
                     <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
                     <div class="nav-dropdown" role="menu">
-                        <a href="budget-scorecard.html">预算效率评分卡</a>
                         <a href="insights.html">洞察中心</a>
                         <a href="genbi-rule-admin.html">GenBI 规则管理</a>
                         <a href="prompt-admin.html">Prompt 管理</a>
@@ -145,10 +145,9 @@
 
                 <!-- Rules Section -->
                 <div class="sidebar-section">
-                    <h5>当前规则 (3 条生效)</h5>
-                    <div class="rule-pill">ROI 分析规则 v2.1</div>
-                    <div class="rule-pill">花费偏离规则 v1.4</div>
-                    <div class="rule-pill">归因模板 v3.0</div>
+                    <h5>当前规则</h5>
+                    <div class="sidebar-history-item">规则由 GenBI 规则管理页动态维护。</div>
+                    <a class="rule-pill" href="genbi-rule-admin.html">打开规则管理</a>
                 </div>
 
                 <!-- Danger Notice -->
@@ -167,13 +166,13 @@
         </section>
     </main>
 
-    <script src="assets/js/auth-helpers.js?v=202605031120"></script>
-    <script src="auth.js?v=202604301830"></script>
+    <script src="assets/js/auth-helpers.js?v=202605050540"></script>
+    <script src="auth.js?v=202605050540"></script>
     <script src="assets/js/config.js"></script>
     <script src="assets/js/shared-utils.js"></script>
-    <script src="assets/js/ai-article-markdown.js?v=202604301830"></script>
-    <script src="script.js?v=202604301830"></script>
-    <script src="assets/js/genbi-page.js?v=202604301830"></script>
+    <script src="assets/js/ai-article-markdown.js?v=202605050540"></script>
+    <script src="script.js?v=202605050540"></script>
+    <script src="assets/js/genbi-page.js?v=202605050540"></script>
     <script>
     // Quick question buttons: fill textarea and focus
     document.getElementById('genbi-quick-btns')?.addEventListener('click', function(e) {

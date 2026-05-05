@@ -3,6 +3,10 @@
   const DEFAULT_DIMENSION = '月均消费金额';
   const METRICS_SHEET_NAME = '人群图片数据提取';
   const LABEL_SHEET_NAME = '人群标签数据';
+  const AUDIENCE_TYPES = {
+    master: '主人群包',
+    split: '分裂子人群包',
+  };
 
   const state = {
     draft: { audience: null, metrics: [] },
@@ -58,6 +62,16 @@
     return Number.isFinite(numeric) ? numeric : null;
   }
 
+  function normalizeAudienceType(value) {
+    const text = String(value || '').trim().toLowerCase();
+    if (text === 'split' || text === '子包' || text === '分裂子包' || text === '分裂子人群包') return 'split';
+    return 'master';
+  }
+
+  function getAudienceTypeLabel(value) {
+    return AUDIENCE_TYPES[normalizeAudienceType(value)] || AUDIENCE_TYPES.master;
+  }
+
   function parseShare(value) {
     if (value === null || value === undefined || value === '') return null;
     if (typeof value === 'number') return Number.isFinite(value) ? value : null;
@@ -110,6 +124,36 @@
     el.value = value ?? '';
   }
 
+  function getMasterAudiences(excludeAudienceId) {
+    const excludeId = Number(excludeAudienceId || 0);
+    return state.saved.audiences
+      .filter((item) => normalizeAudienceType(item.audience_type) === 'master')
+      .filter((item) => Number(item.audience_id) !== excludeId)
+      .sort((a, b) => String(a.audience_name || '').localeCompare(String(b.audience_name || ''), 'zh-CN'));
+  }
+
+  function renderParentAudienceOptions(selectedId, excludeAudienceId) {
+    const select = $('parent-audience-id');
+    if (!select) return;
+    const selected = selectedId ? String(selectedId) : '';
+    const options = ['<option value="">选择主人群包</option>'];
+    getMasterAudiences(excludeAudienceId).forEach((item) => {
+      const id = String(item.audience_id);
+      options.push(`<option value="${escapeHtml(id)}">${escapeHtml(item.audience_name || id)}（${escapeHtml(id)}）</option>`);
+    });
+    select.innerHTML = options.join('');
+    select.value = selected;
+  }
+
+  function syncAudienceTypeControls() {
+    const typeEl = $('audience-type');
+    const parentEl = $('parent-audience-id');
+    if (!typeEl || !parentEl) return;
+    const isSplit = normalizeAudienceType(typeEl.value) === 'split';
+    parentEl.disabled = !isSplit;
+    if (!isSplit) parentEl.value = '';
+  }
+
   function updateFormTitle() {
     const title = $('audience-form-title');
     if (!title) return;
@@ -117,13 +161,18 @@
   }
 
   function fillAudienceForm(audience) {
+    const audienceType = normalizeAudienceType(audience?.audience_type);
     setInputValue('audience-id', audience?.audience_id || '');
     setInputValue('audience-size', audience?.audience_size || '');
+    setInputValue('audience-type', audienceType);
+    renderParentAudienceOptions(audience?.parent_audience_id || '', audience?.audience_id || '');
+    setInputValue('parent-audience-id', audienceType === 'split' ? audience?.parent_audience_id || '' : '');
     setInputValue('audience-name', audience?.audience_name || '');
     setInputValue('audience-valid-from', audience?.valid_from || '');
     setInputValue('audience-valid-to', audience?.valid_to || '');
     setInputValue('audience-selection-logic', audience?.selection_logic || '');
     setInputValue('audience-definition', audience?.audience_definition || '');
+    syncAudienceTypeControls();
   }
 
   function resetAudienceForm() {
@@ -143,9 +192,15 @@
     if (!audienceName) throw new Error('请填写达摩盘人群名称');
     const validFrom = $('audience-valid-from')?.value || '';
     const validTo = $('audience-valid-to')?.value || '';
+    const audienceType = normalizeAudienceType($('audience-type')?.value || 'master');
+    const parentAudienceId = audienceType === 'split' ? parseNumber($('parent-audience-id')?.value) : null;
+    if (audienceType === 'split' && !parentAudienceId) throw new Error('分裂子人群包必须选择所属主人群包');
+    if (audienceType === 'split' && Number(parentAudienceId) === Number(audienceId)) throw new Error('所属主人群包不能选择自己');
     return {
       audience_id: audienceId,
       audience_name: audienceName,
+      audience_type: audienceType,
+      parent_audience_id: parentAudienceId,
       valid_from: validFrom || null,
       valid_to: validTo || null,
       valid_range_text: buildValidRangeText(validFrom, validTo),
@@ -221,9 +276,15 @@
   function buildAudienceFromLabelRow(row, audienceId, existing, fileName) {
     const validRange = parseValidRange(row);
     const audienceName = String(getRowValue(row, ['达摩盘人群名称', '人群名称', 'audience_name']) || existing?.audience_name || '').trim();
+    const audienceType = normalizeAudienceType(getRowValue(row, ['人群包类型', '人群类型', 'audience_type']) || existing?.audience_type || 'master');
+    const parentAudienceId = audienceType === 'split'
+      ? parseNumber(getRowValue(row, ['主人群包ID', '父人群包ID', 'parent_audience_id', 'parent_id']) || existing?.parent_audience_id)
+      : null;
     return {
       audience_id: audienceId,
       audience_name: audienceName,
+      audience_type: audienceType,
+      parent_audience_id: parentAudienceId,
       valid_from: validRange.valid_from || existing?.valid_from || null,
       valid_to: validRange.valid_to || existing?.valid_to || null,
       valid_range_text: validRange.valid_range_text || existing?.valid_range_text || '',
@@ -427,13 +488,14 @@
 
     const stats = $('audience-stats');
     if (stats) {
-      const totalSize = audiences.reduce((sum, item) => sum + (Number(item.audience_size) || 0), 0);
-      const dimensions = new Set(metrics.map((item) => item.dimension));
+      const masterAudiences = audiences.filter((item) => normalizeAudienceType(item.audience_type) === 'master');
+      const splitAudiences = audiences.filter((item) => normalizeAudienceType(item.audience_type) === 'split');
+      const dedupSize = masterAudiences.reduce((sum, item) => sum + (Number(item.audience_size) || 0), 0);
       stats.innerHTML = `
-        <div><strong>${formatNumber(audiences.length)}</strong><span>人群包</span></div>
-        <div><strong>${formatNumber(totalSize)}</strong><span>覆盖规模</span></div>
+        <div><strong>${formatNumber(masterAudiences.length)}</strong><span>主人群包</span></div>
+        <div><strong>${formatNumber(splitAudiences.length)}</strong><span>分裂子包</span></div>
+        <div><strong>${formatNumber(dedupSize)}</strong><span>去重覆盖规模</span></div>
         <div><strong>${formatNumber(metrics.length)}</strong><span>维度占比</span></div>
-        <div><strong>${formatNumber(dimensions.size)}</strong><span>分析维度</span></div>
       `;
     }
 
@@ -451,12 +513,19 @@
     container.innerHTML = audiences.map((item) => {
       const itemMetrics = metricsByAudience.get(Number(item.audience_id)) || [];
       const topMetrics = itemMetrics.slice(0, 8);
+      const audienceType = normalizeAudienceType(item.audience_type);
+      const parent = audienceType === 'split'
+        ? audiences.find((candidate) => Number(candidate.audience_id) === Number(item.parent_audience_id))
+        : null;
       return `
         <article class="audience-row">
           <div class="audience-row-main">
             <div>
               <div class="audience-id">${escapeHtml(item.audience_id)}</div>
               <h3>${escapeHtml(item.audience_name)}</h3>
+              <div class="audience-badge${audienceType === 'split' ? ' audience-badge-split' : ''}">
+                ${escapeHtml(getAudienceTypeLabel(audienceType))}${parent ? ` · 所属：${escapeHtml(parent.audience_name || parent.audience_id)}` : ''}
+              </div>
               <p>${escapeHtml(item.audience_definition || item.selection_logic || '-')}</p>
             </div>
             <div class="audience-row-meta">
@@ -597,6 +666,8 @@
         audiences: result.audiences || [],
         metrics: result.metrics || [],
       };
+      renderParentAudienceOptions($('parent-audience-id')?.value || '', $('audience-id')?.value || '');
+      syncAudienceTypeControls();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : '加载人群仓库失败', 'error');
     } finally {
@@ -615,6 +686,8 @@
     const draftAudience = {
       audience_id: Number(audience.audience_id),
       audience_name: audience.audience_name || '',
+      audience_type: normalizeAudienceType(audience.audience_type),
+      parent_audience_id: audience.parent_audience_id || null,
       valid_from: audience.valid_from || null,
       valid_to: audience.valid_to || null,
       valid_range_text: audience.valid_range_text || buildValidRangeText(audience.valid_from, audience.valid_to),
@@ -690,6 +763,7 @@
     $('save-audience-btn')?.addEventListener('click', handleSave);
     $('reset-audience-btn')?.addEventListener('click', resetAudienceForm);
     $('refresh-audience-btn')?.addEventListener('click', loadRepository);
+    $('audience-type')?.addEventListener('change', syncAudienceTypeControls);
     $('audience-search')?.addEventListener('input', () => {
       window.clearTimeout(state.searchTimer);
       state.searchTimer = window.setTimeout(loadRepository, 300);

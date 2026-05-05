@@ -59,10 +59,12 @@ FILES=(
   metric-rules.html
   supabase-dashboard.html
   audience-repository.html
+  budget-scorecard.html
   plan-dashboard.html
   plan-dashboard-preview.html
   prompt-admin.html
   genbi-rule-admin.html
+  genbi-workflow.html
   dashboard.js
   prompt-admin.js
   assets/js/config.js
@@ -82,6 +84,7 @@ FILES=(
   assets/js/dashboard-events.js
   assets/js/audience-repository-api.js
   assets/js/audience-repository-page.js
+  assets/js/budget-scorecard-page.js
   assets/js/plan-dashboard-api.js
   assets/js/plan-dashboard-state.js
   assets/js/plan-dashboard-render.js
@@ -91,6 +94,7 @@ FILES=(
   assets/data/dashboard-spec.json
   assets/data/genbi-semantic.json
   assets/css/audience-repository.css
+  assets/css/budget-scorecard.css
   assets/css/plan-dashboard.css
   assets/hero-dashboard-scene.svg
   assets/hero-illustration.svg

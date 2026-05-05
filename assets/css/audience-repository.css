@@ -113,6 +113,7 @@ body.audience-repository-page {
 }
 
 .audience-field input,
+.audience-field select,
 .audience-field textarea,
 .audience-search input {
   width: 100%;
@@ -123,6 +124,12 @@ body.audience-repository-page {
   background: #fff;
   color: #111827;
   font: inherit;
+}
+
+.audience-field select:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 .audience-field textarea {
@@ -361,6 +368,24 @@ body.audience-repository-page {
   color: #475569;
   font-size: 12px;
   white-space: nowrap;
+}
+
+.audience-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.audience-badge-split {
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .audience-tags {

@@ -83,6 +83,11 @@
   }
 
   function getInitialMonth() {
+    const now = new Date();
+    if (now.getFullYear() === PLAN_YEAR) {
+      const currentMonth = now.getMonth() + 1;
+      if (!isMonthDisabled(currentMonth)) return currentMonth;
+    }
     return PLAN_BREAKDOWN_AVAILABLE_MONTHS[0];
   }
 

@@ -79,7 +79,7 @@ async function main() {
   assert.equal(effectiveDays[0].remark, '草稿备注', 'draft remark not applied');
 
   assert.equal(typeof window.PlanDashboardPage.getInitialMonth, 'function', 'getInitialMonth should be exported');
-  assert.equal(window.PlanDashboardPage.getInitialMonth(), 4, 'initial month should fall back to first available month');
+  assert.equal(window.PlanDashboardPage.getInitialMonth(), 5, 'initial month should use the current month when available');
   assert.equal(window.PlanDashboardPage.isMonthDisabled(1), true, 'January should be disabled');
   assert.equal(window.PlanDashboardPage.isMonthDisabled(4), false, 'April should be enabled');
 
