@@ -55,7 +55,15 @@ jobs:
         shell: bash
         run: |
           echo "Pushing database migrations..."
-          supabase db push --db-url "$SUPABASE_DB_URL"
+          # Resolve Supabase DB host to IPv4 and rewrite URL to avoid IPv6 unreachable
+          DB_URL="$SUPABASE_DB_URL"
+          DB_HOST=$(echo "$DB_URL" | sed -E 's|.*@([^/:]+).*|\1|')
+          DB_IPV4=$(getent ahostsv4 "$DB_HOST" | awk '{print $1; exit}')
+          if [[ -n "$DB_IPV4" && "$DB_IPV4" != "$DB_HOST" ]]; then
+            echo "Rewriting $DB_HOST -> $DB_IPV4 to force IPv4"
+            DB_URL=$(echo "$DB_URL" | sed "s|@${DB_HOST}|@${DB_IPV4}|")
+          fi
+          supabase db push --db-url "$DB_URL"
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
