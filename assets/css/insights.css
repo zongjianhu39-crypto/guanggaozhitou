@@ -410,7 +410,9 @@ body {
 
 .report-entry-cta-row {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    gap: var(--space-3);
     margin-top: var(--space-1);
 }
 
@@ -422,6 +424,36 @@ body {
 
 .report-entry:hover .report-entry-cta {
     text-decoration: underline;
+}
+
+.delete-report-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--danger-border);
+    background: var(--surface-base);
+    color: var(--danger);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    line-height: 1;
+    transition: background var(--duration-fast) var(--ease-out),
+                border-color var(--duration-fast) var(--ease-out),
+                color var(--duration-fast) var(--ease-out);
+}
+
+.delete-report-btn:hover {
+    background: var(--danger-bg);
+    border-color: var(--danger);
+}
+
+.delete-report-btn:disabled {
+    cursor: wait;
+    opacity: 0.65;
 }
 
 .report-card h3 {
@@ -516,6 +548,14 @@ body {
     display: none;
 }
 
+.detail-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+}
+
 .detail-header {
     display: flex;
     align-items: flex-start;
@@ -587,11 +627,16 @@ body {
     background: var(--surface-base);
     color: var(--gray-700);
     cursor: pointer;
-    margin-bottom: var(--space-5);
+    margin-bottom: 0;
     font-size: var(--text-sm);
     font-weight: var(--font-medium);
     font-family: inherit;
     transition: all var(--duration-fast) var(--ease-out);
+}
+
+.detail-delete-btn {
+    min-height: 38px;
+    font-size: var(--text-sm);
 }
 
 .back-link:hover {
@@ -1123,6 +1168,16 @@ body {
 
     .detail-stage {
         padding: var(--space-5);
+    }
+
+    .detail-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .detail-toolbar .back-link,
+    .detail-toolbar .detail-delete-btn {
+        width: 100%;
     }
 
     .detail-stage-copy h2 {

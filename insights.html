@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>洞察中心 - 交个朋友·广告智投工作台</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="assets/css/insights.css" />
+    <link rel="stylesheet" href="assets/css/insights.css?v=202605060010" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
@@ -113,7 +113,10 @@
         </section>
 
         <section id="detail-view" class="detail-view">
-            <button id="detail-back-btn" class="back-link" type="button">← 返回报告列表</button>
+            <div class="detail-toolbar">
+                <button id="detail-back-btn" class="back-link" type="button">← 返回报告列表</button>
+                <button id="detail-delete-btn" class="delete-report-btn detail-delete-btn" type="button">删除报告</button>
+            </div>
             <div class="detail-stage">
                 <div class="detail-stage-grid">
                     <div class="detail-stage-main">
@@ -154,8 +157,8 @@
     <script src="assets/js/config.js"></script>
     <script src="assets/js/shared-utils.js"></script>
     <script src="assets/js/ai-article-markdown.js?v=202605050540"></script>
-    <script src="assets/js/insights-render.js?v=202605050540"></script>
-    <script src="assets/js/insights-page.js?v=202605050540"></script>
+    <script src="assets/js/insights-render.js?v=202605060010"></script>
+    <script src="assets/js/insights-page.js?v=202605060010"></script>
     <script src="script.js?v=202605050540"></script>
 </body>
 </html>

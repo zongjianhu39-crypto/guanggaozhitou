@@ -9,7 +9,7 @@ function getCorsHeaders(req: Request) {
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-prompt-admin-token',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
     'Content-Type': 'application/json',
   };
 }
@@ -65,6 +65,13 @@ function buildDetailUrl(slug: string): string {
   );
   url.searchParams.set('slug', `eq.${slug}`);
   url.searchParams.set('limit', '1');
+  return url.toString();
+}
+
+function buildDeleteUrl(slug: string): string {
+  const url = new URL(`${SB_URL}/rest/v1/ai_reports`);
+  url.searchParams.set('slug', `eq.${slug}`);
+  url.searchParams.set('select', 'id,slug,title');
   return url.toString();
 }
 
@@ -201,8 +208,8 @@ Deno.serve(async (req: Request) => {
     return new Response('ok', { headers: CORS_HEADERS });
   }
 
-  if (req.method !== 'GET') {
-    return new Response(JSON.stringify({ error: '仅支持 GET 请求' }), {
+  if (req.method !== 'GET' && req.method !== 'DELETE') {
+    return new Response(JSON.stringify({ error: '仅支持 GET 或 DELETE 请求' }), {
       status: 405,
       headers: CORS_HEADERS,
     });
@@ -229,6 +236,49 @@ Deno.serve(async (req: Request) => {
   try {
     const requestUrl = new URL(req.url);
     const slug = requestUrl.searchParams.get('slug');
+
+    if (req.method === 'DELETE') {
+      if (!slug || !SAFE_SLUG_RE.test(slug)) {
+        return new Response(JSON.stringify({ success: false, error: '无效的报告标识' }), {
+          status: 400,
+          headers: CORS_HEADERS,
+        });
+      }
+
+      const response = await fetch(buildDeleteUrl(slug), {
+        method: 'DELETE',
+        headers: {
+          ...getSupabaseHeaders(),
+          Prefer: 'return=representation',
+          Accept: 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (isMissingAiReportsTable(response.status, errorText)) {
+          return new Response(JSON.stringify({ success: false, error: '报告中心尚未初始化' }), {
+            status: 404,
+            headers: CORS_HEADERS,
+          });
+        }
+        throw new Error(`删除报告失败: ${response.status} ${errorText}`);
+      }
+
+      const rows = await response.json();
+      const deletedItem = Array.isArray(rows) ? rows[0] ?? null : rows;
+      if (!deletedItem) {
+        return new Response(JSON.stringify({ success: false, error: '报告不存在或已被删除' }), {
+          status: 404,
+          headers: CORS_HEADERS,
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, item: deletedItem }), {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    }
 
     if (slug) {
       if (!SAFE_SLUG_RE.test(slug)) {

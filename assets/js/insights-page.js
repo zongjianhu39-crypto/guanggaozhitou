@@ -98,9 +98,11 @@
             return { limit: 24 };
         }
 
-        async function fetchFunction(path, params = {}) {
+        async function fetchFunction(path, params = {}, options = {}) {
             const { data } = await authHelpers.fetchFunctionJson(path, {
                 query: params,
+                method: options.method || 'GET',
+                body: options.body,
                 parseErrorMessage: '洞察服务返回了无法解析的响应，请稍后重试',
                 onUnauthorized: () => {
                     redirectToInsightLogin('洞察中心登录状态已失效，正在跳转重新登录…');
@@ -143,6 +145,11 @@ async function loadList(force = false) {
             document.getElementById('detail-story').innerHTML = '<div class="list-empty">请返回报告列表重新选择。</div>';
             document.getElementById('detail-structured-appendix').innerHTML = '<p class="appendix-empty">暂无结构化参考数据。</p>';
             document.getElementById('detail-markdown').textContent = '暂无原始文本';
+            const deleteBtn = document.getElementById('detail-delete-btn');
+            if (deleteBtn) {
+                deleteBtn.hidden = true;
+                delete deleteBtn.dataset.reportSlug;
+            }
         }
 
         async function loadDetail(slug) {
@@ -157,6 +164,12 @@ async function loadList(force = false) {
             const readableSummary = getReadableSummary(item, payload);
             const cleanedMarkdown = sanitizeReportText(item.raw_markdown || payload.markdown || '');
             currentDetailItem = item;
+            const deleteBtn = document.getElementById('detail-delete-btn');
+            if (deleteBtn) {
+                deleteBtn.hidden = false;
+                deleteBtn.dataset.reportSlug = item.slug || '';
+                deleteBtn.disabled = !item.slug;
+            }
 
             document.getElementById('detail-subtitle').textContent = getDetailSubtitle(item);
             document.getElementById('detail-title').textContent = item.title || '未命名报告';
@@ -198,8 +211,59 @@ async function loadList(force = false) {
             loadCurrentView();
         }
 
+        async function deleteReport(slug, options = {}) {
+            if (!slug) return;
+            const sourceButton = options.sourceButton || null;
+            const title = String(options.title || currentDetailItem?.title || '这份报告').trim();
+            const originalButtonText = sourceButton ? sourceButton.textContent : '';
+            const confirmed = window.confirm(`确定删除「${title}」吗？删除后无法在洞察中心恢复。`);
+            if (!confirmed) return;
+
+            if (sourceButton) {
+                sourceButton.disabled = true;
+                sourceButton.dataset.busy = 'true';
+                sourceButton.textContent = '删除中';
+            }
+
+            try {
+                await fetchFunction('ai-reports', { slug }, { method: 'DELETE' });
+                reportListCache = { key: '', result: null };
+                allReportItems = allReportItems.filter((item) => item.slug !== slug);
+
+                if (options.fromDetail) {
+                    openReportList();
+                    return;
+                }
+
+                updateStats(allReportItems, allReportItems.length);
+                renderList(allReportItems);
+            } catch (error) {
+                const errorState = authHelpers.describeFetchError
+                    ? authHelpers.describeFetchError(error, '删除报告失败，请稍后重试。')
+                    : { message: error.message || '删除报告失败，请稍后重试' };
+                window.alert(errorState.message);
+            } finally {
+                if (sourceButton) {
+                    sourceButton.disabled = false;
+                    delete sourceButton.dataset.busy;
+                    sourceButton.textContent = originalButtonText || '删除';
+                }
+            }
+        }
+
         function bindReportCardInteractions() {
             const activate = (event) => {
+                const deleteButton = event.target.closest('[data-delete-report-slug]');
+                if (deleteButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    deleteReport(deleteButton.dataset.deleteReportSlug || '', {
+                        sourceButton: deleteButton,
+                        title: deleteButton.dataset.reportTitle || '',
+                    });
+                    return;
+                }
+
                 const card = event.target.closest('[data-report-slug]');
                 if (!card) return;
                 const slug = card.dataset.reportSlug || '';
@@ -209,6 +273,7 @@ async function loadList(force = false) {
 
             const handleKeydown = (event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return;
+                if (event.target.closest('[data-delete-report-slug]')) return;
                 const card = event.target.closest('[data-report-slug]');
                 if (!card) return;
                 event.preventDefault();
@@ -247,6 +312,14 @@ async function loadList(force = false) {
 
             document.getElementById('reload-reports-btn').addEventListener('click', reloadReports);
             document.getElementById('detail-back-btn').addEventListener('click', openReportList);
+            document.getElementById('detail-delete-btn').addEventListener('click', (event) => {
+                const button = event.currentTarget;
+                deleteReport(button.dataset.reportSlug || currentDetailItem?.slug || '', {
+                    sourceButton: button,
+                    title: currentDetailItem?.title || '',
+                    fromDetail: true,
+                });
+            });
         }
 
         /* ── 筛选逻辑 ── */

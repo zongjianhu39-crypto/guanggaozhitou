@@ -246,13 +246,14 @@
             const badgeLabel = genbiReport ? 'GenBI' : riskLabel(item.risk_level);
             const badgeClass = genbiReport ? 'medium' : escapeHtml(item.risk_level || '');
             const slug = escapeHtml(item.slug || '');
+            const title = escapeHtml(item.title || '未命名报告');
 
             return `
                 <article class="report-card report-entry ${isLatest ? 'report-entry--latest' : ''} ${riskClass} ${riskColorClass}" data-report-slug="${slug}" tabindex="0" role="button" aria-label="查看报告详情">
                     <div class="report-entry-head">
                         <div class="report-entry-head-main">
                             ${isLatest ? '<span class="report-badge-latest">最新</span>' : ''}
-                            <h3>${escapeHtml(item.title || '未命名报告')}</h3>
+                            <h3>${title}</h3>
                         </div>
                         <div class="report-entry-meta">
                             <span class="report-entry-date">${escapeHtml(item.report_date || '--')}</span>
@@ -262,7 +263,10 @@
                     <p class="report-entry-summary">${escapeHtml(readableSummary)}</p>
                     ${metaLine ? `<p class="report-entry-metrics">${escapeHtml(metaLine)}</p>` : ''}
                     ${tags.length ? `<div class="chips">${tags.map((tag) => `<span class="chip">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
-                    <div class="report-entry-cta-row"><span class="report-entry-cta">查看详情</span></div>
+                    <div class="report-entry-cta-row">
+                        <button class="delete-report-btn" type="button" data-delete-report-slug="${slug}" data-report-title="${title}" aria-label="删除报告：${title}">删除</button>
+                        <span class="report-entry-cta">查看详情</span>
+                    </div>
                 </article>
             `;
         }
