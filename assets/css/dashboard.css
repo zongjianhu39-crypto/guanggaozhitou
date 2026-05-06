@@ -230,6 +230,11 @@
     background: var(--indigo-400);
 }
 
+.crowd-plan-filter-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
 .crowd-plan-select {
     min-width: 280px;
     min-height: 38px;
@@ -311,69 +316,6 @@
 .tab-content.active {
     display: block;
 }
-
-/* ── KPI Grid（由 JS 动态生成） ── */
-.kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-3);
-    margin-top: var(--space-3);
-}
-
-/* ── KPI 卡片（兼容旧 JS 渲染） ── */
-.kpi-card {
-    background: var(--surface-base);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    padding: var(--space-4);
-    box-shadow: var(--shadow-card);
-    min-width: 0;
-    position: relative;
-    overflow: hidden;
-    transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-}
-
-.kpi-card.status-default::before { background: var(--indigo-400); }
-.kpi-card.status-positive::before { background: var(--success); }
-.kpi-card.status-warning::before { background: var(--warning); }
-.kpi-card.status-negative::before { background: var(--danger); }
-
-.kpi-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-card-hover);
-}
-
-.kpi-card.skeleton-card {
-    min-height: 86px;
-}
-
-.kpi-label {
-    font-size: var(--text-xs);
-    color: var(--gray-400);
-    font-weight: var(--font-medium);
-    margin-bottom: var(--space-1);
-}
-
-.kpi-value {
-    font-size: var(--text-xl);
-    font-weight: var(--font-bold);
-    line-height: 1.2;
-    color: var(--gray-900);
-}
-
-.kpi-value.green { color: var(--success); }
-.kpi-value.blue { color: var(--indigo-400); }
-.kpi-value.orange { color: var(--warning); }
-.kpi-value.purple { color: var(--purple-600); }
 
 .good { color: var(--success); font-weight: var(--font-semibold); }
 .bad { color: var(--danger); font-weight: var(--font-semibold); }
@@ -795,10 +737,6 @@
     }
 
     .metric-row {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .kpi-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 

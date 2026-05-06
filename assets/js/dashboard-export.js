@@ -131,7 +131,7 @@
                 ? app.getVisibleCrowdRows(crowdResult.crowd?.summary || [])
                 : (crowdResult.crowd?.summary || []);
             const crowdRows = visibleCrowdRows.map((row) => ({
-                '定向人群名称': row.label || '',
+                '定向人群名称': row.label && row.label !== '0' ? row.label : '定向人群名称未回传',
                 '计划名称': row.planName || '',
                 '花费': row.cost.toFixed(2),
                 '总成交金额': row.amount.toFixed(2),

@@ -93,6 +93,7 @@ FILES=(
   assets/js/plan-dashboard-page.js
   assets/data/dashboard-spec.json
   assets/data/genbi-semantic.json
+  assets/css/dashboard.css
   assets/css/audience-repository.css
   assets/css/budget-scorecard.css
   assets/css/plan-dashboard.css

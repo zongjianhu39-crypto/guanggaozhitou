@@ -66,15 +66,6 @@
         }
     }
 
-    function buildKpiSkeletonCards(count = 8) {
-        return Array.from({ length: count }, () => `
-            <div class="kpi-card skeleton-card skeleton-shimmer">
-                <div class="skeleton-line sm" style="width:46%;margin-bottom:10px"></div>
-                <div class="skeleton-line lg" style="width:72%"></div>
-            </div>
-        `).join('');
-    }
-
     function renderTableLoadingSkeleton(tableSelector, rowCount = 4) {
         const tbody = document.querySelector(`${tableSelector} tbody`);
         const colCount = document.querySelectorAll(`${tableSelector} thead th`).length || 1;
@@ -94,10 +85,6 @@
     }
 
     function renderAdsLoadingSkeleton() {
-        const adsGrid = document.getElementById('ads-kpi-grid');
-        if (adsGrid) {
-            adsGrid.innerHTML = buildKpiSkeletonCards(12);
-        }
         renderTableLoadingSkeleton('#ads-monthly-table', 4);
         renderTableLoadingSkeleton('#ads-weekly-table', 4);
         renderTableLoadingSkeleton('#ads-daily-table', 6);
@@ -213,7 +200,6 @@
     }
 
     function renderAdsState(message) {
-        document.getElementById('ads-kpi-grid').innerHTML = `<div class="kpi-card" style="grid-column:1/-1;text-align:center;color:#86868b">${escapeHtml(message)}</div>`;
         renderTableBodyState('#ads-monthly-table', message);
         renderTableBodyState('#ads-weekly-table', message);
         renderTableBodyState('#ads-daily-table', message);
@@ -344,8 +330,11 @@
     }
 
     function buildCrowdAudienceRow(row) {
+        const label = String(row.label || '').trim();
+        const isMissingAudienceName = !label || label === '0' || label === '定向人群名称未回传';
+        const audienceLabel = isMissingAudienceName ? '定向人群名称未回传' : label;
         return `<tr class="crowd-audience-row">
-            <td>${escapeHtml(row.label || '未命名人群')}${row.planName ? `<span class="sub-row-plan">${escapeHtml(row.planName)}</span>` : ''}</td>
+            <td>${escapeHtml(audienceLabel)}${row.planName ? `<span class="sub-row-plan">${escapeHtml(row.planName)}</span>` : ''}</td>
             <td>¥${formatMoney(row.cost)}</td>
             <td>¥${formatMoney(row.amount)}</td>
             <td>${formatNum(row.orders)}</td>
@@ -408,8 +397,19 @@
         const select = document.getElementById('crowd-plan-select');
         if (!select) return;
         const previousValue = select.value;
+        const allPlanOptions = collectCrowdPlanOptions(rows);
+        const hasPlanDimension = allPlanOptions.length > 0;
+        document.querySelectorAll('.crowd-plan-filter-btn[data-crowd-plan-type]').forEach((button) => {
+            const disabled = !hasPlanDimension && button.dataset.crowdPlanType !== 'all';
+            button.disabled = disabled;
+            if (disabled) button.classList.remove('active');
+        });
+        if (!hasPlanDimension) {
+            const allButton = document.querySelector('.crowd-plan-filter-btn[data-crowd-plan-type="all"]');
+            if (allButton) allButton.classList.add('active');
+        }
         const type = getCrowdPlanType();
-        const planOptions = getPlanOptionsForType(collectCrowdPlanOptions(rows), type);
+        const planOptions = getPlanOptionsForType(allPlanOptions, type);
         const defaultLabel = type === 'live'
             ? '全部直播间计划'
             : type === 'product'
@@ -420,7 +420,7 @@
             ...planOptions.map((item) => `<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`),
         ].join('');
         select.innerHTML = optionsHtml;
-        select.disabled = planOptions.length === 0;
+        select.disabled = !hasPlanDimension || planOptions.length === 0;
         if (planOptions.some((item) => item.name === previousValue)) {
             select.value = previousValue;
         } else {
@@ -453,9 +453,14 @@
         const selectedPlanName = getCrowdSelectedPlanName();
         const allPlans = collectCrowdPlanOptions(sourceRows);
         const visiblePlans = new Set();
+        let missingAudienceNameCount = 0;
         (visibleRows || []).forEach((row) => {
             if (row.planName) {
                 visiblePlans.add(row.planName);
+            }
+            const label = String(row.label || '').trim();
+            if (!label || label === '0' || label === '定向人群名称未回传') {
+                missingAudienceNameCount += 1;
             }
         });
         const typeLabel = selectedPlanName
@@ -467,7 +472,13 @@
                     : '全部计划';
         const liveCount = allPlans.filter((item) => item.type === 'live').length;
         const productCount = allPlans.filter((item) => item.type === 'product').length;
-        summaryEl.textContent = `${typeLabel}，当前显示 ${visiblePlans.size} 个计划、${visibleRows.length} 个定向人群。直播间 ${liveCount} 个，单品 ${productCount} 个。`;
+        const missingHint = missingAudienceNameCount > 0
+            ? ` ${missingAudienceNameCount} 行缺少真实定向名称，请重新导入包含人群名称的源数据。`
+            : '';
+        const planHint = allPlans.length
+            ? `当前显示 ${visiblePlans.size} 个计划、${visibleRows.length} 个定向人群。直播间 ${liveCount} 个，单品 ${productCount} 个。`
+            : `当前显示 ${visibleRows.length} 个定向人群。当前汇总数据未包含计划名称，计划类型筛选不可用。`;
+        summaryEl.textContent = `${typeLabel}，${planHint}${missingHint}`;
     }
 
     function buildCrowdSummaryRow(groups) {
@@ -536,52 +547,17 @@
             return;
         }
 
-        document.getElementById('ads-kpi-grid').innerHTML = `
-            <div class="kpi-card"><div class="kpi-label">总花费</div><div class="kpi-value orange">¥${formatMoney(kpi.totalCost)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">总成交金额</div><div class="kpi-value green">¥${formatMoney(kpi.totalAmount)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">总成交笔数</div><div class="kpi-value purple">${formatNum(kpi.totalOrders)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均ROI</div><div class="kpi-value ${getRoiClass(kpi.avgRoi)}">${kpi.avgRoi > 0 ? kpi.avgRoi.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均直接ROI</div><div class="kpi-value ${getRoiClass(kpi.avgDirectRoi)}">${kpi.avgDirectRoi > 0 ? kpi.avgDirectRoi.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">广告收入（可计算天）</div><div class="kpi-value green">${kpi.totalAdRevenue !== null && Number.isFinite(Number(kpi.totalAdRevenue)) ? '¥' + formatMoney(kpi.totalAdRevenue) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">盈亏平衡ROI（可计算天）</div><div class="kpi-value ${getBreakevenRoiClass(kpi.totalBreakevenRoi)}">${formatFiniteNumber(kpi.totalBreakevenRoi)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">可计算天数 / 跳过天数</div><div class="kpi-value blue">${formatNum(kpi.computableDays)} / ${formatNum(kpi.skippedDays)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均去退ROI</div><div class="kpi-value ${getRoiClass(kpi.totalReturnRoi)}">${kpi.totalReturnRoi > 0 ? kpi.totalReturnRoi.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均广告成交占比</div><div class="kpi-value ${getAdShareClass(kpi.totalAdShare)}">${formatFinitePercent(kpi.totalAdShare)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均观看成本</div><div class="kpi-value blue">${kpi.avgViewCost > 0 ? '¥' + kpi.avgViewCost.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均订单成本</div><div class="kpi-value blue">${kpi.avgOrderCost > 0 ? '¥' + kpi.avgOrderCost.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均加购成本</div><div class="kpi-value blue">${kpi.avgCartCost > 0 ? '¥' + kpi.avgCartCost.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">总预售成交笔数</div><div class="kpi-value purple">${formatNum(kpi.totalPreOrders)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均预售订单成本</div><div class="kpi-value blue">${kpi.avgPreOrderCost > 0 ? '¥' + kpi.avgPreOrderCost.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均观看转化率</div><div class="kpi-value green">${kpi.avgViewConvertRate > 0 ? kpi.avgViewConvertRate.toFixed(2) + '%' : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均深度互动率</div><div class="kpi-value purple">${kpi.avgDeepInteractRate > 0 ? kpi.avgDeepInteractRate.toFixed(2) + '%' : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均观看率</div><div class="kpi-value blue">${kpi.avgViewRate > 0 ? kpi.avgViewRate.toFixed(2) + '%' : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">平均千次展现成本</div><div class="kpi-value orange">${kpi.avgCpm > 0 ? '¥' + kpi.avgCpm.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">展现量</div><div class="kpi-value blue">${formatNum(kpi.totalShows)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">总购物车数</div><div class="kpi-value blue">${formatNum(kpi.totalCart)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">直接成交金额</div><div class="kpi-value green">¥${formatMoney(kpi.totalDirectAmount)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">保量佣金</div><div class="kpi-value orange">¥${formatMoney(kpi.finGuarantee)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">预估结算线下佣金</div><div class="kpi-value orange">¥${formatMoney(kpi.finOffline)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">预估结算机构佣金</div><div class="kpi-value orange">¥${formatMoney(kpi.finAgency)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">直播间红包</div><div class="kpi-value orange">¥${formatMoney(kpi.finRedPacket)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">严选红包</div><div class="kpi-value orange">¥${formatMoney(kpi.finYanxuanRed)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">淘宝直播成交笔数</div><div class="kpi-value purple">${formatNum(kpi.totalTaobaoOrders)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">退货率</div><div class="kpi-value purple">${(kpi.totalReturnRate * 100).toFixed(2)}%</div></div>
-        `;
-
         const counts = result.counts || {};
         if (counts.superLive > 0) {
             const warnParts = [];
             if (!counts.taobaoLive) warnParts.push('淘宝直播成交数据缺失（无法计算广告成交占比）');
             if (!counts.financial) warnParts.push('财务佣金数据缺失（无法计算广告收入）');
             if (warnParts.length > 0) {
-                const grid = document.getElementById('ads-kpi-grid');
-                if (grid) {
-                    grid.insertAdjacentHTML('beforeend',
-                        `<div style="grid-column:1/-1;padding:10px 14px;background:#fff8f0;border:1px solid #f5d0a8;border-radius:10px;color:#9a3412;font-size:12px;line-height:1.6">` +
-                        `<strong>⚠ 广告收入 / 可计算天数 无法显示的原因：</strong> ${escapeHtml(warnParts.join('；'))}。请检查对应日期的数据是否已导入 Supabase。` +
-                        `</div>`
-                    );
-                }
+                hideGlobalDashboardError();
+                showGlobalDashboardError(
+                    { message: `⚠ 广告收入 / 可计算天数 无法显示的原因：${warnParts.join('；')}。请检查对应日期的数据是否已导入 Supabase。` },
+                    '部分数据缺失'
+                );
             }
         }
 
@@ -634,18 +610,10 @@
     }
 
     function renderSingleLoadingState() {
-        const grid = document.getElementById('single-kpi-grid');
-        if (grid) {
-            grid.innerHTML = buildKpiSkeletonCards(8);
-        }
         renderTableLoadingSkeleton('#single-table', 6);
     }
 
     function renderSingleState(message) {
-        const grid = document.getElementById('single-kpi-grid');
-        if (grid) {
-            grid.innerHTML = '';
-        }
         const tbody = document.querySelector('#single-table tbody');
         const colCount = document.querySelectorAll('#single-table thead th').length || 1;
         if (tbody) {
@@ -654,25 +622,7 @@
     }
 
     function renderSingleKpi(products, rowCount) {
-        const grid = document.getElementById('single-kpi-grid');
-        if (!grid) return;
-        const totalCost = products.reduce((sum, product) => sum + singleToNum(product?.花费), 0);
-        const totalDirect = products.reduce((sum, product) => sum + singleToNum(product?.直接成交金额), 0);
-        const totalProductDirect = products.reduce((sum, product) => sum + singleToNum(product?.['该商品直接成交金额']), 0);
-        const totalCart = products.reduce((sum, product) => sum + singleToNum(product?.['该商品加购数']), 0);
-        const roi = totalCost > 0 ? totalDirect / totalCost : 0;
-        const productRoi = totalCost > 0 ? totalProductDirect / totalCost : 0;
-        const cartCost = totalCart > 0 ? totalCost / totalCart : 0;
-        grid.innerHTML = `
-            <div class="kpi-card"><div class="kpi-label">总花费</div><div class="kpi-value orange">¥${formatMoney(totalCost)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">直接成交金额</div><div class="kpi-value green">¥${formatMoney(totalDirect)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">商品直接成交金额</div><div class="kpi-value green">¥${formatMoney(totalProductDirect)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">直接ROI</div><div class="kpi-value ${getRoiClass(roi)}">${roi > 0 ? roi.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">商品直接ROI</div><div class="kpi-value ${getRoiClass(productRoi)}">${productRoi > 0 ? productRoi.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">总加购数</div><div class="kpi-value purple">${formatNum(totalCart)}</div></div>
-            <div class="kpi-card"><div class="kpi-label">加购成本</div><div class="kpi-value blue">${cartCost > 0 ? '¥' + cartCost.toFixed(2) : '-'}</div></div>
-            <div class="kpi-card"><div class="kpi-label">商品数 / 数据行</div><div class="kpi-value purple">${products.length} / ${formatNum(rowCount)}</div></div>
-        `;
+        // KPI 卡片已移除，保留空函数避免调用方报错
     }
 
     function getSingleProductName(product) {
@@ -733,7 +683,6 @@
         classifyDashboardError,
         buildStateMessage,
         setDashboardStatus,
-        buildKpiSkeletonCards,
         renderTableLoadingSkeleton,
         renderAdsLoadingSkeleton,
         renderCrowdLoadingSkeleton,

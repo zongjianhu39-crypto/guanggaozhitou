@@ -25,7 +25,7 @@ const SUPER_LIVE_BASE_COLUMNS = [
   '总预售成交笔数',
   '互动量',
 ];
-const SUPER_LIVE_CROWD_COLUMNS = [...SUPER_LIVE_BASE_COLUMNS, '计划名字', '人群名字'];
+const SUPER_LIVE_CROWD_COLUMNS = [...SUPER_LIVE_BASE_COLUMNS, '计划id', '计划名字', '人群名字'];
 const SINGLE_PRODUCT_COLUMNS = ['id', '日期', '商品id', '商品名称', 'img_url', '花费', '直接成交笔数', '直接成交金额', '该商品直接成交笔数', '该商品直接成交金额', '该商品加购数', '该商品收藏数', '观看人数'];
 const ADS_SUMMARY_COLUMNS = [
   '日期',
@@ -235,6 +235,24 @@ function parseDate(value: unknown): string | null {
   if (typeof value !== 'string' || !value.trim()) return null;
   const normalized = value.trim();
   return isValidDateString(normalized) ? normalized : null;
+}
+
+function normalizeNameValue(value: unknown): string {
+  const normalized = String(value ?? '').trim();
+  return normalized && normalized !== '0' ? normalized : '';
+}
+
+function getCrowdAudienceName(row: Record<string, unknown>): { label: string; missing: boolean } {
+  const name = normalizeNameValue(row['人群名字']);
+  if (name) return { label: name, missing: false };
+  return { label: '定向人群名称未回传', missing: true };
+}
+
+function getCrowdPlanName(row: Record<string, unknown>): string {
+  const planName = normalizeNameValue(row['计划名字']);
+  if (planName) return planName;
+  const planId = normalizeNameValue(row['计划id']);
+  return planId ? `计划ID ${planId}` : '未标注计划';
 }
 
 
@@ -634,9 +652,10 @@ function buildCrowdRows(rows: any[], crowdLayerConfig: CrowdLayerConfig) {
   const crowdSubs: Record<string, Record<string, AggregateBucket>> = {};
   const crowdSubMeta: Record<string, Record<string, { label: string; planName: string }>> = {};
   rows.forEach((row) => {
-    const crowd = classifyDimensionValue(String(row['人群名字'] ?? ''), crowdLayerConfig);
-    const subName = String(row['人群名字'] ?? '').trim() || '未命名人群';
-    const planName = String(row['计划名字'] ?? '').trim() || '未标注计划';
+    const audience = getCrowdAudienceName(row);
+    const crowd = audience.missing ? '未标注定向' : classifyDimensionValue(audience.label, crowdLayerConfig);
+    const subName = audience.label;
+    const planName = getCrowdPlanName(row);
     const subKey = `${planName}\u0001${subName}`;
     if (!crowdMap[crowd]) crowdMap[crowd] = createAggregateBucket(false);
     if (!crowdSubs[crowd]) crowdSubs[crowd] = {};
@@ -686,8 +705,11 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
   const crowdSubs: Record<string, Record<string, AggregateBucket>> = {};
 
   rows.forEach((row) => {
-    const subName = String(row['人群名字'] ?? '').trim() || '未命名人群';
-    const crowd = String(row['人群分类'] ?? '').trim() || classifyDimensionValue(subName, crowdLayerConfig);
+    const rawName = normalizeNameValue(row['人群名字']);
+    const subName = rawName || '定向人群名称未回传';
+    const crowd = rawName
+      ? (String(row['人群分类'] ?? '').trim() || classifyDimensionValue(rawName, crowdLayerConfig))
+      : '未标注定向';
     if (!crowdMap[crowd]) crowdMap[crowd] = createAggregateBucket(false);
     if (!crowdSubs[crowd]) crowdSubs[crowd] = {};
     if (!crowdSubs[crowd][subName]) crowdSubs[crowd][subName] = createAggregateBucket(false);
@@ -792,7 +814,7 @@ function buildKpiPayload(totalAggregate: AggregateBucket, dailyRows: DisplayRow[
 function filterRowsByPlanName(rows: any[], keyword?: string | null): any[] {
   const normalizedKeyword = String(keyword ?? '').trim();
   if (!normalizedKeyword) return rows;
-  return rows.filter((row) => String(row?.['计划名字'] ?? '').includes(normalizedKeyword));
+  return rows.filter((row) => getCrowdPlanName(row).includes(normalizedKeyword));
 }
 
 export async function getDashboardPayload(startDate: string, endDate: string, sections: RequestedSections, options: DashboardPayloadOptions = {}) {

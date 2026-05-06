@@ -492,7 +492,7 @@ async function ensureCrowdResponseCurrent() {
     const start = document.getElementById('crowd-start')?.value;
     const end = document.getElementById('crowd-end')?.value;
     if (!isResponseForRange(getCurrentCrowdResponse(), start, end)) {
-        setCurrentCrowdResponse(await fetchDashboardSummary(start, end, 'crowd', { forceRawCrowd: true }), { rangeKey: `${start}|${end}` });
+        setCurrentCrowdResponse(await fetchDashboardSummary(start, end, 'crowd'), { rangeKey: `${start}|${end}` });
     }
     return getCurrentCrowdResponse();
 }

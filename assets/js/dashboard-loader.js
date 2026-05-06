@@ -16,7 +16,6 @@
         },
         crowd: {
             prefix: 'crowd',
-            cacheVariant: 'raw-crowd',
             loadMethod: 'loadCrowd',
             getResponse: (app) => app.getCurrentCrowdResponse(),
             setResponse: (app, value, options = {}) => app.setCurrentCrowdResponse(value, options),
@@ -306,10 +305,7 @@
         }
 
         try {
-            const result = await app.fetchDashboardSummary(start, end, 'crowd', {
-                forceRefresh: options.forceRefresh,
-                forceRawCrowd: true,
-            });
+            const result = await app.fetchDashboardSummary(start, end, 'crowd', { forceRefresh: options.forceRefresh });
             app.setCurrentCrowdResponse(result, { rangeKey: `${start}|${end}`, lastCacheSource: options.forceRefresh ? '' : 'network' });
             app.renderCrowdFromResponse(result);
             if (!options.silent) {
