@@ -343,6 +343,29 @@
         </tr>`).join('');
     }
 
+    function buildCrowdAudienceRow(row) {
+        return `<tr class="crowd-audience-row">
+            <td>${escapeHtml(row.label || '未命名人群')}${row.planName ? `<span class="sub-row-plan">${escapeHtml(row.planName)}</span>` : ''}</td>
+            <td>¥${formatMoney(row.cost)}</td>
+            <td>¥${formatMoney(row.amount)}</td>
+            <td>${formatNum(row.orders)}</td>
+            <td>${row.roi > 0 ? row.roi.toFixed(2) : '-'}</td>
+            <td>${row.directRoi > 0 ? row.directRoi.toFixed(2) : '-'}</td>
+            <td>${row.viewCost > 0 ? '¥' + row.viewCost.toFixed(2) : '-'}</td>
+            <td>${row.orderCost > 0 ? '¥' + row.orderCost.toFixed(2) : '-'}</td>
+            <td>${row.cartCost > 0 ? '¥' + row.cartCost.toFixed(2) : '-'}</td>
+            <td>${formatNum(row.preOrders)}</td>
+            <td>${row.preOrderCost > 0 ? '¥' + row.preOrderCost.toFixed(2) : '-'}</td>
+            <td>${row.viewConvertRate > 0 ? row.viewConvertRate.toFixed(2) + '%' : '-'}</td>
+            <td>${row.deepInteractRate > 0 ? row.deepInteractRate.toFixed(2) + '%' : '-'}</td>
+            <td>${row.viewRate > 0 ? row.viewRate.toFixed(2) + '%' : '-'}</td>
+            <td>${row.cpm > 0 ? '¥' + row.cpm.toFixed(2) : '-'}</td>
+            <td>¥${formatMoney(row.directAmount)}</td>
+            <td>${formatNum(row.cart)}</td>
+            <td>${formatNum(row.shows)}</td>
+        </tr>`;
+    }
+
     function isLiveRoomPlanName(planName) {
         return String(planName || '').includes('规则');
     }
@@ -413,66 +436,14 @@
         return true;
     }
 
-    function calcCrowdSummaryFromSubRows(subRows) {
-        const total = (subRows || []).reduce((acc, row) => {
-            acc.cost += Number(row.cost) || 0;
-            acc.amount += Number(row.amount) || 0;
-            acc.orders += Number(row.orders) || 0;
-            acc.views += Number(row.views) || 0;
-            acc.shows += Number(row.shows) || 0;
-            acc.directAmount += Number(row.directAmount) || 0;
-            acc.cart += Number(row.cart) || 0;
-            acc.preOrders += Number(row.preOrders) || 0;
-            acc.interactions += Number(row.interactions) || 0;
-            return acc;
-        }, {
-            cost: 0,
-            amount: 0,
-            orders: 0,
-            views: 0,
-            shows: 0,
-            directAmount: 0,
-            cart: 0,
-            preOrders: 0,
-            interactions: 0,
-        });
-
-        return {
-            ...total,
-            roi: total.cost > 0 ? total.amount / total.cost : 0,
-            directRoi: total.cost > 0 ? total.directAmount / total.cost : 0,
-            viewCost: total.views > 0 ? total.cost / total.views : 0,
-            orderCost: total.orders > 0 ? total.cost / total.orders : 0,
-            cartCost: total.cart > 0 ? total.cost / total.cart : 0,
-            preOrderCost: total.preOrders > 0 ? total.cost / total.preOrders : 0,
-            viewConvertRate: total.views > 0 ? (total.orders / total.views) * 100 : 0,
-            deepInteractRate: total.views > 0 ? (total.interactions / total.views) * 100 : 0,
-            viewRate: total.shows > 0 ? (total.views / total.shows) * 100 : 0,
-            cpm: total.shows > 0 ? (total.cost / total.shows) * 1000 : 0,
-        };
-    }
-
     function getVisibleCrowdRows(rows) {
         const normalizedRows = Array.isArray(rows) ? rows : [];
         const type = getCrowdPlanType();
         const selectedPlanName = getCrowdSelectedPlanName();
-
-        if (type === 'all' && !selectedPlanName) {
-            return normalizedRows;
-        }
-
         return normalizedRows
-            .map((group) => {
-                const subRows = (group.subRows || []).filter((row) => shouldIncludeCrowdSubRow(row, type, selectedPlanName));
-                if (!subRows.length) return null;
-                return {
-                    ...group,
-                    summary: calcCrowdSummaryFromSubRows(subRows),
-                    subRows,
-                };
-            })
-            .filter(Boolean)
-            .sort((left, right) => (right.summary?.cost || 0) - (left.summary?.cost || 0));
+            .flatMap((group) => group.subRows || [])
+            .filter((row) => shouldIncludeCrowdSubRow(row, type, selectedPlanName))
+            .sort((left, right) => (Number(right.cost) || 0) - (Number(left.cost) || 0));
     }
 
     function updateCrowdFilterSummary(sourceRows, visibleRows) {
@@ -482,12 +453,10 @@
         const selectedPlanName = getCrowdSelectedPlanName();
         const allPlans = collectCrowdPlanOptions(sourceRows);
         const visiblePlans = new Set();
-        let detailCount = 0;
-        (visibleRows || []).forEach((group) => {
-            (group.subRows || []).forEach((row) => {
-                if (row.planName) visiblePlans.add(row.planName);
-                detailCount += 1;
-            });
+        (visibleRows || []).forEach((row) => {
+            if (row.planName) {
+                visiblePlans.add(row.planName);
+            }
         });
         const typeLabel = selectedPlanName
             ? `具体计划：${selectedPlanName}`
@@ -498,7 +467,7 @@
                     : '全部计划';
         const liveCount = allPlans.filter((item) => item.type === 'live').length;
         const productCount = allPlans.filter((item) => item.type === 'product').length;
-        summaryEl.textContent = `${typeLabel}，当前显示 ${visiblePlans.size} 个计划、${detailCount} 条人群明细。直播间 ${liveCount} 个，单品 ${productCount} 个。`;
+        summaryEl.textContent = `${typeLabel}，当前显示 ${visiblePlans.size} 个计划、${visibleRows.length} 个定向人群。直播间 ${liveCount} 个，单品 ${productCount} 个。`;
     }
 
     function buildCrowdSummaryRow(groups) {
@@ -506,7 +475,7 @@
         var totalDirectAmount = 0, totalCart = 0, totalShows = 0, totalPreOrders = 0;
 
         groups.forEach(function (g) {
-            var s = g.summary || {};
+            var s = g.summary || g || {};
             totalCost += Number(s.cost) || 0;
             totalAmount += Number(s.amount) || 0;
             totalOrders += Number(s.orders) || 0;
@@ -653,9 +622,7 @@
             updateCrowdFilterSummary(rows, []);
             return;
         }
-        var bodyHtml = visibleRows.map(function(group) {
-            return buildCrowdMainRow(group.crowd, group.summary) + buildCrowdSubRows(group.subRows || []);
-        }).join('');
+        var bodyHtml = visibleRows.map((row) => buildCrowdAudienceRow(row)).join('');
         bodyHtml += buildCrowdSummaryRow(visibleRows);
         document.querySelector('#crowd-summary-table tbody').innerHTML = bodyHtml;
         updateCrowdFilterSummary(rows, visibleRows);
@@ -788,6 +755,7 @@
         buildTableRow,
         buildCrowdMainRow,
         buildCrowdSubRows,
+        buildCrowdAudienceRow,
         buildCrowdSummaryRow,
         getVisibleCrowdRows,
         toggleCrowdRow,

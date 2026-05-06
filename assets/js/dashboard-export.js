@@ -126,60 +126,31 @@
                 });
             });
 
-            const crowdHeaders = ['人群分层', '计划名称', '标签', '花费', '总成交金额', '总成交笔数', 'ROI', '直接ROI', '观看成本', '订单成本', '加购成本', '总预售成交笔数', '预售订单成本', '观看转化率', '深度互动率', '观看率', '千次展现成本', '直接成交金额', '总购物车数', '展现量'];
-            const crowdRows = [];
-            const visibleCrowdGroups = typeof app.getVisibleCrowdRows === 'function'
+            const crowdHeaders = ['定向人群名称', '计划名称', '花费', '总成交金额', '总成交笔数', 'ROI', '直接ROI', '观看成本', '订单成本', '加购成本', '总预售成交笔数', '预售订单成本', '观看转化率', '深度互动率', '观看率', '千次展现成本', '直接成交金额', '总购物车数', '展现量'];
+            const visibleCrowdRows = typeof app.getVisibleCrowdRows === 'function'
                 ? app.getVisibleCrowdRows(crowdResult.crowd?.summary || [])
                 : (crowdResult.crowd?.summary || []);
-            visibleCrowdGroups.forEach((group) => {
-                crowdRows.push({
-                    '人群分层': group.crowd,
-                    '计划名称': '',
-                    '标签': '分层汇总',
-                    '花费': group.summary.cost.toFixed(2),
-                    '总成交金额': group.summary.amount.toFixed(2),
-                    '总成交笔数': group.summary.orders,
-                    'ROI': group.summary.roi > 0 ? group.summary.roi.toFixed(2) : '-',
-                    '直接ROI': group.summary.directRoi > 0 ? group.summary.directRoi.toFixed(2) : '-',
-                    '观看成本': group.summary.viewCost > 0 ? group.summary.viewCost.toFixed(2) : '-',
-                    '订单成本': group.summary.orderCost > 0 ? group.summary.orderCost.toFixed(2) : '-',
-                    '加购成本': group.summary.cartCost > 0 ? group.summary.cartCost.toFixed(2) : '-',
-                    '总预售成交笔数': group.summary.preOrders,
-                    '预售订单成本': group.summary.preOrderCost > 0 ? group.summary.preOrderCost.toFixed(2) : '-',
-                    '观看转化率': group.summary.viewConvertRate > 0 ? group.summary.viewConvertRate.toFixed(2) + '%' : '-',
-                    '深度互动率': group.summary.deepInteractRate > 0 ? group.summary.deepInteractRate.toFixed(2) + '%' : '-',
-                    '观看率': group.summary.viewRate > 0 ? group.summary.viewRate.toFixed(2) + '%' : '-',
-                    '千次展现成本': group.summary.cpm > 0 ? group.summary.cpm.toFixed(2) : '-',
-                    '直接成交金额': group.summary.directAmount.toFixed(2),
-                    '总购物车数': group.summary.cart,
-                    '展现量': group.summary.shows,
-                });
-                (group.subRows || []).forEach((row) => {
-                    crowdRows.push({
-                        '人群分层': group.crowd,
-                        '计划名称': row.planName || '',
-                        '标签': row.label,
-                        '花费': row.cost.toFixed(2),
-                        '总成交金额': row.amount.toFixed(2),
-                        '总成交笔数': row.orders,
-                        'ROI': row.roi > 0 ? row.roi.toFixed(2) : '-',
-                        '直接ROI': row.directRoi > 0 ? row.directRoi.toFixed(2) : '-',
-                        '观看成本': row.viewCost > 0 ? row.viewCost.toFixed(2) : '-',
-                        '订单成本': row.orderCost > 0 ? row.orderCost.toFixed(2) : '-',
-                        '加购成本': row.cartCost > 0 ? row.cartCost.toFixed(2) : '-',
-                        '总预售成交笔数': row.preOrders,
-                        '预售订单成本': row.preOrderCost > 0 ? row.preOrderCost.toFixed(2) : '-',
-                        '观看转化率': row.viewConvertRate > 0 ? row.viewConvertRate.toFixed(2) + '%' : '-',
-                        '深度互动率': row.deepInteractRate > 0 ? row.deepInteractRate.toFixed(2) + '%' : '-',
-                        '观看率': row.viewRate > 0 ? row.viewRate.toFixed(2) + '%' : '-',
-                        '千次展现成本': row.cpm > 0 ? row.cpm.toFixed(2) : '-',
-                        '直接成交金额': row.directAmount.toFixed(2),
-                        '总购物车数': row.cart,
-                        '展现量': row.shows,
-                    });
-                });
-            });
-
+            const crowdRows = visibleCrowdRows.map((row) => ({
+                '定向人群名称': row.label || '',
+                '计划名称': row.planName || '',
+                '花费': row.cost.toFixed(2),
+                '总成交金额': row.amount.toFixed(2),
+                '总成交笔数': row.orders,
+                'ROI': row.roi > 0 ? row.roi.toFixed(2) : '-',
+                '直接ROI': row.directRoi > 0 ? row.directRoi.toFixed(2) : '-',
+                '观看成本': row.viewCost > 0 ? row.viewCost.toFixed(2) : '-',
+                '订单成本': row.orderCost > 0 ? row.orderCost.toFixed(2) : '-',
+                '加购成本': row.cartCost > 0 ? row.cartCost.toFixed(2) : '-',
+                '总预售成交笔数': row.preOrders,
+                '预售订单成本': row.preOrderCost > 0 ? row.preOrderCost.toFixed(2) : '-',
+                '观看转化率': row.viewConvertRate > 0 ? row.viewConvertRate.toFixed(2) + '%' : '-',
+                '深度互动率': row.deepInteractRate > 0 ? row.deepInteractRate.toFixed(2) + '%' : '-',
+                '观看率': row.viewRate > 0 ? row.viewRate.toFixed(2) + '%' : '-',
+                '千次展现成本': row.cpm > 0 ? row.cpm.toFixed(2) : '-',
+                '直接成交金额': row.directAmount.toFixed(2),
+                '总购物车数': row.cart,
+                '展现量': row.shows,
+            }));
             const singleHeaders = ['商品id', '商品名称', '花费', '直接成交笔数', '直接成交金额', '直接ROI', '该商品直接成交笔数', '该商品直接成交金额', '该商品直接ROI', '该商品加购数', '加购成本', '该商品收藏数', '观看人数'];
             const singleRows = (singleResult.single?.items || []).map((row) => {
                 const cost = Number(row.花费 || 0);
