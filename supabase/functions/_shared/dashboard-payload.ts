@@ -55,6 +55,7 @@ const CROWD_SUMMARY_COLUMNS = [
   '日期',
   '人群分类',
   '人群名字',
+  '计划名字',
   '花费',
   '总成交金额',
   '总成交笔数',
@@ -703,6 +704,7 @@ function buildCrowdRows(rows: any[], crowdLayerConfig: CrowdLayerConfig) {
 function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConfig) {
   const crowdMap: Record<string, AggregateBucket> = {};
   const crowdSubs: Record<string, Record<string, AggregateBucket>> = {};
+  const crowdSubMeta: Record<string, Record<string, { label: string; planName: string }>> = {};
 
   rows.forEach((row) => {
     const rawName = normalizeNameValue(row['人群名字']);
@@ -710,11 +712,15 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
     const crowd = rawName
       ? (String(row['人群分类'] ?? '').trim() || classifyDimensionValue(rawName, crowdLayerConfig))
       : '未标注定向';
+    const planName = normalizeNameValue(row['计划名字']) || '未标注计划';
+    const subKey = `${planName}\u0001${subName}`;
     if (!crowdMap[crowd]) crowdMap[crowd] = createAggregateBucket(false);
     if (!crowdSubs[crowd]) crowdSubs[crowd] = {};
-    if (!crowdSubs[crowd][subName]) crowdSubs[crowd][subName] = createAggregateBucket(false);
+    if (!crowdSubMeta[crowd]) crowdSubMeta[crowd] = {};
+    if (!crowdSubs[crowd][subKey]) crowdSubs[crowd][subKey] = createAggregateBucket(false);
+    if (!crowdSubMeta[crowd][subKey]) crowdSubMeta[crowd][subKey] = { label: subName, planName };
     accumulateSuperLiveRow(crowdMap[crowd], row);
-    accumulateSuperLiveRow(crowdSubs[crowd][subName], row);
+    accumulateSuperLiveRow(crowdSubs[crowd][subKey], row);
   });
 
   return Object.keys(crowdMap)
@@ -734,19 +740,19 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
       }),
       subRows: Object.keys(crowdSubs[crowd])
         .sort((left, right) => crowdSubs[crowd][right].cost - crowdSubs[crowd][left].cost)
-        .map((name) => ({
-          label: name,
-          planName: '',
+        .map((key) => ({
+          label: crowdSubMeta[crowd][key]?.label ?? key,
+          planName: crowdSubMeta[crowd][key]?.planName ?? '未标注计划',
           ...calcGroup({
-            '花费': crowdSubs[crowd][name].cost,
-            '总成交金额': crowdSubs[crowd][name].amount,
-            '总成交笔数': crowdSubs[crowd][name].orders,
-            '观看次数': crowdSubs[crowd][name].views,
-            '展现量': crowdSubs[crowd][name].shows,
-            '直接成交金额': crowdSubs[crowd][name].directAmount,
-            '总购物车数': crowdSubs[crowd][name].cart,
-            '总预售成交笔数': crowdSubs[crowd][name].preOrders,
-            '互动量': crowdSubs[crowd][name].interactions,
+            '花费': crowdSubs[crowd][key].cost,
+            '总成交金额': crowdSubs[crowd][key].amount,
+            '总成交笔数': crowdSubs[crowd][key].orders,
+            '观看次数': crowdSubs[crowd][key].views,
+            '展现量': crowdSubs[crowd][key].shows,
+            '直接成交金额': crowdSubs[crowd][key].directAmount,
+            '总购物车数': crowdSubs[crowd][key].cart,
+            '总预售成交笔数': crowdSubs[crowd][key].preOrders,
+            '互动量': crowdSubs[crowd][key].interactions,
           }),
         })),
     }));
