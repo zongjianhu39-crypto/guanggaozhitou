@@ -736,6 +736,7 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
         .sort((left, right) => crowdSubs[crowd][right].cost - crowdSubs[crowd][left].cost)
         .map((name) => ({
           label: name,
+          planName: '',
           ...calcGroup({
             '花费': crowdSubs[crowd][name].cost,
             '总成交金额': crowdSubs[crowd][name].amount,

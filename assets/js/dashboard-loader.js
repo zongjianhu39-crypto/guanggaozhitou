@@ -305,7 +305,7 @@
         }
 
         try {
-            const result = await app.fetchDashboardSummary(start, end, 'crowd', { forceRefresh: options.forceRefresh });
+            const result = await app.fetchDashboardSummary(start, end, 'crowd', { forceRefresh: options.forceRefresh, forceRawCrowd: true });
             app.setCurrentCrowdResponse(result, { rangeKey: `${start}|${end}`, lastCacheSource: options.forceRefresh ? '' : 'network' });
             app.renderCrowdFromResponse(result);
             if (!options.silent) {
