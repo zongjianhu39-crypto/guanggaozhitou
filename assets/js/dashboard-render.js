@@ -322,7 +322,7 @@
 
     function buildCrowdSubRows(rows) {
         return (rows || []).map(row => `<tr class="sub-row">
-            <td>${row.label}</td>
+            <td>${escapeHtml(row.label)}${row.planName ? `<span class="sub-row-plan">${escapeHtml(row.planName)}</span>` : ''}</td>
             <td>¥${formatMoney(row.cost)}</td>
             <td>¥${formatMoney(row.amount)}</td>
             <td>${formatNum(row.orders)}</td>
@@ -341,6 +341,164 @@
             <td>${formatNum(row.cart)}</td>
             <td>${formatNum(row.shows)}</td>
         </tr>`).join('');
+    }
+
+    function isLiveRoomPlanName(planName) {
+        return String(planName || '').includes('规则');
+    }
+
+    function getCrowdPlanType() {
+        const active = document.querySelector('.crowd-plan-filter-btn.active');
+        const type = active?.dataset?.crowdPlanType || 'all';
+        return type === 'live' || type === 'product' ? type : 'all';
+    }
+
+    function getCrowdSelectedPlanName() {
+        return String(document.getElementById('crowd-plan-select')?.value || '').trim();
+    }
+
+    function collectCrowdPlanOptions(rows) {
+        const planMap = new Map();
+        (rows || []).forEach((group) => {
+            (group.subRows || []).forEach((row) => {
+                const planName = String(row.planName || '').trim();
+                if (!planName) return;
+                const current = planMap.get(planName) || {
+                    name: planName,
+                    cost: 0,
+                    type: isLiveRoomPlanName(planName) ? 'live' : 'product',
+                };
+                current.cost += Number(row.cost) || 0;
+                planMap.set(planName, current);
+            });
+        });
+        return Array.from(planMap.values()).sort((left, right) => right.cost - left.cost);
+    }
+
+    function getPlanOptionsForType(options, type) {
+        if (type === 'live') return options.filter((item) => item.type === 'live');
+        if (type === 'product') return options.filter((item) => item.type === 'product');
+        return options;
+    }
+
+    function syncCrowdPlanSelect(rows) {
+        const select = document.getElementById('crowd-plan-select');
+        if (!select) return;
+        const previousValue = select.value;
+        const type = getCrowdPlanType();
+        const planOptions = getPlanOptionsForType(collectCrowdPlanOptions(rows), type);
+        const defaultLabel = type === 'live'
+            ? '全部直播间计划'
+            : type === 'product'
+                ? '全部单品计划'
+                : '全部计划';
+        const optionsHtml = [
+            `<option value="">${defaultLabel}</option>`,
+            ...planOptions.map((item) => `<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`),
+        ].join('');
+        select.innerHTML = optionsHtml;
+        select.disabled = planOptions.length === 0;
+        if (planOptions.some((item) => item.name === previousValue)) {
+            select.value = previousValue;
+        } else {
+            select.value = '';
+        }
+    }
+
+    function shouldIncludeCrowdSubRow(row, type, selectedPlanName) {
+        const planName = String(row.planName || '').trim();
+        if (selectedPlanName && planName !== selectedPlanName) return false;
+        if (type === 'live') return isLiveRoomPlanName(planName);
+        if (type === 'product') return planName ? !isLiveRoomPlanName(planName) : false;
+        return true;
+    }
+
+    function calcCrowdSummaryFromSubRows(subRows) {
+        const total = (subRows || []).reduce((acc, row) => {
+            acc.cost += Number(row.cost) || 0;
+            acc.amount += Number(row.amount) || 0;
+            acc.orders += Number(row.orders) || 0;
+            acc.views += Number(row.views) || 0;
+            acc.shows += Number(row.shows) || 0;
+            acc.directAmount += Number(row.directAmount) || 0;
+            acc.cart += Number(row.cart) || 0;
+            acc.preOrders += Number(row.preOrders) || 0;
+            acc.interactions += Number(row.interactions) || 0;
+            return acc;
+        }, {
+            cost: 0,
+            amount: 0,
+            orders: 0,
+            views: 0,
+            shows: 0,
+            directAmount: 0,
+            cart: 0,
+            preOrders: 0,
+            interactions: 0,
+        });
+
+        return {
+            ...total,
+            roi: total.cost > 0 ? total.amount / total.cost : 0,
+            directRoi: total.cost > 0 ? total.directAmount / total.cost : 0,
+            viewCost: total.views > 0 ? total.cost / total.views : 0,
+            orderCost: total.orders > 0 ? total.cost / total.orders : 0,
+            cartCost: total.cart > 0 ? total.cost / total.cart : 0,
+            preOrderCost: total.preOrders > 0 ? total.cost / total.preOrders : 0,
+            viewConvertRate: total.views > 0 ? (total.orders / total.views) * 100 : 0,
+            deepInteractRate: total.views > 0 ? (total.interactions / total.views) * 100 : 0,
+            viewRate: total.shows > 0 ? (total.views / total.shows) * 100 : 0,
+            cpm: total.shows > 0 ? (total.cost / total.shows) * 1000 : 0,
+        };
+    }
+
+    function getVisibleCrowdRows(rows) {
+        const normalizedRows = Array.isArray(rows) ? rows : [];
+        const type = getCrowdPlanType();
+        const selectedPlanName = getCrowdSelectedPlanName();
+
+        if (type === 'all' && !selectedPlanName) {
+            return normalizedRows;
+        }
+
+        return normalizedRows
+            .map((group) => {
+                const subRows = (group.subRows || []).filter((row) => shouldIncludeCrowdSubRow(row, type, selectedPlanName));
+                if (!subRows.length) return null;
+                return {
+                    ...group,
+                    summary: calcCrowdSummaryFromSubRows(subRows),
+                    subRows,
+                };
+            })
+            .filter(Boolean)
+            .sort((left, right) => (right.summary?.cost || 0) - (left.summary?.cost || 0));
+    }
+
+    function updateCrowdFilterSummary(sourceRows, visibleRows) {
+        const summaryEl = document.getElementById('crowd-plan-filter-summary');
+        if (!summaryEl) return;
+        const type = getCrowdPlanType();
+        const selectedPlanName = getCrowdSelectedPlanName();
+        const allPlans = collectCrowdPlanOptions(sourceRows);
+        const visiblePlans = new Set();
+        let detailCount = 0;
+        (visibleRows || []).forEach((group) => {
+            (group.subRows || []).forEach((row) => {
+                if (row.planName) visiblePlans.add(row.planName);
+                detailCount += 1;
+            });
+        });
+        const typeLabel = selectedPlanName
+            ? `具体计划：${selectedPlanName}`
+            : type === 'live'
+                ? '直播间计划（名称含“规则”）'
+                : type === 'product'
+                    ? '单品计划（名称不含“规则”）'
+                    : '全部计划';
+        const liveCount = allPlans.filter((item) => item.type === 'live').length;
+        const productCount = allPlans.filter((item) => item.type === 'product').length;
+        summaryEl.textContent = `${typeLabel}，当前显示 ${visiblePlans.size} 个计划、${detailCount} 条人群明细。直播间 ${liveCount} 个，单品 ${productCount} 个。`;
     }
 
     function buildCrowdSummaryRow(groups) {
@@ -484,13 +642,23 @@
         const rows = result.crowd?.summary || [];
         if (!rows.length) {
             renderTableBodyState('#crowd-summary-table', '所选时间范围暂无人群数据');
+            syncCrowdPlanSelect([]);
+            updateCrowdFilterSummary([], []);
             return;
         }
-        var bodyHtml = rows.map(function(group) {
+        syncCrowdPlanSelect(rows);
+        const visibleRows = getVisibleCrowdRows(rows);
+        if (!visibleRows.length) {
+            renderTableBodyState('#crowd-summary-table', '当前计划筛选下暂无人群数据');
+            updateCrowdFilterSummary(rows, []);
+            return;
+        }
+        var bodyHtml = visibleRows.map(function(group) {
             return buildCrowdMainRow(group.crowd, group.summary) + buildCrowdSubRows(group.subRows || []);
         }).join('');
-        bodyHtml += buildCrowdSummaryRow(rows);
+        bodyHtml += buildCrowdSummaryRow(visibleRows);
         document.querySelector('#crowd-summary-table tbody').innerHTML = bodyHtml;
+        updateCrowdFilterSummary(rows, visibleRows);
     }
 
     function singleToNum(v) {
@@ -621,6 +789,7 @@
         buildCrowdMainRow,
         buildCrowdSubRows,
         buildCrowdSummaryRow,
+        getVisibleCrowdRows,
         toggleCrowdRow,
         renderAdsFromResponse,
         renderCrowdFromResponse,

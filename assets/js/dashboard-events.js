@@ -58,6 +58,22 @@
             });
         }
 
+        document.querySelectorAll('.crowd-plan-filter-btn[data-crowd-plan-type]').forEach((button) => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.crowd-plan-filter-btn[data-crowd-plan-type]').forEach((item) => {
+                    item.classList.toggle('active', item === button);
+                });
+                app.renderCurrentCrowdTable();
+            });
+        });
+
+        const crowdPlanSelect = document.getElementById('crowd-plan-select');
+        if (crowdPlanSelect) {
+            crowdPlanSelect.addEventListener('change', () => {
+                app.renderCurrentCrowdTable();
+            });
+        }
+
         ['ads-start', 'ads-end', 'crowd-start', 'crowd-end', 'single-start', 'single-end'].forEach((id) => {
             const input = document.getElementById(id);
             if (input) {

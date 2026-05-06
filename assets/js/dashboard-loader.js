@@ -16,6 +16,7 @@
         },
         crowd: {
             prefix: 'crowd',
+            cacheVariant: 'raw-crowd',
             loadMethod: 'loadCrowd',
             getResponse: (app) => app.getCurrentCrowdResponse(),
             setResponse: (app, value, options = {}) => app.setCurrentCrowdResponse(value, options),
@@ -66,6 +67,10 @@
         return `${start}|${end}`;
     }
 
+    function getSectionCacheVariant(section) {
+        return getSectionConfig(section).cacheVariant || '';
+    }
+
     function getCacheSourceLabel(source) {
         if (source === 'memory') return '内存缓存';
         if (source === 'localStorage') return '本地缓存';
@@ -109,7 +114,7 @@
         const app = window.DashboardApp;
         const config = getSectionConfig(section);
         const { start, end } = getSectionRange(section);
-        const cacheEntry = app.readDashboardCacheEntryFromStorage(start, end, section);
+        const cacheEntry = app.readDashboardCacheEntryFromStorage(start, end, section, getSectionCacheVariant(section));
         if (cacheEntry) {
             return renderSectionFromCacheThenRefresh(section, cacheEntry);
         }
@@ -301,7 +306,10 @@
         }
 
         try {
-            const result = await app.fetchDashboardSummary(start, end, 'crowd', { forceRefresh: options.forceRefresh });
+            const result = await app.fetchDashboardSummary(start, end, 'crowd', {
+                forceRefresh: options.forceRefresh,
+                forceRawCrowd: true,
+            });
             app.setCurrentCrowdResponse(result, { rangeKey: `${start}|${end}`, lastCacheSource: options.forceRefresh ? '' : 'network' });
             app.renderCrowdFromResponse(result);
             if (!options.silent) {

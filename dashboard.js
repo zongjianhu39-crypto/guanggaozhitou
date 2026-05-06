@@ -91,6 +91,7 @@ const {
     renderAdsState,
     renderAdsFromResponse,
     renderCrowdFromResponse,
+    getVisibleCrowdRows,
     renderSingleKpi,
     renderSingleTable,
     toggleCrowdRow,
@@ -491,7 +492,7 @@ async function ensureCrowdResponseCurrent() {
     const start = document.getElementById('crowd-start')?.value;
     const end = document.getElementById('crowd-end')?.value;
     if (!isResponseForRange(getCurrentCrowdResponse(), start, end)) {
-        setCurrentCrowdResponse(await fetchDashboardSummary(start, end, 'crowd'), { rangeKey: `${start}|${end}` });
+        setCurrentCrowdResponse(await fetchDashboardSummary(start, end, 'crowd', { forceRawCrowd: true }), { rangeKey: `${start}|${end}` });
     }
     return getCurrentCrowdResponse();
 }
@@ -535,6 +536,11 @@ function renderCurrentSingleTable() {
     renderSingleTable(products);
 }
 
+function renderCurrentCrowdTable() {
+    const response = getCurrentCrowdResponse();
+    renderCrowdFromResponse(response || { crowd: { summary: [] } });
+}
+
 window.DashboardApp = {
     logout,
     setButtonBusy,
@@ -552,6 +558,7 @@ window.DashboardApp = {
     renderTableBodyState,
     renderAdsFromResponse,
     renderCrowdFromResponse,
+    getVisibleCrowdRows,
     renderSingleKpi,
     renderSingleTable,
     showLoading,
@@ -580,6 +587,7 @@ window.DashboardApp = {
     ensureSingleResponseCurrent,
     syncRangeActionButtons,
     applyPresetDateRange,
+    renderCurrentCrowdTable,
     renderCurrentSingleTable,
     setSectionLoading,
     setSectionBackgroundRefreshing,

@@ -1,7 +1,7 @@
 (function attachDashboardState(window) {
     const PENDING_AI_ANALYSIS_KEY = 'pending_ai_analysis_request';
     const DASHBOARD_VIEW_STATE_KEY = 'dashboard_view_state_v3';
-    const DASHBOARD_CACHE_PREFIX = 'dashboard_summary_cache_v5';
+    const DASHBOARD_CACHE_PREFIX = 'dashboard_summary_cache_v6';
     const DASHBOARD_CACHE_GENERATION_KEY = 'dashboard_cache_generation_v1';
     const DASHBOARD_CACHE_TTL_MS = 20 * 60 * 1000;
     const DASHBOARD_HISTORICAL_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
@@ -225,12 +225,12 @@
         setActiveTabState(viewState.activeTab || 'ads');
     }
 
-    function getDashboardCacheKey(startDate, endDate, sections = 'all') {
-        return `${sections}:${startDate}:${endDate}`;
+    function getDashboardCacheKey(startDate, endDate, sections = 'all', variant = '') {
+        return [sections, startDate, endDate, variant].filter(Boolean).join(':');
     }
 
-    function getDashboardStorageKey(startDate, endDate, sections = 'all') {
-        return `${DASHBOARD_CACHE_PREFIX}:${getDashboardCacheKey(startDate, endDate, sections)}`;
+    function getDashboardStorageKey(startDate, endDate, sections = 'all', variant = '') {
+        return `${DASHBOARD_CACHE_PREFIX}:${getDashboardCacheKey(startDate, endDate, sections, variant)}`;
     }
 
     function getTodayInputValue() {
@@ -275,8 +275,8 @@
         });
     }
 
-    function readDashboardCacheEntryFromStorage(startDate, endDate, sections = 'all') {
-        const storageKey = getDashboardStorageKey(startDate, endDate, sections);
+    function readDashboardCacheEntryFromStorage(startDate, endDate, sections = 'all', variant = '') {
+        const storageKey = getDashboardStorageKey(startDate, endDate, sections, variant);
         for (const { storage, label } of CACHE_BACKENDS) {
             try {
                 const raw = storage.getItem(storageKey);
@@ -313,12 +313,12 @@
         return null;
     }
 
-    function readDashboardSummaryFromStorage(startDate, endDate, sections = 'all') {
-        return readDashboardCacheEntryFromStorage(startDate, endDate, sections)?.data || null;
+    function readDashboardSummaryFromStorage(startDate, endDate, sections = 'all', variant = '') {
+        return readDashboardCacheEntryFromStorage(startDate, endDate, sections, variant)?.data || null;
     }
 
-    function getCachedDashboardSummaryEntry(startDate, endDate, sections = 'all') {
-        const cacheKey = getDashboardCacheKey(startDate, endDate, sections);
+    function getCachedDashboardSummaryEntry(startDate, endDate, sections = 'all', variant = '') {
+        const cacheKey = getDashboardCacheKey(startDate, endDate, sections, variant);
         if (dashboardDataCache.has(cacheKey)) {
             return {
                 data: dashboardDataCache.get(cacheKey),
@@ -326,7 +326,7 @@
                 source: 'memory',
             };
         }
-        const stored = readDashboardCacheEntryFromStorage(startDate, endDate, sections);
+        const stored = readDashboardCacheEntryFromStorage(startDate, endDate, sections, variant);
         if (stored) {
             dashboardDataCache.set(cacheKey, stored.data);
             return stored;
@@ -334,11 +334,11 @@
         return null;
     }
 
-    function getCachedDashboardSummary(startDate, endDate, sections = 'all') {
-        return getCachedDashboardSummaryEntry(startDate, endDate, sections)?.data || null;
+    function getCachedDashboardSummary(startDate, endDate, sections = 'all', variant = '') {
+        return getCachedDashboardSummaryEntry(startDate, endDate, sections, variant)?.data || null;
     }
 
-    function writeDashboardSummaryToStorage(startDate, endDate, sections, data) {
+    function writeDashboardSummaryToStorage(startDate, endDate, sections, data, variant = '') {
         const payload = JSON.stringify({
             cachedAt: Date.now(),
             data,
@@ -346,7 +346,7 @@
         });
         CACHE_BACKENDS.forEach(({ storage }) => {
             try {
-                storage.setItem(getDashboardStorageKey(startDate, endDate, sections), payload);
+                storage.setItem(getDashboardStorageKey(startDate, endDate, sections, variant), payload);
             } catch (error) {
                 console.warn('Failed to cache dashboard summary', error);
             }

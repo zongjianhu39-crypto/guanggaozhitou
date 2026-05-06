@@ -24,14 +24,22 @@
         return dashboardSpecPromise;
     }
 
+    function buildDashboardCacheVariant(options = {}) {
+        const parts = [];
+        if (options.forceRawCrowd) parts.push('raw-crowd');
+        if (options.crowdPlanNameIncludes) parts.push(`crowd-plan-${options.crowdPlanNameIncludes}`);
+        return parts.join('|');
+    }
+
     async function fetchDashboardSummary(startDate, endDate, sections = 'all', options = {}) {
         const state = window.DashboardState;
         const authHelpers = window.authHelpers || {};
-        const cacheKey = state.getDashboardCacheKey(startDate, endDate, sections);
+        const cacheVariant = buildDashboardCacheVariant(options);
+        const cacheKey = state.getDashboardCacheKey(startDate, endDate, sections, cacheVariant);
         const forceRefresh = Boolean(options.forceRefresh);
         const includeMeta = options.includeMeta === true;
         if (!forceRefresh) {
-            const cachedEntry = state.getCachedDashboardSummaryEntry(startDate, endDate, sections);
+            const cachedEntry = state.getCachedDashboardSummaryEntry(startDate, endDate, sections, cacheVariant);
             if (cachedEntry) {
                 return includeMeta ? cachedEntry : cachedEntry.data;
             }
@@ -53,6 +61,12 @@
             if (sections !== 'all') {
                 query.sections = sections;
             }
+            if (options.forceRawCrowd) {
+                query.force_raw_crowd = '1';
+            }
+            if (options.crowdPlanNameIncludes) {
+                query.crowd_plan_name_includes = options.crowdPlanNameIncludes;
+            }
 
             const result = await authHelpers.fetchFunctionJson('dashboard-data', {
                 query,
@@ -67,7 +81,7 @@
             }).then(({ data }) => data);
 
             state.dashboardDataCache.set(cacheKey, result);
-            state.writeDashboardSummaryToStorage(startDate, endDate, sections, result);
+            state.writeDashboardSummaryToStorage(startDate, endDate, sections, result, cacheVariant);
             return result;
         })();
 

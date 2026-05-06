@@ -126,11 +126,15 @@
                 });
             });
 
-            const crowdHeaders = ['人群分层', '标签', '花费', '总成交金额', '总成交笔数', 'ROI', '直接ROI', '观看成本', '订单成本', '加购成本', '总预售成交笔数', '预售订单成本', '观看转化率', '深度互动率', '观看率', '千次展现成本', '直接成交金额', '总购物车数', '展现量'];
+            const crowdHeaders = ['人群分层', '计划名称', '标签', '花费', '总成交金额', '总成交笔数', 'ROI', '直接ROI', '观看成本', '订单成本', '加购成本', '总预售成交笔数', '预售订单成本', '观看转化率', '深度互动率', '观看率', '千次展现成本', '直接成交金额', '总购物车数', '展现量'];
             const crowdRows = [];
-            (crowdResult.crowd?.summary || []).forEach((group) => {
+            const visibleCrowdGroups = typeof app.getVisibleCrowdRows === 'function'
+                ? app.getVisibleCrowdRows(crowdResult.crowd?.summary || [])
+                : (crowdResult.crowd?.summary || []);
+            visibleCrowdGroups.forEach((group) => {
                 crowdRows.push({
                     '人群分层': group.crowd,
+                    '计划名称': '',
                     '标签': '分层汇总',
                     '花费': group.summary.cost.toFixed(2),
                     '总成交金额': group.summary.amount.toFixed(2),
@@ -153,6 +157,7 @@
                 (group.subRows || []).forEach((row) => {
                     crowdRows.push({
                         '人群分层': group.crowd,
+                        '计划名称': row.planName || '',
                         '标签': row.label,
                         '花费': row.cost.toFixed(2),
                         '总成交金额': row.amount.toFixed(2),
