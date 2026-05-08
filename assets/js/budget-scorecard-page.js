@@ -355,21 +355,32 @@
             if (!byPlan[key]) {
                 byPlan[key] = {
                     planName: key,
+                    spend: 0,
+                    spendPct: 0,
                     suggestedSpendPct: 0,
                     suggestedBudgetAmountRaw: 0,
                     suggestedBudgetAmount: 0,
                     minBudgetDelta: 0,
+                    orders: 0,
+                    cart: 0,
                     crowdCount: 0,
                 };
             }
+            byPlan[key].spend += toNum(item.spend);
+            byPlan[key].spendPct += toNum(item.spendPct);
             byPlan[key].suggestedSpendPct += toNum(item.suggestedSpendPct);
             byPlan[key].suggestedBudgetAmountRaw += toNum(item.suggestedBudgetAmountRaw);
             byPlan[key].suggestedBudgetAmount += toNum(item.suggestedBudgetAmount);
             byPlan[key].minBudgetDelta += Math.max(toNum(item.suggestedBudgetAmount) - toNum(item.suggestedBudgetAmountRaw), 0);
+            byPlan[key].orders += toNum(item.orders);
+            byPlan[key].cart += toNum(item.cart);
             byPlan[key].crowdCount += 1;
         });
         return Object.keys(byPlan).map(function (key) {
-            return byPlan[key];
+            var row = byPlan[key];
+            row.orderCost = row.orders > 0 ? row.spend / row.orders : 0;
+            row.cartCost = row.cart > 0 ? row.spend / row.cart : 0;
+            return row;
         }).sort(function (a, b) {
             return b.suggestedBudgetAmount - a.suggestedBudgetAmount;
         });
@@ -526,7 +537,7 @@
         tbody.innerHTML = '';
 
         if (scored.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
             return;
         }
 
@@ -542,8 +553,10 @@
                 '<td class="bs-td-num bs-td-suggested-share">' + formatPct(s.suggestedSpendPct) + '</td>' +
                 '<td class="bs-td-num bs-td-suggested-amount">' + formatSuggestedAmount(s.suggestedBudgetAmountRaw, s.suggestedBudgetAmount) + '</td>' +
                 '<td class="bs-td-num bs-td-delta ' + getDeltaClass(s.adjustPct) + '">' + formatDeltaPct(s.adjustPct) + '</td>' +
-                '<td class="bs-td-num">' + formatInt(s.volume) + '</td>' +
-                '<td class="bs-td-num">' + formatOrderCost(s.metricCost) + '</td>' +
+                '<td class="bs-td-num">' + formatInt(s.orders) + '</td>' +
+                '<td class="bs-td-num">' + formatOrderCost(s.orderCost) + '</td>' +
+                '<td class="bs-td-num">' + formatInt(s.cart) + '</td>' +
+                '<td class="bs-td-num">' + formatOrderCost(s.cartCost) + '</td>' +
                 '<td class="bs-td-num"><span class="bs-score-bar"><span class="bs-score-bar-track"><span class="bs-score-bar-fill ' + s.grade.toLowerCase() + '" style="width:' + scorePct + '%"></span></span> ' + s.score.toFixed(1) + '</span></td>' +
                 '<td class="bs-td-action"><span class="bs-action-label ' + s.actionClass + '">' + s.action + '</span></td>';
             tbody.appendChild(tr);
@@ -578,14 +591,20 @@
         }
         if (!tbody) return;
         if (!state.planAllocations.length) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:var(--space-4);">暂无计划分配数据</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--gray-400);padding:var(--space-4);">暂无计划分配数据</td></tr>';
             return;
         }
         tbody.innerHTML = state.planAllocations.map(function (row) {
             return '<tr>' +
                 '<td class="bs-td-plan">' + escapeHtml(row.planName) + '</td>' +
+                '<td class="bs-td-num">' + formatMoney(row.spend) + '</td>' +
+                '<td class="bs-td-num">' + formatPct(row.spendPct) + '</td>' +
                 '<td class="bs-td-num">' + formatPct(row.suggestedSpendPct) + '</td>' +
                 '<td class="bs-td-num bs-td-suggested-amount">' + formatSuggestedAmount(row.suggestedBudgetAmountRaw, row.suggestedBudgetAmount) + '</td>' +
+                '<td class="bs-td-num">' + formatInt(row.orders) + '</td>' +
+                '<td class="bs-td-num">' + formatOrderCost(row.orderCost) + '</td>' +
+                '<td class="bs-td-num">' + formatInt(row.cart) + '</td>' +
+                '<td class="bs-td-num">' + formatOrderCost(row.cartCost) + '</td>' +
                 '<td class="bs-td-num">' + formatInt(row.crowdCount) + '</td>' +
                 '</tr>';
         }).join('');
@@ -1059,7 +1078,7 @@
             if (scored.length === 0) return;
 
             var stage = getStageConfig(ACTIVE_STAGE);
-            var header = '阶段,预算日期,万相台计划,执行预算比例,可分配预算,建议执行合计,最低预算差额,等级,计划,人群,花费,当前花费占比,建议花费占比,测算花费金额,建议执行金额,最低预算修正,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,ROI,建议动作\n';
+            var header = '阶段,预算日期,万相台计划,执行预算比例,可分配预算,建议执行合计,最低预算差额,等级,计划,人群,花费,当前花费占比,建议花费占比,测算花费金额,建议执行金额,最低预算修正,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成交笔数,订单成本,总购物车数,加购成本,成本健康分,ROI,建议动作\n';
             var rows = scored.map(function (s) {
                 return [
                     stage.label,
@@ -1081,6 +1100,10 @@
                     formatDeltaPct(s.adjustPct),
                     s.volume.toFixed(0),
                     s.metricCost.toFixed(2),
+                    s.orders.toFixed(0),
+                    s.orderCost.toFixed(2),
+                    s.cart.toFixed(0),
+                    s.cartCost.toFixed(2),
                     s.score.toFixed(1),
                     s.roi.toFixed(4),
                     s.action,
