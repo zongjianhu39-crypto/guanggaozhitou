@@ -14,6 +14,7 @@
     var SNAPSHOT_KEY = 'bs_suggestion_snapshots';
     var MAX_SNAPSHOTS = 20;
     var REVIEW_ROW_LIMIT = 8;
+    var MIN_EXECUTION_BUDGET = 100;
     var STAGE_CONFIG = {
         warmup: {
             label: '预热期',
@@ -216,6 +217,8 @@
         budgetDate: '',
         wanxiangPlan: null,
         allocatableBudget: 0,
+        executableBudget: 0,
+        minBudgetDelta: 0,
         planAllocations: [],
         suggestionSnapshots: loadSuggestionSnapshots(),
     };
@@ -323,9 +326,24 @@
         return budget > 0 && isFinite(item.suggestedSpendPct) ? budget * item.suggestedSpendPct : 0;
     }
 
+    function getExecutableBudgetAmount(amount) {
+        var numeric = toNum(amount);
+        if (numeric <= 0) return 0;
+        return Math.max(numeric, MIN_EXECUTION_BUDGET);
+    }
+
+    function formatSuggestedAmount(rawAmount, executableAmount) {
+        var adjusted = toNum(executableAmount) > toNum(rawAmount) && toNum(rawAmount) > 0;
+        var label = formatMoney(executableAmount);
+        if (!adjusted) return label;
+        return label + '<span class="bs-min-budget-tag">最低100</span>';
+    }
+
     function applySuggestedBudgetAmounts(scored) {
         scored.forEach(function (item) {
-            item.suggestedBudgetAmount = getSuggestedBudgetAmount(item);
+            item.suggestedBudgetAmountRaw = getSuggestedBudgetAmount(item);
+            item.suggestedBudgetAmount = getExecutableBudgetAmount(item.suggestedBudgetAmountRaw);
+            item.minBudgetApplied = item.suggestedBudgetAmount > item.suggestedBudgetAmountRaw && item.suggestedBudgetAmountRaw > 0;
         });
         return scored;
     }
@@ -338,12 +356,16 @@
                 byPlan[key] = {
                     planName: key,
                     suggestedSpendPct: 0,
+                    suggestedBudgetAmountRaw: 0,
                     suggestedBudgetAmount: 0,
+                    minBudgetDelta: 0,
                     crowdCount: 0,
                 };
             }
             byPlan[key].suggestedSpendPct += toNum(item.suggestedSpendPct);
+            byPlan[key].suggestedBudgetAmountRaw += toNum(item.suggestedBudgetAmountRaw);
             byPlan[key].suggestedBudgetAmount += toNum(item.suggestedBudgetAmount);
+            byPlan[key].minBudgetDelta += Math.max(toNum(item.suggestedBudgetAmount) - toNum(item.suggestedBudgetAmountRaw), 0);
             byPlan[key].crowdCount += 1;
         });
         return Object.keys(byPlan).map(function (key) {
@@ -359,6 +381,10 @@
         state.allocatableBudget = wanxiangPlan * ratio;
         applySuggestedBudgetAmounts(state.scoredCrowds);
         state.planAllocations = buildPlanAllocations(state.scoredCrowds);
+        state.executableBudget = state.scoredCrowds.reduce(function (sum, item) {
+            return sum + toNum(item.suggestedBudgetAmount);
+        }, 0);
+        state.minBudgetDelta = Math.max(state.executableBudget - state.allocatableBudget, 0);
     }
 
     function scoreItems(items, type) {
@@ -514,7 +540,7 @@
                 '<td class="bs-td-num">' + formatMoney(s.spend) + '</td>' +
                 '<td class="bs-td-num">' + formatPct(s.spendPct) + '</td>' +
                 '<td class="bs-td-num bs-td-suggested-share">' + formatPct(s.suggestedSpendPct) + '</td>' +
-                '<td class="bs-td-num bs-td-suggested-amount">' + formatMoney(s.suggestedBudgetAmount) + '</td>' +
+                '<td class="bs-td-num bs-td-suggested-amount">' + formatSuggestedAmount(s.suggestedBudgetAmountRaw, s.suggestedBudgetAmount) + '</td>' +
                 '<td class="bs-td-num bs-td-delta ' + getDeltaClass(s.adjustPct) + '">' + formatDeltaPct(s.adjustPct) + '</td>' +
                 '<td class="bs-td-num">' + formatInt(s.volume) + '</td>' +
                 '<td class="bs-td-num">' + formatOrderCost(s.metricCost) + '</td>' +
@@ -529,6 +555,8 @@
         var wanxiangEl = $('bs-wanxiang-plan');
         var ratioDisplay = $('bs-budget-ratio-display');
         var allocatableEl = $('bs-allocatable-budget');
+        var executableEl = $('bs-executable-budget');
+        var minBudgetDeltaEl = $('bs-min-budget-delta');
         var planCountEl = $('bs-plan-count');
         var hint = $('bs-allocation-hint');
         var tbody = $('bs-plan-allocation-tbody');
@@ -539,12 +567,14 @@
         if (wanxiangEl) wanxiangEl.textContent = state.wanxiangPlan === null ? '--' : formatMoney(state.wanxiangPlan);
         if (ratioDisplay) ratioDisplay.textContent = formatPct(ratio);
         if (allocatableEl) allocatableEl.textContent = state.wanxiangPlan === null ? '--' : formatMoney(state.allocatableBudget);
+        if (executableEl) executableEl.textContent = state.wanxiangPlan === null ? '--' : formatMoney(state.executableBudget);
+        if (minBudgetDeltaEl) minBudgetDeltaEl.textContent = state.wanxiangPlan === null ? '--' : formatMoney(state.minBudgetDelta);
         if (planCountEl) planCountEl.textContent = String(state.planAllocations.length || 0);
         if (hint) {
             var budgetDate = state.budgetDate || (budgetDateInput ? budgetDateInput.value : '');
             hint.textContent = state.wanxiangPlan === null
                 ? '预算日期 ' + budgetDate + ' 暂未读取到万相台计划；评分占比仍可查看。'
-                : '预算日期 ' + budgetDate + '，按万相台计划 × ' + formatPct(ratio) + ' 计算可分配预算。';
+                : '预算日期 ' + budgetDate + '，按万相台计划 × ' + formatPct(ratio) + ' 计算可分配预算；单个人群建议执行金额最低按 ' + formatMoney(MIN_EXECUTION_BUDGET) + ' 处理。';
         }
         if (!tbody) return;
         if (!state.planAllocations.length) {
@@ -555,7 +585,7 @@
             return '<tr>' +
                 '<td class="bs-td-plan">' + escapeHtml(row.planName) + '</td>' +
                 '<td class="bs-td-num">' + formatPct(row.suggestedSpendPct) + '</td>' +
-                '<td class="bs-td-num bs-td-suggested-amount">' + formatMoney(row.suggestedBudgetAmount) + '</td>' +
+                '<td class="bs-td-num bs-td-suggested-amount">' + formatSuggestedAmount(row.suggestedBudgetAmountRaw, row.suggestedBudgetAmount) + '</td>' +
                 '<td class="bs-td-num">' + formatInt(row.crowdCount) + '</td>' +
                 '</tr>';
         }).join('');
@@ -975,6 +1005,8 @@
             budgetAllocationRatio: getBudgetRatio(),
             wanxiangPlan: state.wanxiangPlan,
             allocatableBudget: state.allocatableBudget,
+            executableBudget: state.executableBudget,
+            minBudgetDelta: state.minBudgetDelta,
             items: state.scoredCrowds.map(function (item) {
                 return {
                     key: getItemKey(item),
@@ -984,7 +1016,9 @@
                     spend: item.spend,
                     spendPct: item.spendPct,
                     suggestedSpendPct: item.suggestedSpendPct,
+                    suggestedBudgetAmountRaw: item.suggestedBudgetAmountRaw,
                     suggestedBudgetAmount: item.suggestedBudgetAmount,
+                    minBudgetApplied: item.minBudgetApplied,
                     adjustPct: item.adjustPct,
                     action: item.action,
                     metricCost: item.metricCost,
@@ -1025,7 +1059,7 @@
             if (scored.length === 0) return;
 
             var stage = getStageConfig(ACTIVE_STAGE);
-            var header = '阶段,预算日期,万相台计划,执行预算比例,可分配预算,等级,计划,人群,花费,当前花费占比,建议花费占比,建议花费金额,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,ROI,建议动作\n';
+            var header = '阶段,预算日期,万相台计划,执行预算比例,可分配预算,建议执行合计,最低预算差额,等级,计划,人群,花费,当前花费占比,建议花费占比,测算花费金额,建议执行金额,最低预算修正,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,ROI,建议动作\n';
             var rows = scored.map(function (s) {
                 return [
                     stage.label,
@@ -1033,13 +1067,17 @@
                     state.wanxiangPlan === null ? '' : toNum(state.wanxiangPlan).toFixed(2),
                     (getBudgetRatio() * 100).toFixed(1) + '%',
                     toNum(state.allocatableBudget).toFixed(2),
+                    toNum(state.executableBudget).toFixed(2),
+                    toNum(state.minBudgetDelta).toFixed(2),
                     s.grade,
                     '"' + String(s.planName || '未标注计划').replace(/"/g, '""') + '"',
                     '"' + String(s.name).replace(/"/g, '""') + '"',
                     s.spend.toFixed(2),
                     (s.spendPct * 100).toFixed(1) + '%',
                     (s.suggestedSpendPct * 100).toFixed(1) + '%',
+                    toNum(s.suggestedBudgetAmountRaw).toFixed(2),
                     toNum(s.suggestedBudgetAmount).toFixed(2),
+                    s.minBudgetApplied ? '是' : '否',
                     formatDeltaPct(s.adjustPct),
                     s.volume.toFixed(0),
                     s.metricCost.toFixed(2),

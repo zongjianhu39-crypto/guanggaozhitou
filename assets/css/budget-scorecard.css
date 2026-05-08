@@ -526,6 +526,19 @@
     color: var(--success);
 }
 
+.bs-min-budget-tag {
+    display: inline-block;
+    margin-left: var(--space-1);
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+    background: var(--warning-bg);
+    color: var(--warning);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
 .bs-table tbody td.bs-td-delta {
     font-weight: var(--font-semibold);
 }
