@@ -11,9 +11,6 @@
 
     var authHelpers = window.authHelpers || {};
     var CONFIG_KEY = 'bs_score_config';
-    var SNAPSHOT_KEY = 'bs_suggestion_snapshots';
-    var MAX_SNAPSHOTS = 20;
-    var REVIEW_ROW_LIMIT = 8;
     var MIN_EXECUTION_BUDGET = 100;
     var STAGE_CONFIG = {
         warmup: {
@@ -117,22 +114,6 @@
         return (pct > 0 ? '+' : '') + pct.toFixed(1) + 'pct';
     }
 
-    function getDeltaClass(n) {
-        if (!isFinite(n) || Math.abs(n * 100) < 0.05) return 'neutral';
-        return n > 0 ? 'positive' : 'negative';
-    }
-
-    function getCostChangeClass(n) {
-        if (!isFinite(n) || Math.abs(n) < 0.005) return 'neutral';
-        return n <= 0 ? 'positive' : 'negative';
-    }
-
-    function formatRelativeChange(n) {
-        if (!isFinite(n)) return '--';
-        if (Math.abs(n) < 0.005) return '持平';
-        return (n > 0 ? '+' : '') + (n * 100).toFixed(1) + '%';
-    }
-
     function formatInt(n) {
         if (!isFinite(n)) return '--';
         return String(Math.round(n));
@@ -175,37 +156,6 @@
         return formatDateInput(d);
     }
 
-    function formatDateTime(ts) {
-        var d = new Date(ts);
-        if (!isFinite(d.getTime())) return '--';
-        return formatDateInput(d) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    }
-
-    function getItemKey(item) {
-        return String(item.planName || '未标注计划') + '\u0001' + String(item.name || '未命名人群');
-    }
-
-    function loadSuggestionSnapshots() {
-        try {
-            var raw = localStorage.getItem(SNAPSHOT_KEY);
-            var parsed = raw ? JSON.parse(raw) : [];
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-            console.warn('加载建议快照失败:', e);
-            return [];
-        }
-    }
-
-    function saveSuggestionSnapshots() {
-        try {
-            localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(state.suggestionSnapshots.slice(0, MAX_SNAPSHOTS)));
-            return true;
-        } catch (e) {
-            console.warn('保存建议快照失败:', e);
-            return false;
-        }
-    }
-
     // ── 状态管理 ──
 
     var state = {
@@ -220,7 +170,6 @@
         executableBudget: 0,
         minBudgetDelta: 0,
         planAllocations: [],
-        suggestionSnapshots: loadSuggestionSnapshots(),
     };
 
     // ── 评分算法 ──
@@ -459,7 +408,7 @@
     }
 
     function showContent() {
-        ['bs-overview', 'bs-allocation-section', 'bs-detail-section'].forEach(function (id) {
+        ['bs-overview', 'bs-allocation-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = '';
         });
@@ -468,7 +417,7 @@
     }
 
     function hideContent() {
-        ['bs-overview', 'bs-allocation-section', 'bs-detail-section', 'bs-review-section'].forEach(function (id) {
+        ['bs-overview', 'bs-allocation-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = 'none';
         });
@@ -531,38 +480,6 @@
         }
     }
 
-    function renderScoreTable(scored) {
-        var tbody = $('bs-score-tbody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        if (scored.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
-            return;
-        }
-
-        scored.forEach(function (s) {
-            var tr = document.createElement('tr');
-            var scorePct = Math.min(s.score, 100);
-            tr.innerHTML =
-                '<td class="bs-td-grade"><span class="bs-grade-badge ' + s.grade.toLowerCase() + '">' + s.grade + '</span></td>' +
-                '<td class="bs-td-plan">' + escapeHtml(s.planName) + '</td>' +
-                '<td>' + escapeHtml(s.name) + '</td>' +
-                '<td class="bs-td-num">' + formatMoney(s.spend) + '</td>' +
-                '<td class="bs-td-num">' + formatPct(s.spendPct) + '</td>' +
-                '<td class="bs-td-num bs-td-suggested-share">' + formatPct(s.suggestedSpendPct) + '</td>' +
-                '<td class="bs-td-num bs-td-suggested-amount">' + formatSuggestedAmount(s.suggestedBudgetAmountRaw, s.suggestedBudgetAmount) + '</td>' +
-                '<td class="bs-td-num bs-td-delta ' + getDeltaClass(s.adjustPct) + '">' + formatDeltaPct(s.adjustPct) + '</td>' +
-                '<td class="bs-td-num">' + formatInt(s.orders) + '</td>' +
-                '<td class="bs-td-num">' + formatOrderCost(s.orderCost) + '</td>' +
-                '<td class="bs-td-num">' + formatInt(s.cart) + '</td>' +
-                '<td class="bs-td-num">' + formatOrderCost(s.cartCost) + '</td>' +
-                '<td class="bs-td-num"><span class="bs-score-bar"><span class="bs-score-bar-track"><span class="bs-score-bar-fill ' + s.grade.toLowerCase() + '" style="width:' + scorePct + '%"></span></span> ' + s.score.toFixed(1) + '</span></td>' +
-                '<td class="bs-td-action"><span class="bs-action-label ' + s.actionClass + '">' + s.action + '</span></td>';
-            tbody.appendChild(tr);
-        });
-    }
-
     function renderAllocationPanel() {
         var budgetDateInput = $('bs-budget-date');
         var wanxiangEl = $('bs-wanxiang-plan');
@@ -608,164 +525,6 @@
                 '<td class="bs-td-num">' + formatInt(row.crowdCount) + '</td>' +
                 '</tr>';
         }).join('');
-    }
-
-    function buildScoreIndex(scored) {
-        return scored.reduce(function (map, item) {
-            map[getItemKey(item)] = item;
-            return map;
-        }, {});
-    }
-
-    function getReviewStatus(beforePct, suggestedPct, currentPct) {
-        var targetMove = suggestedPct - beforePct;
-        if (!isFinite(targetMove) || Math.abs(targetMove) < 0.005) {
-            return { label: '建议维持', className: 'neutral', progress: 0 };
-        }
-        var progress = (currentPct - beforePct) / targetMove;
-        if (progress >= 0.8) return { label: '基本到位', className: 'good', progress: progress };
-        if (progress >= 0.35) return { label: '部分执行', className: 'warn', progress: progress };
-        if (progress < -0.2) return { label: '反向变化', className: 'bad', progress: progress };
-        return { label: '未明显执行', className: 'neutral', progress: progress };
-    }
-
-    function getReviewEffect(snapshotItem, currentItem, status) {
-        if (!currentItem) return { label: '当前未匹配', className: 'neutral', costChange: null };
-
-        var beforeCost = toNum(snapshotItem.metricCost);
-        var currentCost = toNum(currentItem.metricCost);
-        var costChange = beforeCost > 0 && currentCost > 0 ? (currentCost - beforeCost) / beforeCost : null;
-        var action = snapshotItem.action || '';
-
-        if (status.className === 'neutral' && status.label === '未明显执行') {
-            return { label: '待执行验证', className: 'neutral', costChange: costChange };
-        }
-
-        if (action === '提高占比') {
-            if (costChange !== null && costChange <= 0.1) {
-                return { label: '放量稳定', className: 'good', costChange: costChange };
-            }
-            return { label: '放量后成本变差', className: 'bad', costChange: costChange };
-        }
-
-        if (action === '降低占比' || action === '暂停') {
-            if (costChange !== null && costChange <= 0) {
-                return { label: '控量且成本改善', className: 'good', costChange: costChange };
-            }
-            return { label: '已控量待看承接', className: 'warn', costChange: costChange };
-        }
-
-        if (action === '观察') {
-            if (currentItem.grade !== 'N') {
-                return { label: '样本已补足', className: 'good', costChange: costChange };
-            }
-            return { label: '继续观察', className: 'neutral', costChange: costChange };
-        }
-
-        if (costChange !== null && Math.abs(costChange) <= 0.1) {
-            return { label: '维持稳定', className: 'good', costChange: costChange };
-        }
-        return { label: '出现波动', className: 'warn', costChange: costChange };
-    }
-
-    function getSnapshotReviewRows(snapshot, currentIndex) {
-        return (snapshot.items || []).map(function (item) {
-            var current = currentIndex[getItemKey(item)];
-            var status = current
-                ? getReviewStatus(toNum(item.spendPct), toNum(item.suggestedSpendPct), toNum(current.spendPct))
-                : { label: '当前未匹配', className: 'neutral', progress: 0 };
-            var effect = getReviewEffect(item, current, status);
-            return {
-                snapshotItem: item,
-                currentItem: current,
-                status: status,
-                effect: effect,
-            };
-        }).sort(function (a, b) {
-            return Math.abs(toNum(b.snapshotItem.adjustPct)) - Math.abs(toNum(a.snapshotItem.adjustPct));
-        });
-    }
-
-    function renderSnapshotReviews() {
-        var section = $('bs-review-section');
-        var list = $('bs-review-list');
-        var hint = $('bs-review-hint');
-        if (!section || !list) return;
-
-        var currentIndex = buildScoreIndex(state.scoredCrowds);
-        var snapshots = state.suggestionSnapshots
-            .filter(function (snapshot) { return snapshot.stage === ACTIVE_STAGE; })
-            .slice(0, 5);
-
-        if (state.scoredCrowds.length === 0 || snapshots.length === 0) {
-            section.style.display = 'none';
-            list.innerHTML = '';
-            return;
-        }
-
-        section.style.display = '';
-        if (hint) {
-            hint.textContent = '当前对比区间：' + state.startDate + ' 至 ' + state.endDate + '；仅展示' + getStageConfig(ACTIVE_STAGE).label + '快照。';
-        }
-
-        list.innerHTML = '';
-        snapshots.forEach(function (snapshot) {
-            var rows = getSnapshotReviewRows(snapshot, currentIndex);
-            var matchedCount = rows.filter(function (row) { return Boolean(row.currentItem); }).length;
-            var movedCount = rows.filter(function (row) { return row.status.className === 'good' || row.status.className === 'warn'; }).length;
-            var goodCount = rows.filter(function (row) { return row.effect.className === 'good'; }).length;
-            var visibleRows = rows.slice(0, REVIEW_ROW_LIMIT);
-
-            var tableRows = visibleRows.map(function (row) {
-                var before = row.snapshotItem;
-                var current = row.currentItem;
-                return '<tr>' +
-                    '<td class="bs-td-plan">' + escapeHtml(before.planName) + '</td>' +
-                    '<td>' + escapeHtml(before.name) + '</td>' +
-                    '<td class="bs-td-num">' + formatPct(before.spendPct) + '</td>' +
-                    '<td class="bs-td-num bs-td-suggested-share">' + formatPct(before.suggestedSpendPct) + '</td>' +
-                    '<td class="bs-td-num">' + (current ? formatPct(current.spendPct) : '--') + '</td>' +
-                    '<td class="bs-td-num">' + formatOrderCost(before.metricCost) + '</td>' +
-                    '<td class="bs-td-num">' + (current ? formatOrderCost(current.metricCost) : '--') + '</td>' +
-                    '<td class="bs-td-num bs-td-delta ' + (row.effect.costChange === null ? 'neutral' : getCostChangeClass(row.effect.costChange)) + '">' + (row.effect.costChange === null ? '--' : formatRelativeChange(row.effect.costChange)) + '</td>' +
-                    '<td><span class="bs-review-pill ' + row.status.className + '">' + escapeHtml(row.status.label) + '</span></td>' +
-                    '<td><span class="bs-review-pill ' + row.effect.className + '">' + escapeHtml(row.effect.label) + '</span></td>' +
-                '</tr>';
-            }).join('');
-
-            var card = document.createElement('div');
-            card.className = 'bs-review-card';
-            card.innerHTML =
-                '<div class="bs-review-card-header">' +
-                    '<div>' +
-                        '<div class="bs-review-title">' + escapeHtml(snapshot.stageLabel) + '建议快照</div>' +
-                        '<div class="bs-review-meta">保存于 ' + escapeHtml(formatDateTime(snapshot.createdAt)) + ' · 建议区间 ' + escapeHtml(snapshot.startDate) + ' 至 ' + escapeHtml(snapshot.endDate) + '</div>' +
-                    '</div>' +
-                    '<div class="bs-review-summary">' +
-                        '<span>匹配 ' + matchedCount + '/' + rows.length + '</span>' +
-                        '<span>有执行迹象 ' + movedCount + '</span>' +
-                        '<span>表现稳定/改善 ' + goodCount + '</span>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="bs-table-wrap bs-review-table-wrap">' +
-                    '<table class="bs-table bs-review-table">' +
-                        '<thead><tr>' +
-                            '<th>计划</th>' +
-                            '<th>人群</th>' +
-                            '<th class="bs-th-num">建议时占比</th>' +
-                            '<th class="bs-th-num">建议占比</th>' +
-                            '<th class="bs-th-num">当前占比</th>' +
-                            '<th class="bs-th-num">建议时成本</th>' +
-                            '<th class="bs-th-num">当前成本</th>' +
-                            '<th class="bs-th-num">成本变化</th>' +
-                            '<th>执行判断</th>' +
-                            '<th>效果判断</th>' +
-                        '</tr></thead>' +
-                        '<tbody>' + (tableRows || '<tr><td colspan="10" style="text-align:center;color:var(--gray-400);padding:var(--space-4);">暂无可复盘明细</td></tr>') + '</tbody>' +
-                    '</table>' +
-                '</div>';
-            list.appendChild(card);
-        });
     }
 
     // ── 数据获取 ──
@@ -930,8 +689,6 @@
         var scored = state.scoredCrowds;
         renderOverview(scored);
         renderAllocationPanel();
-        renderScoreTable(scored);
-        renderSnapshotReviews();
     }
 
     // ── 事件绑定 ──
@@ -1005,68 +762,6 @@
         btn.addEventListener('click', function () {
             if (state.loading) return;
             loadAndScore();
-        });
-    }
-
-    function createSuggestionSnapshot() {
-        var stage = getStageConfig(ACTIVE_STAGE);
-        return {
-            id: 'snapshot-' + Date.now(),
-            createdAt: Date.now(),
-            startDate: state.startDate,
-            endDate: state.endDate,
-            stage: ACTIVE_STAGE,
-            stageLabel: stage.label,
-            costLabel: stage.costLabel,
-            volumeLabel: stage.volumeLabel,
-            targetCost: TARGET_COST,
-            budgetDate: state.budgetDate,
-            budgetAllocationRatio: getBudgetRatio(),
-            wanxiangPlan: state.wanxiangPlan,
-            allocatableBudget: state.allocatableBudget,
-            executableBudget: state.executableBudget,
-            minBudgetDelta: state.minBudgetDelta,
-            items: state.scoredCrowds.map(function (item) {
-                return {
-                    key: getItemKey(item),
-                    planName: item.planName,
-                    name: item.name,
-                    grade: item.grade,
-                    spend: item.spend,
-                    spendPct: item.spendPct,
-                    suggestedSpendPct: item.suggestedSpendPct,
-                    suggestedBudgetAmountRaw: item.suggestedBudgetAmountRaw,
-                    suggestedBudgetAmount: item.suggestedBudgetAmount,
-                    minBudgetApplied: item.minBudgetApplied,
-                    adjustPct: item.adjustPct,
-                    action: item.action,
-                    metricCost: item.metricCost,
-                    volume: item.volume,
-                    score: item.score,
-                };
-            }),
-        };
-    }
-
-    function initSaveSnapshotButton() {
-        var btn = $('bs-save-snapshot-btn');
-        if (!btn) return;
-        btn.addEventListener('click', function () {
-            if (!state.scoredCrowds || state.scoredCrowds.length === 0) {
-                setStatus('warn', '请先计算评分，再保存建议快照');
-                return;
-            }
-
-            var snapshot = createSuggestionSnapshot();
-            state.suggestionSnapshots = [snapshot].concat(state.suggestionSnapshots || []).slice(0, MAX_SNAPSHOTS);
-            if (!saveSuggestionSnapshots()) {
-                setStatus('error', '保存失败：浏览器存储不可用');
-                return;
-            }
-
-            renderSnapshotReviews();
-            setStatus('success', '已保存本次建议快照，后续重新计算即可自动复盘');
-            setTimeout(hideStatus, 3500);
         });
     }
 
@@ -1289,7 +984,6 @@
         initDatePresets();
         initBudgetControls();
         initLoadButton();
-        initSaveSnapshotButton();
         initExport();
     });
 

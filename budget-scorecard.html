@@ -191,6 +191,7 @@
                         <input type="number" id="bs-budget-ratio" class="bs-date-input bs-ratio-input" step="0.05" min="0" max="1" value="0.3">
                     </label>
                     <button id="bs-budget-refresh-btn" class="btn btn-outline btn-sm" type="button">刷新预算</button>
+                    <button id="bs-export-btn" class="btn btn-outline btn-sm" type="button">导出 CSV</button>
                 </div>
             </div>
             <div class="bs-allocation-grid">
@@ -238,51 +239,6 @@
                     <tbody id="bs-plan-allocation-tbody"></tbody>
                 </table>
             </div>
-        </section>
-
-        <!-- 评分明细表 -->
-        <section class="bs-detail-section" id="bs-detail-section" style="display:none;">
-            <div class="bs-detail-header">
-                <h2 class="bs-section-title">评分明细</h2>
-                <div class="bs-detail-actions">
-                    <button id="bs-save-snapshot-btn" class="btn btn-primary btn-sm" type="button">保存本次建议快照</button>
-                    <button id="bs-export-btn" class="btn btn-outline btn-sm" type="button">导出 CSV</button>
-                </div>
-            </div>
-            <div class="bs-table-wrap">
-                <table class="bs-table" id="bs-score-table">
-                    <thead>
-                        <tr>
-                            <th class="bs-th-grade">等级</th>
-                            <th class="bs-th-name">计划</th>
-                            <th class="bs-th-name">人群</th>
-                            <th class="bs-th-num">花费</th>
-                            <th class="bs-th-num">当前花费占比</th>
-                            <th class="bs-th-num">建议花费占比</th>
-                            <th class="bs-th-num">建议执行金额</th>
-                            <th class="bs-th-num">调整幅度</th>
-                            <th class="bs-th-num">成交笔数</th>
-                            <th class="bs-th-num">订单成本</th>
-                            <th class="bs-th-num">总购物车数</th>
-                            <th class="bs-th-num">加购成本</th>
-                            <th class="bs-th-num">成本健康分</th>
-                            <th class="bs-th-action">建议动作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bs-score-tbody"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- 建议复盘 -->
-        <section class="bs-review-section" id="bs-review-section" style="display:none;">
-            <div class="bs-detail-header">
-                <div>
-                    <h2 class="bs-section-title">建议复盘</h2>
-                    <p class="bs-review-hint" id="bs-review-hint">保存建议快照后，重新计算后续日期即可自动对比。</p>
-                </div>
-            </div>
-            <div id="bs-review-list" class="bs-review-list"></div>
         </section>
 
         <!-- 空状态 -->
