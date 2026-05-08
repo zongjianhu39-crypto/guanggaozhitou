@@ -367,6 +367,75 @@
 .bs-grade-n-dot { background: #94a3b8; }
 
 /* Detail table */
+.bs-allocation-section {
+    margin-bottom: var(--space-6);
+}
+
+.bs-allocation-hint {
+    margin: var(--space-1) 0 0;
+    color: var(--gray-500);
+    font-size: var(--text-xs);
+}
+
+.bs-allocation-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.bs-inline-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    color: var(--gray-500);
+    font-size: var(--text-xs);
+}
+
+.bs-ratio-input {
+    width: 96px;
+}
+
+.bs-allocation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.bs-allocation-card {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+}
+
+.bs-allocation-card.primary {
+    border-color: var(--indigo-200);
+    background: var(--indigo-50);
+}
+
+.bs-allocation-label {
+    color: var(--gray-500);
+    font-size: var(--text-xs);
+    margin-bottom: var(--space-1);
+}
+
+.bs-allocation-value {
+    color: var(--gray-900);
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+.bs-plan-summary-wrap {
+    margin-bottom: var(--space-3);
+}
+
+.bs-plan-summary-table {
+    font-size: var(--text-xs);
+}
+
 .bs-detail-section {
     margin-bottom: var(--space-8);
 }
@@ -450,6 +519,11 @@
 .bs-table tbody td.bs-td-suggested-share {
     font-weight: var(--font-semibold);
     color: var(--indigo-700);
+}
+
+.bs-table tbody td.bs-td-suggested-amount {
+    font-weight: var(--font-semibold);
+    color: var(--success);
 }
 
 .bs-table tbody td.bs-td-delta {
@@ -676,6 +750,13 @@
     .bs-review-card-header {
         flex-direction: column;
         align-items: stretch;
+    }
+    .bs-allocation-controls {
+        align-items: stretch;
+    }
+    .bs-inline-field,
+    .bs-ratio-input {
+        width: 100%;
     }
     .bs-review-summary {
         justify-content: flex-start;

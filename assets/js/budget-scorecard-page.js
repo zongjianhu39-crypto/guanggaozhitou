@@ -56,6 +56,7 @@
         gradeAThreshold: 80,    // A级阈值
         gradeBThreshold: 60,    // B级阈值
         gradeCThreshold: 40,    // C级阈值
+        budgetAllocationRatio: 0.3, // 默认只分配万相台计划的 30%
     };
 
     // 加载配置
@@ -212,6 +213,10 @@
         endDate: '',
         crowdItems: [],
         scoredCrowds: [],
+        budgetDate: '',
+        wanxiangPlan: null,
+        allocatableBudget: 0,
+        planAllocations: [],
         suggestionSnapshots: loadSuggestionSnapshots(),
     };
 
@@ -289,6 +294,73 @@
         return scored;
     }
 
+    function getTomorrowDate() {
+        return getRelativeDate(1);
+    }
+
+    function normalizeBudgetRatio(value) {
+        var numeric = parseFloat(value);
+        if (!isFinite(numeric)) return DEFAULT_CONFIG.budgetAllocationRatio;
+        if (numeric < 0) return 0;
+        if (numeric > 1) return 1;
+        return Math.round(numeric * 100) / 100;
+    }
+
+    function getBudgetRatio() {
+        return normalizeBudgetRatio(scoreConfig.budgetAllocationRatio);
+    }
+
+    function setBudgetRatioInputs(value) {
+        var ratio = normalizeBudgetRatio(value);
+        ['bs-budget-ratio', 'cfg-budget-ratio'].forEach(function (id) {
+            var input = $(id);
+            if (input) input.value = ratio;
+        });
+    }
+
+    function getSuggestedBudgetAmount(item) {
+        var budget = toNum(state.allocatableBudget);
+        return budget > 0 && isFinite(item.suggestedSpendPct) ? budget * item.suggestedSpendPct : 0;
+    }
+
+    function applySuggestedBudgetAmounts(scored) {
+        scored.forEach(function (item) {
+            item.suggestedBudgetAmount = getSuggestedBudgetAmount(item);
+        });
+        return scored;
+    }
+
+    function buildPlanAllocations(scored) {
+        var byPlan = {};
+        scored.forEach(function (item) {
+            var key = item.planName || '未标注计划';
+            if (!byPlan[key]) {
+                byPlan[key] = {
+                    planName: key,
+                    suggestedSpendPct: 0,
+                    suggestedBudgetAmount: 0,
+                    crowdCount: 0,
+                };
+            }
+            byPlan[key].suggestedSpendPct += toNum(item.suggestedSpendPct);
+            byPlan[key].suggestedBudgetAmount += toNum(item.suggestedBudgetAmount);
+            byPlan[key].crowdCount += 1;
+        });
+        return Object.keys(byPlan).map(function (key) {
+            return byPlan[key];
+        }).sort(function (a, b) {
+            return b.suggestedBudgetAmount - a.suggestedBudgetAmount;
+        });
+    }
+
+    function updateBudgetAllocations() {
+        var ratio = getBudgetRatio();
+        var wanxiangPlan = toNum(state.wanxiangPlan);
+        state.allocatableBudget = wanxiangPlan * ratio;
+        applySuggestedBudgetAmounts(state.scoredCrowds);
+        state.planAllocations = buildPlanAllocations(state.scoredCrowds);
+    }
+
     function scoreItems(items, type) {
         var totalSpend = items.reduce(function (s, item) { return s + toNum(item.spend); }, 0);
         if (totalSpend <= 0) return [];
@@ -326,7 +398,7 @@
                 actionClass: '',
             };
         }).sort(function (a, b) { return b.score - a.score; });
-        return applySuggestedSpendShares(scored);
+        return applySuggestedBudgetAmounts(applySuggestedSpendShares(scored));
     }
 
     // ── UI 渲染 ──
@@ -350,7 +422,7 @@
     }
 
     function showContent() {
-        ['bs-overview', 'bs-detail-section'].forEach(function (id) {
+        ['bs-overview', 'bs-allocation-section', 'bs-detail-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = '';
         });
@@ -359,7 +431,7 @@
     }
 
     function hideContent() {
-        ['bs-overview', 'bs-detail-section', 'bs-review-section'].forEach(function (id) {
+        ['bs-overview', 'bs-allocation-section', 'bs-detail-section', 'bs-review-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = 'none';
         });
@@ -428,7 +500,7 @@
         tbody.innerHTML = '';
 
         if (scored.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--gray-400);padding:var(--space-6);">暂无数据</td></tr>';
             return;
         }
 
@@ -442,6 +514,7 @@
                 '<td class="bs-td-num">' + formatMoney(s.spend) + '</td>' +
                 '<td class="bs-td-num">' + formatPct(s.spendPct) + '</td>' +
                 '<td class="bs-td-num bs-td-suggested-share">' + formatPct(s.suggestedSpendPct) + '</td>' +
+                '<td class="bs-td-num bs-td-suggested-amount">' + formatMoney(s.suggestedBudgetAmount) + '</td>' +
                 '<td class="bs-td-num bs-td-delta ' + getDeltaClass(s.adjustPct) + '">' + formatDeltaPct(s.adjustPct) + '</td>' +
                 '<td class="bs-td-num">' + formatInt(s.volume) + '</td>' +
                 '<td class="bs-td-num">' + formatOrderCost(s.metricCost) + '</td>' +
@@ -449,6 +522,43 @@
                 '<td class="bs-td-action"><span class="bs-action-label ' + s.actionClass + '">' + s.action + '</span></td>';
             tbody.appendChild(tr);
         });
+    }
+
+    function renderAllocationPanel() {
+        var budgetDateInput = $('bs-budget-date');
+        var wanxiangEl = $('bs-wanxiang-plan');
+        var ratioDisplay = $('bs-budget-ratio-display');
+        var allocatableEl = $('bs-allocatable-budget');
+        var planCountEl = $('bs-plan-count');
+        var hint = $('bs-allocation-hint');
+        var tbody = $('bs-plan-allocation-tbody');
+        var ratio = getBudgetRatio();
+
+        if (budgetDateInput && !budgetDateInput.value) budgetDateInput.value = state.budgetDate || getTomorrowDate();
+        setBudgetRatioInputs(ratio);
+        if (wanxiangEl) wanxiangEl.textContent = state.wanxiangPlan === null ? '--' : formatMoney(state.wanxiangPlan);
+        if (ratioDisplay) ratioDisplay.textContent = formatPct(ratio);
+        if (allocatableEl) allocatableEl.textContent = state.wanxiangPlan === null ? '--' : formatMoney(state.allocatableBudget);
+        if (planCountEl) planCountEl.textContent = String(state.planAllocations.length || 0);
+        if (hint) {
+            var budgetDate = state.budgetDate || (budgetDateInput ? budgetDateInput.value : '');
+            hint.textContent = state.wanxiangPlan === null
+                ? '预算日期 ' + budgetDate + ' 暂未读取到万相台计划；评分占比仍可查看。'
+                : '预算日期 ' + budgetDate + '，按万相台计划 × ' + formatPct(ratio) + ' 计算可分配预算。';
+        }
+        if (!tbody) return;
+        if (!state.planAllocations.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:var(--space-4);">暂无计划分配数据</td></tr>';
+            return;
+        }
+        tbody.innerHTML = state.planAllocations.map(function (row) {
+            return '<tr>' +
+                '<td class="bs-td-plan">' + escapeHtml(row.planName) + '</td>' +
+                '<td class="bs-td-num">' + formatPct(row.suggestedSpendPct) + '</td>' +
+                '<td class="bs-td-num bs-td-suggested-amount">' + formatMoney(row.suggestedBudgetAmount) + '</td>' +
+                '<td class="bs-td-num">' + formatInt(row.crowdCount) + '</td>' +
+                '</tr>';
+        }).join('');
     }
 
     function buildScoreIndex(scored) {
@@ -635,6 +745,67 @@
         return result.data ? result.data : null;
     }
 
+    async function fetchPlanBudgetData(budgetDate) {
+        var result;
+        try {
+            result = await authHelpers.fetchFunctionJson('plan-dashboard-summary', {
+                query: {
+                    start: budgetDate,
+                    end: budgetDate,
+                },
+                includePromptAdminToken: true,
+                useSessionToken: true,
+                parseErrorMessage: '计划预算接口返回了无法解析的响应',
+                onUnauthorized: function () {
+                    setStatus('error', '登录状态已失效，请重新登录');
+                },
+            });
+        } catch (e) {
+            console.warn('读取计划预算失败:', e);
+            return null;
+        }
+        return result && result.data ? result.data : null;
+    }
+
+    async function refreshPlanBudget(options) {
+        options = options || {};
+        var budgetDateInput = $('bs-budget-date');
+        var ratioInput = $('bs-budget-ratio');
+        var budgetDate = budgetDateInput && budgetDateInput.value ? budgetDateInput.value : (state.budgetDate || getTomorrowDate());
+        var ratio = normalizeBudgetRatio(ratioInput && ratioInput.value);
+
+        state.budgetDate = budgetDate;
+        scoreConfig.budgetAllocationRatio = ratio;
+        saveConfig(scoreConfig);
+        setBudgetRatioInputs(ratio);
+
+        if (!budgetDate) {
+            state.wanxiangPlan = null;
+            updateBudgetAllocations();
+            renderActiveTab();
+            return;
+        }
+
+        if (!options.silent) {
+            setStatus('', '正在读取 ' + budgetDate + ' 的万相台计划...');
+        }
+
+        var planData = await fetchPlanBudgetData(budgetDate);
+        var day = planData && Array.isArray(planData.days) ? planData.days[0] : null;
+        state.wanxiangPlan = day ? toNum(day.wanxiang_plan) : null;
+        updateBudgetAllocations();
+        renderActiveTab();
+
+        if (!options.silent) {
+            if (state.wanxiangPlan === null) {
+                setStatus('warn', '未读取到 ' + budgetDate + ' 的万相台计划，建议金额暂按 0 展示');
+            } else {
+                setStatus('success', '已按 ' + budgetDate + ' 万相台计划计算建议花费金额');
+                setTimeout(hideStatus, 2500);
+            }
+        }
+    }
+
     // ── 主流程 ──
 
     async function loadAndScore() {
@@ -690,6 +861,8 @@
 
             // 评分
             state.scoredCrowds = scoreItems(state.crowdItems, 'crowd');
+            await refreshPlanBudget({ silent: true });
+            updateBudgetAllocations();
 
             // 渲染
             showContent();
@@ -707,6 +880,7 @@
         updateStageCopy();
         var scored = state.scoredCrowds;
         renderOverview(scored);
+        renderAllocationPanel();
         renderScoreTable(scored);
         renderSnapshotReviews();
     }
@@ -747,6 +921,35 @@
         if (endEl3) endEl3.value = thisMonthRange.end;
     }
 
+    function initBudgetControls() {
+        var budgetDateInput = $('bs-budget-date');
+        var ratioInput = $('bs-budget-ratio');
+        var refreshBtn = $('bs-budget-refresh-btn');
+        var ratio = getBudgetRatio();
+        state.budgetDate = getTomorrowDate();
+        if (budgetDateInput) budgetDateInput.value = state.budgetDate;
+        if (ratioInput) {
+            setBudgetRatioInputs(ratio);
+            ratioInput.addEventListener('change', function () {
+                scoreConfig.budgetAllocationRatio = normalizeBudgetRatio(ratioInput.value);
+                saveConfig(scoreConfig);
+                setBudgetRatioInputs(scoreConfig.budgetAllocationRatio);
+                updateBudgetAllocations();
+                renderActiveTab();
+            });
+        }
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function () {
+                refreshPlanBudget();
+            });
+        }
+        if (budgetDateInput) {
+            budgetDateInput.addEventListener('change', function () {
+                refreshPlanBudget();
+            });
+        }
+    }
+
     function initLoadButton() {
         var btn = $('bs-load-btn');
         if (!btn) return;
@@ -768,6 +971,10 @@
             costLabel: stage.costLabel,
             volumeLabel: stage.volumeLabel,
             targetCost: TARGET_COST,
+            budgetDate: state.budgetDate,
+            budgetAllocationRatio: getBudgetRatio(),
+            wanxiangPlan: state.wanxiangPlan,
+            allocatableBudget: state.allocatableBudget,
             items: state.scoredCrowds.map(function (item) {
                 return {
                     key: getItemKey(item),
@@ -777,6 +984,7 @@
                     spend: item.spend,
                     spendPct: item.spendPct,
                     suggestedSpendPct: item.suggestedSpendPct,
+                    suggestedBudgetAmount: item.suggestedBudgetAmount,
                     adjustPct: item.adjustPct,
                     action: item.action,
                     metricCost: item.metricCost,
@@ -817,16 +1025,21 @@
             if (scored.length === 0) return;
 
             var stage = getStageConfig(ACTIVE_STAGE);
-            var header = '阶段,等级,计划,人群,花费,当前花费占比,建议花费占比,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,ROI,建议动作\n';
+            var header = '阶段,预算日期,万相台计划,执行预算比例,可分配预算,等级,计划,人群,花费,当前花费占比,建议花费占比,建议花费金额,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成本健康分,ROI,建议动作\n';
             var rows = scored.map(function (s) {
                 return [
                     stage.label,
+                    state.budgetDate || '',
+                    state.wanxiangPlan === null ? '' : toNum(state.wanxiangPlan).toFixed(2),
+                    (getBudgetRatio() * 100).toFixed(1) + '%',
+                    toNum(state.allocatableBudget).toFixed(2),
                     s.grade,
                     '"' + String(s.planName || '未标注计划').replace(/"/g, '""') + '"',
                     '"' + String(s.name).replace(/"/g, '""') + '"',
                     s.spend.toFixed(2),
                     (s.spendPct * 100).toFixed(1) + '%',
                     (s.suggestedSpendPct * 100).toFixed(1) + '%',
+                    toNum(s.suggestedBudgetAmount).toFixed(2),
                     formatDeltaPct(s.adjustPct),
                     s.volume.toFixed(0),
                     s.metricCost.toFixed(2),
@@ -864,6 +1077,7 @@
         var hasData = false;
         if (state.crowdItems && state.crowdItems.length > 0) {
             state.scoredCrowds = scoreItems(state.crowdItems, 'crowd');
+            updateBudgetAllocations();
             hasData = true;
         }
         if (hasData) {
@@ -885,6 +1099,7 @@
         var aInput = $('cfg-grade-a');
         var bInput = $('cfg-grade-b');
         var cInput = $('cfg-grade-c');
+        var budgetRatioInput = $('cfg-budget-ratio');
 
         if (!toggle || !body || !section) {
             console.warn('[budget-scorecard] 配置面板DOM元素未找到');
@@ -898,6 +1113,7 @@
         if (aInput) aInput.value = scoreConfig.gradeAThreshold;
         if (bInput) bInput.value = scoreConfig.gradeBThreshold;
         if (cInput) cInput.value = scoreConfig.gradeCThreshold;
+        if (budgetRatioInput) budgetRatioInput.value = getBudgetRatio();
 
         // 展开/收起 (只响应 header 点击,避免冒泡问题)
         toggle.addEventListener('click', function (e) {
@@ -933,6 +1149,7 @@
                 var gradeAValue = parseInt(aInput.value, 10);
                 var gradeBValue = parseInt(bInput.value, 10);
                 var gradeCValue = parseInt(cInput.value, 10);
+                var budgetRatioValue = normalizeBudgetRatio(budgetRatioInput && budgetRatioInput.value);
                 var nextTargetCosts = Object.assign({}, scoreConfig.targetCosts);
                 nextTargetCosts[selectedStage] = isFinite(targetCostValue) ? targetCostValue : getTargetCost(selectedStage);
                 var newConfig = {
@@ -942,6 +1159,7 @@
                     gradeAThreshold: isFinite(gradeAValue) ? gradeAValue : 80,
                     gradeBThreshold: isFinite(gradeBValue) ? gradeBValue : 60,
                     gradeCThreshold: isFinite(gradeCValue) ? gradeCValue : 40,
+                    budgetAllocationRatio: budgetRatioValue,
                 };
 
                 // 验证阈值逻辑
@@ -963,6 +1181,7 @@
                 }
 
                 applyConfig(newConfig);
+                setBudgetRatioInputs(budgetRatioValue);
 
                 // 如果已有数据,立即重新计算
                 var recomputed = recomputeScores();
@@ -989,6 +1208,7 @@
                 if (aInput) aInput.value = DEFAULT_CONFIG.gradeAThreshold;
                 if (bInput) bInput.value = DEFAULT_CONFIG.gradeBThreshold;
                 if (cInput) cInput.value = DEFAULT_CONFIG.gradeCThreshold;
+                setBudgetRatioInputs(DEFAULT_CONFIG.budgetAllocationRatio);
 
                 var recomputed = recomputeScores();
                 if (recomputed) {
@@ -1006,6 +1226,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         initConfigPanel();
         initDatePresets();
+        initBudgetControls();
         initLoadButton();
         initSaveSnapshotButton();
         initExport();
