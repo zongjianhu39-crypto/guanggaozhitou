@@ -278,6 +278,44 @@ function getAIAnalysisContext() {
     };
 }
 
+function getDashboardTabRange(tabName) {
+    const prefix = tabName === 'crowd' ? 'crowd' : tabName === 'single' ? 'single' : 'ads';
+    return {
+        start: document.getElementById(`${prefix}-start`)?.value || '',
+        end: document.getElementById(`${prefix}-end`)?.value || '',
+    };
+}
+
+function getDashboardTabResponse(tabName) {
+    if (tabName === 'crowd') {
+        return getCurrentCrowdResponse();
+    }
+    if (tabName === 'single') {
+        return getCurrentSingleResponse();
+    }
+    return getCurrentAdsResponse();
+}
+
+function loadDashboardTab(tabName) {
+    if (tabName === 'crowd') {
+        return loadCrowd({ mode: 'tab_switch' });
+    }
+    if (tabName === 'single') {
+        return loadSingleSection({ mode: 'tab_switch' });
+    }
+    return loadAds({ mode: 'tab_switch' });
+}
+
+function shouldAutoLoadDashboardTab(tabName) {
+    const { start, end } = getDashboardTabRange(tabName);
+    if (!hasValidDateRange(start, end)) {
+        return false;
+    }
+    const rangeKey = `${start}|${end}`;
+    return !isResponseForRange(getDashboardTabResponse(tabName), start, end)
+        || getSectionRangeKey(tabName) !== rangeKey;
+}
+
 function setActiveTab(tabName, options = {}) {
     const targetTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
     const targetPanel = document.getElementById(tabName);
@@ -300,15 +338,8 @@ function setActiveTab(tabName, options = {}) {
         return;
     }
 
-    if (tabName === 'crowd' && !isResponseForRange(getCurrentCrowdResponse(), document.getElementById('crowd-start')?.value, document.getElementById('crowd-end')?.value)) {
-        loadCrowd().catch(() => {});
-    }
-    if (tabName === 'single') {
-        const start = (document.getElementById('single-start') || { value: '' }).value;
-        const end = (document.getElementById('single-end') || { value: '' }).value;
-        if (!isResponseForRange(getCurrentSingleResponse(), start, end) || getSectionRangeKey('single') !== `${start}|${end}`) {
-            loadSingleSection().catch(() => {});
-        }
+    if (shouldAutoLoadDashboardTab(tabName)) {
+        loadDashboardTab(tabName).catch(() => {});
     }
 }
 
