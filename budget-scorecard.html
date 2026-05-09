@@ -8,7 +8,7 @@
     <meta name="description" content="基于阶段成本的人群预算占比评分建议">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="assets/css/budget-scorecard.css?v=202605090030">
+    <link rel="stylesheet" href="assets/css/budget-scorecard.css?v=202605091010">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
@@ -121,6 +121,14 @@
                         <input type="number" id="cfg-budget-ratio" class="bs-config-input" step="0.05" min="0" max="1" value="0.3">
                         <span class="bs-config-hint">默认只分配万相台计划的 30%，其余留给实时调整</span>
                     </div>
+                </div>
+                <div class="bs-config-explain">
+                    <h4 class="bs-config-explain-title">预算评分怎么算</h4>
+                    <p>先说怎么算。先拉每个人群的花费占比，公式很简单：该人群花费 ÷ 所有人群总花费。</p>
+                    <p>然后根据选定的阶段取成本指标。比如现货期就看订单成本。拿目标成本除以实际成本，就是成本健康分。再结合样本量，把人群分成五档：A、B、C、D、N。</p>
+                    <p>分完级就该调系数了。A 级是优势人群，放大到 1.25-1.5，分越高、样本越足，系数拿得越大。B 级中规中矩，系数 1，不增不减。C 级系数 0.65，压到当前权重的 65%。D 级区分一下：有转化样本 0.25，没有直接压到 0.05。N 级还在观察期，系数 0.5-0.75，样本越接近门槛给得越高。</p>
+                    <p>新的预算权重 = 当前花费占比 × 等级系数。然后所有新权重统一归一化，得到建议花费占比。</p>
+                    <p>最后一步：万相台计划预算 × 执行比例 = 可分配总预算，再 × 建议花费占比 = 每个人的建议预算。有个保护逻辑：算出来大于 0 但不到 100 的，兜底按 100。</p>
                 </div>
                 <div class="bs-config-actions">
                     <button id="bs-config-reset" class="btn btn-outline btn-sm" type="button">恢复默认</button>
