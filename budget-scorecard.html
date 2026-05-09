@@ -104,17 +104,17 @@
                     <div class="bs-config-item">
                         <label class="bs-config-label">A 级阈值 (优质)</label>
                         <input type="number" id="cfg-grade-a" class="bs-config-input" step="5" min="60" max="100" value="80">
-                        <span class="bs-config-hint">成本健康分≥此值为A级</span>
+                        <span class="bs-config-hint">A 级：实际成本 ≤ 目标成本</span>
                     </div>
                     <div class="bs-config-item">
                         <label class="bs-config-label">B 级阈值 (健康)</label>
                         <input type="number" id="cfg-grade-b" class="bs-config-input" step="5" min="40" max="90" value="60">
-                        <span class="bs-config-hint">成本健康分≥此值为B级</span>
+                        <span class="bs-config-hint">B 级：目标成本 &lt; 实际成本 ≤ 目标成本 ×（A 级阈值 ÷ B 级阈值）</span>
                     </div>
                     <div class="bs-config-item">
                         <label class="bs-config-label">C 级阈值 (偏高)</label>
                         <input type="number" id="cfg-grade-c" class="bs-config-input" step="5" min="10" max="80" value="40">
-                        <span class="bs-config-hint">成本健康分≥此值为C级</span>
+                        <span class="bs-config-hint">C 级：目标成本 ×（A 级阈值 ÷ B 级阈值） &lt; 实际成本 ≤ 目标成本 ×（A 级阈值 ÷ C 级阈值）</span>
                     </div>
                     <div class="bs-config-item">
                         <label class="bs-config-label">执行预算比例</label>
