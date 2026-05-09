@@ -193,6 +193,20 @@ body {
     color: #fff;
 }
 
+.filter-pill[data-type="doc"].active,
+.filter-pill[data-type="doc"]:hover {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+}
+
+.filter-pill[data-type="genbi"].active,
+.filter-pill[data-type="genbi"]:hover {
+    background: var(--warning);
+    border-color: var(--warning);
+    color: #fff;
+}
+
 .filter-divider {
     width: 1px;
     align-self: stretch;
@@ -352,6 +366,24 @@ body {
     border-color: var(--success-border);
 }
 
+.report-entry.is-doc::before {
+    background: var(--success);
+}
+
+.report-entry.is-doc {
+    background: var(--success-bg);
+    border-color: var(--success-border);
+}
+
+.report-entry.is-genbi::before {
+    background: var(--warning);
+}
+
+.report-entry.is-genbi {
+    background: var(--warning-bg);
+    border-color: var(--warning-border);
+}
+
 .report-entry-head {
     display: flex;
     align-items: flex-start;
@@ -506,6 +538,18 @@ body {
 .risk-pill.critical {
     background: var(--critical);
     color: #fff;
+}
+
+.risk-pill.doc {
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid var(--success-border);
+}
+
+.risk-pill.genbi {
+    background: var(--warning-bg);
+    color: var(--warning);
+    border: 1px solid var(--warning-border);
 }
 
 /* ── 标签 chips ── */

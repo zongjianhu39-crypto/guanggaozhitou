@@ -20,8 +20,17 @@
             yoyRoi: 'ROI 同比'
         };
 
+        function getItemContentKind(item) {
+            return typeof window.getContentKind === 'function' ? window.getContentKind(item, item?.raw_payload || {}) : 'ai';
+        }
+
         function getDetailSubtitle(item) {
-            if (item.report_type === 'genbi' || item.source_channel === 'genbi' || item.raw_payload?.source?.channel === 'genbi') {
+            const kind = getItemContentKind(item);
+            if (kind === 'doc') {
+                const label = typeof window.getContentTypeLabel === 'function' ? window.getContentTypeLabel(item, item.raw_payload || {}) : '文档发布';
+                return `${label} · ${item.report_date || item.published_at || '--'}`;
+            }
+            if (kind === 'genbi') {
                 return `GenBI 洞察 · ${item.report_date || '--'}`;
             }
             return `${item.report_type === 'daily' ? '日报洞察' : '经营洞察'} · ${item.report_date || '--'}`;
@@ -126,7 +135,7 @@
 
 async function loadList(force = false) {
             setViewMode('reports');
-            renderLoading('正在读取洞察报告...');
+            renderLoading('正在读取洞察内容...');
 
             const result = await loadReportCollection(force);
 
@@ -136,13 +145,13 @@ async function loadList(force = false) {
 
         function renderMissingDetail(message) {
             currentDetailItem = null;
-            document.getElementById('detail-subtitle').textContent = '报告详情';
-            document.getElementById('detail-title').textContent = message || '报告不存在';
-            document.getElementById('detail-summary').textContent = '当前链接对应的报告不存在，可能已被删除或尚未生成。';
+            document.getElementById('detail-subtitle').textContent = '内容详情';
+            document.getElementById('detail-title').textContent = message || '内容不存在';
+            document.getElementById('detail-summary').textContent = '当前链接对应的内容不存在，可能已被删除或尚未发布。';
             document.getElementById('detail-tags').innerHTML = '';
             document.getElementById('detail-focus-points').innerHTML = '';
             document.getElementById('detail-primary-metrics').innerHTML = '';
-            document.getElementById('detail-story').innerHTML = '<div class="list-empty">请返回报告列表重新选择。</div>';
+            document.getElementById('detail-story').innerHTML = '<div class="list-empty">请返回内容列表重新选择。</div>';
             document.getElementById('detail-structured-appendix').innerHTML = '<p class="appendix-empty">暂无结构化参考数据。</p>';
             document.getElementById('detail-markdown').textContent = '暂无原始文本';
             const deleteBtn = document.getElementById('detail-delete-btn');
@@ -157,18 +166,19 @@ async function loadList(force = false) {
             const result = await fetchFunction('ai-reports', { slug });
             const item = result?.item;
             if (!item) {
-                renderMissingDetail('报告不存在');
+                renderMissingDetail('内容不存在');
                 return;
             }
             const payload = item.raw_payload || {};
             const readableSummary = getReadableSummary(item, payload);
-            const cleanedMarkdown = sanitizeReportText(item.raw_markdown || payload.markdown || '');
+            const cleanedMarkdown = sanitizeReportText(item.raw_markdown || payload.article?.markdown || payload.markdown || '');
             currentDetailItem = item;
             const deleteBtn = document.getElementById('detail-delete-btn');
             if (deleteBtn) {
                 deleteBtn.hidden = false;
                 deleteBtn.dataset.reportSlug = item.slug || '';
                 deleteBtn.disabled = !item.slug;
+                deleteBtn.textContent = getItemContentKind(item) === 'doc' ? '删除文档' : '删除内容';
             }
 
             document.getElementById('detail-subtitle').textContent = getDetailSubtitle(item);
@@ -323,16 +333,14 @@ async function loadList(force = false) {
         }
 
         /* ── 筛选逻辑 ── */
-        let filterState = { risk: 'all', range: 'all', tag: null };
+        let filterState = { type: 'all', range: 'all', tag: null };
         let allReportItems = [];
 
         function applyFilters() {
             let filtered = allReportItems.slice();
 
-            if (filterState.risk !== 'all') {
-                const riskMap = { critical: ['critical', 'high'], warning: ['medium'], good: ['low'] };
-                const levels = riskMap[filterState.risk] || [filterState.risk];
-                filtered = filtered.filter((item) => levels.includes(item.risk_level));
+            if (filterState.type !== 'all') {
+                filtered = filtered.filter((item) => getItemContentKind(item) === filterState.type);
             }
 
             if (filterState.range !== 'all') {
@@ -340,8 +348,9 @@ async function loadList(force = false) {
                 const days = filterState.range === '7d' ? 7 : 30;
                 const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
                 filtered = filtered.filter((item) => {
-                    if (!item.report_date) return false;
-                    const d = new Date(item.report_date);
+                    const itemDate = item.report_date || item.published_at || item.created_at;
+                    if (!itemDate) return false;
+                    const d = new Date(itemDate);
                     return d >= cutoff;
                 });
             }
@@ -350,7 +359,7 @@ async function loadList(force = false) {
                 filtered = filtered.filter((item) => Array.isArray(item.tags) && item.tags.includes(filterState.tag));
             }
 
-            renderList(filtered);
+            _originalRenderList(filtered);
         }
 
         function bindFilterBar() {
@@ -361,13 +370,13 @@ async function loadList(force = false) {
                 const pill = e.target.closest('.filter-pill');
                 if (!pill) return;
 
-                const risk = pill.dataset.risk;
+                const type = pill.dataset.type;
                 const range = pill.dataset.range;
                 const tag = pill.dataset.tag;
 
-                if (risk !== undefined) {
-                    filterState.risk = risk;
-                    filterBar.querySelectorAll('[data-risk]').forEach((p) => p.classList.toggle('active', p.dataset.risk === risk));
+                if (type !== undefined) {
+                    filterState.type = type;
+                    filterBar.querySelectorAll('[data-type]').forEach((p) => p.classList.toggle('active', p.dataset.type === type));
                 }
 
                 if (range !== undefined) {
@@ -392,7 +401,7 @@ async function loadList(force = false) {
         const _originalRenderList = renderList;
         renderList = function(items) {
             allReportItems = Array.isArray(items) ? items : allReportItems;
-            if (filterState.risk !== 'all' || filterState.range !== 'all' || filterState.tag) {
+            if (filterState.type !== 'all' || filterState.range !== 'all' || filterState.tag) {
                 applyFilters();
                 return;
             }
