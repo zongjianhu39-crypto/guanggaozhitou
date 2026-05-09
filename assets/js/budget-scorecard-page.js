@@ -156,6 +156,10 @@
         return formatDateInput(d);
     }
 
+    function getDefaultScoreDate() {
+        return getRelativeDate(-2);
+    }
+
     // ── 状态管理 ──
 
     var state = {
@@ -408,7 +412,7 @@
     }
 
     function showContent() {
-        ['bs-overview', 'bs-allocation-section'].forEach(function (id) {
+        ['bs-allocation-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = '';
         });
@@ -417,7 +421,7 @@
     }
 
     function hideContent() {
-        ['bs-overview', 'bs-allocation-section'].forEach(function (id) {
+        ['bs-allocation-section'].forEach(function (id) {
             var el = $(id);
             if (el) el.style.display = 'none';
         });
@@ -432,7 +436,6 @@
         var targetInput = $('cfg-target-cost');
         var minVolumeLabel = $('cfg-min-volume-label');
         var minVolumeHint = $('cfg-min-volume-hint');
-        var overviewTitle = $('bs-overview-title');
         var volumeTh = $('bs-volume-th');
         var costTh = $('bs-cost-th');
 
@@ -441,43 +444,8 @@
         if (targetInput) targetInput.value = getTargetCost(ACTIVE_STAGE);
         if (minVolumeLabel) minVolumeLabel.textContent = '最低样本量（' + stage.volumeLabel + '）';
         if (minVolumeHint) minVolumeHint.textContent = '低于该样本量标记为观察';
-        if (overviewTitle) overviewTitle.textContent = stage.label + '人群成本健康总览';
         if (volumeTh) volumeTh.textContent = stage.volumeLabel;
         if (costTh) costTh.textContent = stage.costLabel;
-    }
-
-    function renderOverview(scored) {
-        var counts = { A: 0, B: 0, C: 0, D: 0, N: 0 };
-        var spends = { A: 0, B: 0, C: 0, D: 0, N: 0 };
-        var total = scored.length;
-
-        scored.forEach(function (s) {
-            if (!Object.prototype.hasOwnProperty.call(counts, s.grade)) return;
-            counts[s.grade]++;
-            spends[s.grade] += s.spend;
-        });
-
-        var totalSpend = scored.reduce(function (sum, s) { return sum + s.spend; }, 0);
-
-        ['A', 'B', 'C', 'D', 'N'].forEach(function (grade) {
-            var countEl = $('grade-' + grade.toLowerCase() + '-count');
-            var pctEl = $('grade-' + grade.toLowerCase() + '-pct');
-            if (countEl) countEl.textContent = counts[grade];
-            if (pctEl) pctEl.textContent = total > 0 ? (counts[grade] / total * 100).toFixed(0) + '%' : '0%';
-        });
-
-        var bar = $('bs-budget-bar');
-        if (bar) {
-            bar.innerHTML = '';
-            ['A', 'B', 'C', 'D', 'N'].forEach(function (grade) {
-                if (spends[grade] <= 0) return;
-                var seg = document.createElement('div');
-                seg.className = 'bs-budget-bar-seg grade-' + grade.toLowerCase();
-                seg.style.width = totalSpend > 0 ? (spends[grade] / totalSpend * 100) + '%' : '0%';
-                seg.title = grade + ' 级花费 ' + formatMoney(spends[grade]);
-                bar.appendChild(seg);
-            });
-        }
     }
 
     function renderAllocationPanel() {
@@ -686,8 +654,6 @@
 
     function renderActiveTab() {
         updateStageCopy();
-        var scored = state.scoredCrowds;
-        renderOverview(scored);
         renderAllocationPanel();
     }
 
@@ -695,6 +661,7 @@
 
     function initDatePresets() {
         var presets = {
+            t2: function () { var d = getDefaultScoreDate(); return { start: d, end: d }; },
             yesterday: function () { var d = getRelativeDate(-1); return { start: d, end: d }; },
             last7: function () { return { start: getRelativeDate(-7), end: getRelativeDate(-1) }; },
             thisMonth: function () {
@@ -719,12 +686,15 @@
             });
         });
 
-        // 默认本月
-        var thisMonthRange = presets.thisMonth();
+        // 默认使用 T-2，避免当天数据未回流导致打开页面后没有评分结果。
+        btns.forEach(function (btn) {
+            btn.classList.toggle('active', btn.dataset.preset === 't2');
+        });
+        var defaultRange = presets.t2();
         var startEl3 = $('bs-start');
         var endEl3 = $('bs-end');
-        if (startEl3) startEl3.value = thisMonthRange.start;
-        if (endEl3) endEl3.value = thisMonthRange.end;
+        if (startEl3) startEl3.value = defaultRange.start;
+        if (endEl3) endEl3.value = defaultRange.end;
     }
 
     function initBudgetControls() {
@@ -985,6 +955,7 @@
         initBudgetControls();
         initLoadButton();
         initExport();
+        loadAndScore();
     });
 
 })(window);

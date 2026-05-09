@@ -58,9 +58,10 @@
                     <label class="bs-date-label">结束</label>
                     <input type="date" id="bs-end" class="bs-date-input">
                     <div class="bs-date-presets">
+                        <button class="bs-preset-btn active" data-preset="t2">T-2</button>
                         <button class="bs-preset-btn" data-preset="yesterday">昨天</button>
                         <button class="bs-preset-btn" data-preset="last7">近7天</button>
-                        <button class="bs-preset-btn active" data-preset="thisMonth">本月</button>
+                        <button class="bs-preset-btn" data-preset="thisMonth">本月</button>
                     </div>
                 </div>
                 <button id="bs-load-btn" class="btn btn-primary" type="button">计算评分</button>
@@ -124,54 +125,6 @@
                 <div class="bs-config-actions">
                     <button id="bs-config-reset" class="btn btn-outline btn-sm" type="button">恢复默认</button>
                     <button id="bs-config-save" class="btn btn-primary btn-sm" type="button">保存并重新计算</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 评分总览 -->
-        <section class="bs-overview" id="bs-overview" style="display:none;">
-            <h2 class="bs-section-title" id="bs-overview-title">人群成本健康总览</h2>
-            <div class="bs-grade-row">
-                <div class="bs-grade-card bs-grade-a">
-                    <div class="bs-grade-label">A 优质</div>
-                    <div class="bs-grade-count" id="grade-a-count">0</div>
-                    <div class="bs-grade-pct" id="grade-a-pct">0%</div>
-                    <div class="bs-grade-hint">加预算候选</div>
-                </div>
-                <div class="bs-grade-card bs-grade-b">
-                    <div class="bs-grade-label">B 健康</div>
-                    <div class="bs-grade-count" id="grade-b-count">0</div>
-                    <div class="bs-grade-pct" id="grade-b-pct">0%</div>
-                    <div class="bs-grade-hint">维持</div>
-                </div>
-                <div class="bs-grade-card bs-grade-c">
-                    <div class="bs-grade-label">C 成本偏高</div>
-                    <div class="bs-grade-count" id="grade-c-count">0</div>
-                    <div class="bs-grade-pct" id="grade-c-pct">0%</div>
-                    <div class="bs-grade-hint">减预算候选</div>
-                </div>
-                <div class="bs-grade-card bs-grade-d">
-                    <div class="bs-grade-label">D 低效</div>
-                    <div class="bs-grade-count" id="grade-d-count">0</div>
-                    <div class="bs-grade-pct" id="grade-d-pct">0%</div>
-                    <div class="bs-grade-hint">暂停候选</div>
-                </div>
-                <div class="bs-grade-card bs-grade-n">
-                    <div class="bs-grade-label">N 观察</div>
-                    <div class="bs-grade-count" id="grade-n-count">0</div>
-                    <div class="bs-grade-pct" id="grade-n-pct">0%</div>
-                    <div class="bs-grade-hint">样本不足</div>
-                </div>
-            </div>
-            <div class="bs-budget-bar-container">
-                <div class="bs-budget-bar-label">花费流向</div>
-                <div class="bs-budget-bar" id="bs-budget-bar"></div>
-                <div class="bs-budget-bar-legend">
-                    <span class="bs-legend-item"><span class="bs-legend-dot bs-grade-a-dot"></span>A 级花费</span>
-                    <span class="bs-legend-item"><span class="bs-legend-dot bs-grade-b-dot"></span>B 级花费</span>
-                    <span class="bs-legend-item"><span class="bs-legend-dot bs-grade-c-dot"></span>C 级花费</span>
-                    <span class="bs-legend-item"><span class="bs-legend-dot bs-grade-d-dot"></span>D 级花费</span>
-                    <span class="bs-legend-item"><span class="bs-legend-dot bs-grade-n-dot"></span>N 级花费</span>
                 </div>
             </div>
         </section>
@@ -268,7 +221,7 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/shared-utils.js"></script>
-    <script src="assets/js/budget-scorecard-page.js?v=202605090030"></script>
+    <script src="assets/js/budget-scorecard-page.js?v=202605090530"></script>
     <script src="script.js?v=202605050540"></script>
 </body>
 </html>
