@@ -273,7 +273,7 @@
     };
   }
 
-  function buildAudienceFromLabelRow(row, audienceId, existing, fileName) {
+  function buildAudienceFromLabelRow(row, audienceId, existing, fileName, parentNameMap) {
     const validRange = parseValidRange(row);
     const audienceName = String(getRowValue(row, ['达摩盘人群名称', '人群名称', 'audience_name']) || existing?.audience_name || '').trim();
     const parentAudienceName = String(getRowValue(row, ['所属主人群包', '主人群包名称', 'parent_audience_name']) || '').trim();
@@ -289,12 +289,14 @@
     const parentAudienceId = audienceType === 'split'
       ? parseNumber(getRowValue(row, ['主人群包ID', '父人群包ID', 'parent_audience_id', 'parent_id']) || existing?.parent_audience_id)
       : null;
+    if (parentNameMap && audienceType === 'split' && parentAudienceName && !parentAudienceId) {
+      parentNameMap.set(audienceId, parentAudienceName);
+    }
     return {
       audience_id: audienceId,
       audience_name: audienceName,
       audience_type: audienceType,
       parent_audience_id: parentAudienceId,
-      _parent_audience_name: parentAudienceName || null,
       valid_from: validRange.valid_from || existing?.valid_from || null,
       valid_to: validRange.valid_to || existing?.valid_to || null,
       valid_range_text: validRange.valid_range_text || existing?.valid_range_text || '',
@@ -315,6 +317,7 @@
     const audiencesById = new Map();
     const metrics = [];
     const seenMetrics = new Set();
+    const parentNameMap = new Map();
     let currentAudienceId = null;
     let skippedRows = 0;
 
@@ -328,7 +331,7 @@
       }
 
       const existingAudience = audiencesById.get(audienceId);
-      const audience = buildAudienceFromLabelRow(row, audienceId, existingAudience, fileName);
+      const audience = buildAudienceFromLabelRow(row, audienceId, existingAudience, fileName, parentNameMap);
       audiencesById.set(audienceId, audience);
 
       const metric = normalizeWorkbookMetric(row, audienceId);
@@ -349,24 +352,26 @@
         });
       });
 
-    const nameToIdMap = new Map();
-    audiences.forEach((a) => {
-      if (a.audience_name) nameToIdMap.set(a.audience_name, a.audience_id);
-    });
-    state.saved.audiences.forEach((a) => {
-      if (a.audience_name && !nameToIdMap.has(a.audience_name)) {
-        nameToIdMap.set(a.audience_name, a.audience_id);
-      }
-    });
-    audiences.forEach((audience) => {
-      if (audience.audience_type === 'split' && !audience.parent_audience_id && audience._parent_audience_name) {
-        const resolvedId = nameToIdMap.get(audience._parent_audience_name);
-        if (resolvedId) {
-          audience.parent_audience_id = Number(resolvedId);
+    if (parentNameMap.size) {
+      const nameToIdMap = new Map();
+      audiences.forEach((a) => {
+        if (a.audience_name) nameToIdMap.set(a.audience_name, a.audience_id);
+      });
+      state.saved.audiences.forEach((a) => {
+        if (a.audience_name && !nameToIdMap.has(a.audience_name)) {
+          nameToIdMap.set(a.audience_name, a.audience_id);
         }
-      }
-      delete audience._parent_audience_name;
-    });
+      });
+      audiences.forEach((audience) => {
+        const parentName = parentNameMap.get(audience.audience_id);
+        if (parentName && !audience.parent_audience_id) {
+          const resolvedId = nameToIdMap.get(parentName);
+          if (resolvedId) {
+            audience.parent_audience_id = Number(resolvedId);
+          }
+        }
+      });
+    }
 
     return {
       audiences,
