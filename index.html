@@ -29,7 +29,7 @@
                 <li><a href="index.html" class="nav-link active">首页</a></li>
                 <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
                 <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
-                <li><a href="audience-repository.html" class="nav-link">人群仓库</a></li>
+
                 <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
                 <li><a href="insights.html" class="nav-link">洞察中心</a></li>
                 <li class="nav-item-dropdown">
@@ -422,13 +422,6 @@
                     metric: latestRow ? `${formatInteger(latestRow.orders)} 笔成交` : '等待同步',
                     desc: '查看预算节奏、活动期和计划完成度是否偏离。',
                     status: '看节奏',
-                },
-                {
-                    name: '人群仓库',
-                    href: 'audience-repository.html',
-                    metric: topCrowd ? topCrowd.crowd : '暂无人群',
-                    desc: topCrowd ? `高消耗人群花费 ${formatCurrency(topCrowd.summary?.cost || 0)}，ROI ${formatRoi(topCrowd.summary?.roi || 0)}` : '今日未读取到人群分层数据。',
-                    status: '找机会',
                 },
                 {
                     name: '人群评分',
