@@ -4,32 +4,27 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>今日广告日报 · 交个朋友广告智投工作台</title>
-    <meta name="description" content="每日汇总广告投放大盘、风险动作、AI洞察、人群与计划表现，让团队快速掌握今日经营重点">
-    <meta name="keywords" content="广告投放,数据看板,ROI优化,直播广告,自动化报表">
-    <meta property="og:title" content="今日广告日报 · 交个朋友广告智投工作台">
-    <meta property="og:description" content="每日汇总广告投放大盘、风险动作、AI洞察、人群与计划表现">
-    <meta property="og:type" content="website">
-    <link rel="stylesheet" href="style.css?v=202605090930">
+    <title>618大促日报 · 交个朋友广告智投工作台</title>
+    <meta name="description" content="618大促广告投放日报：每日核心KPI、经营结论、优先动作与AI洞察，一键导出PDF分享">
+    <link rel="stylesheet" href="style.css?v=202605120930">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body class="home-page">
-    <script src="assets/js/auth-helpers.js?v=202605050540"></script>
-    <script src="auth.js?v=202605050540"></script>
+    <script src="assets/js/auth-helpers.js?v=202605120930"></script>
+    <script src="auth.js?v=202605120930"></script>
 
-    <!-- 导航栏 -->
-    <nav class="navbar">
+    <!-- 导航栏（PDF 导出时隐藏） -->
+    <nav class="navbar no-print">
         <div class="nav-container">
             <a href="index.html" class="nav-logo">
                 <span class="logo-emoji">🎯</span>
                 <span>广告智投工作台</span>
             </a>
             <ul class="nav-menu">
-                <li><a href="index.html" class="nav-link active">首页</a></li>
+                <li><a href="index.html" class="nav-link active">日报</a></li>
                 <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
                 <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
-
                 <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
                 <li><a href="insights.html" class="nav-link">洞察中心</a></li>
                 <li class="nav-item-dropdown">
@@ -48,146 +43,144 @@
         </div>
     </nav>
 
-    <!-- 今日日报头图 -->
-    <section class="dashboard-hero">
+    <!-- ====== 日报报头 ====== -->
+    <header class="report-header">
         <div class="container">
-            <div class="hero-greeting">
-                <div class="section-kicker" id="daily-date-label">今日广告日报</div>
-                <h1>把今天该看的广告经营信息放在首页</h1>
-                <p class="hero-subtitle">
-                    <span id="daily-freshness">正在同步最新投放、AI 洞察与风险动作...</span>
-                </p>
-            </div>
-            <div class="metric-row">
-                <div class="metric-card status-default">
-                    <div class="metric-label" id="metric-spend-label">今日花费</div>
-                    <div class="metric-value" id="metric-spend">--</div>
-                    <div class="metric-change neutral" id="metric-spend-change">加载中</div>
+            <div class="report-header-inner">
+                <div class="report-brand">
+                    <div class="report-campaign-badge">🔥 618 大促</div>
+                    <h1 class="report-title">广告投放日报</h1>
+                    <div class="report-subtitle">
+                        <span id="daily-date-label">加载中...</span>
+                        <span> · </span>
+                        <span id="daily-freshness">正在同步最新数据...</span>
+                    </div>
                 </div>
-                <div class="metric-card status-positive">
-                    <div class="metric-label" id="metric-roi-label">今日 ROI</div>
-                    <div class="metric-value" id="metric-roi">--</div>
-                    <div class="metric-change neutral" id="metric-roi-change">加载中</div>
-                </div>
-                <div class="metric-card status-accent">
-                    <div class="metric-label" id="metric-return-roi-label">去退 ROI</div>
-                    <div class="metric-value" id="metric-return-roi">--</div>
-                    <div class="metric-change neutral" id="metric-return-roi-change">加载中</div>
-                </div>
-                <div class="metric-card status-default">
-                    <div class="metric-label" id="metric-amount-label">成交金额</div>
-                    <div class="metric-value" id="metric-amount">--</div>
-                    <div class="metric-change neutral" id="metric-amount-change">加载中</div>
-                </div>
-                <div class="metric-card status-positive">
-                    <div class="metric-label" id="metric-orders-label">成交笔数</div>
-                    <div class="metric-value" id="metric-orders">--</div>
-                    <div class="metric-change neutral" id="metric-orders-change">加载中</div>
-                </div>
-                <div class="metric-card status-warning">
-                    <div class="metric-label">异常告警</div>
-                    <div class="metric-value" id="metric-alerts">--</div>
-                    <div class="metric-change neutral" id="metric-alerts-change">加载中</div>
+                <div class="report-actions no-print">
+                    <button onclick="location.reload()" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)">🔄 刷新数据</button>
+                    <button onclick="window.print()" class="btn btn-sm btn-export">📄 导出 PDF</button>
                 </div>
             </div>
         </div>
-    </section>
+    </header>
 
-    <!-- 今日结论 + 动作 -->
-    <section class="dashboard-main">
+    <main class="report-body">
         <div class="container">
-            <div class="daily-briefing-layout">
-                <article class="card daily-briefing-card">
-                    <div class="card-header">
-                        <div>
-                            <div class="section-kicker">今日一句话结论</div>
-                            <h2 id="daily-headline">正在生成今日经营摘要...</h2>
-                        </div>
-                        <a href="genbi.html" class="btn btn-outline btn-sm">向 GenBI 追问</a>
-                    </div>
-                    <p class="daily-summary-text" id="daily-summary-text">系统正在读取大盘表现、异常报告和栏目数据，稍后会给出今天最值得关注的变化。</p>
-                    <ul class="daily-key-points" id="daily-key-points">
-                        <li>正在加载今日关键变化...</li>
-                    </ul>
-                    <div class="daily-report-highlight" id="daily-report-highlight">
-                        <div class="daily-report-label">最新 AI 报告</div>
-                        <div>
-                            <strong id="daily-report-title">等待报告同步</strong>
-                            <p id="daily-report-summary">洞察中心的日报会自动显示在这里。</p>
-                        </div>
-                    </div>
-                </article>
-                <aside class="card daily-actions-card">
-                    <div class="card-title">今日优先动作</div>
-                    <div class="daily-action-list" id="daily-action-list">
-                        <div class="daily-action-item is-loading">正在生成今日待办...</div>
-                    </div>
-                </aside>
-            </div>
-        </div>
-    </section>
 
-    <!-- 栏目日报汇总 -->
-    <section class="dashboard-modules">
-        <div class="container">
-            <div class="insights-header">
-                <div>
-                    <div class="section-kicker">栏目日报汇总</div>
-                    <h2 class="section-title left">各模块今天有什么新变化</h2>
+            <!-- ====== 核心指标 ====== -->
+            <section class="report-section report-kpi">
+                <div class="metric-row">
+                    <div class="metric-card status-default">
+                        <div class="metric-label" id="metric-spend-label">今日花费</div>
+                        <div class="metric-value" id="metric-spend">--</div>
+                        <div class="metric-change neutral" id="metric-spend-change">加载中</div>
+                    </div>
+                    <div class="metric-card status-positive">
+                        <div class="metric-label" id="metric-roi-label">今日 ROI</div>
+                        <div class="metric-value" id="metric-roi">--</div>
+                        <div class="metric-change neutral" id="metric-roi-change">加载中</div>
+                    </div>
+                    <div class="metric-card status-accent">
+                        <div class="metric-label" id="metric-return-roi-label">去退 ROI</div>
+                        <div class="metric-value" id="metric-return-roi">--</div>
+                        <div class="metric-change neutral" id="metric-return-roi-change">加载中</div>
+                    </div>
+                    <div class="metric-card status-default">
+                        <div class="metric-label" id="metric-amount-label">成交金额</div>
+                        <div class="metric-value" id="metric-amount">--</div>
+                        <div class="metric-change neutral" id="metric-amount-change">加载中</div>
+                    </div>
+                    <div class="metric-card status-positive">
+                        <div class="metric-label" id="metric-orders-label">成交笔数</div>
+                        <div class="metric-value" id="metric-orders">--</div>
+                        <div class="metric-change neutral" id="metric-orders-change">加载中</div>
+                    </div>
+                    <div class="metric-card status-warning">
+                        <div class="metric-label">异常告警</div>
+                        <div class="metric-value" id="metric-alerts">--</div>
+                        <div class="metric-change neutral" id="metric-alerts-change">加载中</div>
+                    </div>
                 </div>
-                <a href="supabase-dashboard.html" class="btn btn-outline btn-sm">进入数据看板 →</a>
-            </div>
-            <div class="daily-module-grid" id="daily-module-grid">
-                <article class="daily-module-card is-loading">正在汇总栏目日报...</article>
-            </div>
-        </div>
-    </section>
+            </section>
 
-    <!-- 趋势图 + 最近日报 -->
-    <section class="dashboard-main">
-        <div class="container">
-            <div class="dashboard-two-col">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">趋势图表 <span class="card-subtitle">花费 & ROI</span></div>
-                        <div class="card-actions">
-                            <span class="metric-period active">日</span>
-                            <span class="metric-period">周</span>
+            <!-- ====== 经营结论 + 优先动作 ====== -->
+            <section class="report-section">
+                <div class="report-columns report-columns--summary">
+                    <div class="report-card">
+                        <div class="report-card-title">📋 今日经营结论</div>
+                        <div class="report-headline" id="daily-headline">正在生成今日经营摘要...</div>
+                        <p class="report-summary-text" id="daily-summary-text">系统正在读取大盘表现、异常报告和栏目数据，稍后会给出今天最值得关注的变化。</p>
+                        <ul class="report-key-points" id="daily-key-points">
+                            <li>正在加载今日关键变化...</li>
+                        </ul>
+                        <div class="report-ai-highlight" id="daily-report-highlight">
+                            <div class="report-ai-badge">AI 报告</div>
+                            <div>
+                                <strong id="daily-report-title">等待报告同步</strong>
+                                <p id="daily-report-summary">洞察中心的日报会自动显示在这里。</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="chart-area" id="home-chart">
-                        <canvas id="home-chart-canvas"></canvas>
+                    <div class="report-card">
+                        <div class="report-card-title">⚡ 今日优先动作</div>
+                        <div class="report-action-list" id="daily-action-list">
+                            <div class="report-action-item is-loading">正在生成今日待办...</div>
+                        </div>
                     </div>
                 </div>
-                <div class="card daily-history-card">
-                    <div class="card-title">最近 7 天日报</div>
-                    <div class="daily-history-list" id="daily-history-list">
-                        <div class="daily-history-empty">正在加载历史日报...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+            </section>
 
-    <!-- AI 洞察预览 -->
-    <section class="dashboard-insights">
+            <!-- ====== 趋势图 + 近7天历史 ====== -->
+            <section class="report-section">
+                <div class="report-columns report-columns--chart">
+                    <div class="report-card">
+                        <div class="report-card-title">
+                            📈 花费 &amp; ROI 趋势
+                            <div class="report-chart-toolbar no-print">
+                                <span class="metric-period active" data-period="daily">日</span>
+                                <span class="metric-period" data-period="weekly">周</span>
+                            </div>
+                        </div>
+                        <div class="report-chart-area" id="home-chart">
+                            <canvas id="home-chart-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-card-title">📅 最近 7 天</div>
+                        <div class="report-history-list" id="daily-history-list">
+                            <div class="report-history-empty">正在加载历史数据...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ====== 栏目速览 ====== -->
+            <section class="report-section">
+                <h3 class="report-section-title">📊 栏目速览</h3>
+                <div class="report-module-grid" id="daily-module-grid">
+                    <div class="report-module-card is-loading">正在汇总栏目日报...</div>
+                </div>
+            </section>
+
+            <!-- ====== AI 洞察 ====== -->
+            <section class="report-section">
+                <h3 class="report-section-title">🤖 今日 AI 洞察</h3>
+                <div id="insights-preview-state" class="report-insights-state">正在加载最新报告...</div>
+                <div id="insights-preview-grid" class="report-insights-grid"></div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- 报告脚注（屏幕和PDF都显示） -->
+    <div class="report-footnote">
         <div class="container">
-            <div class="insights-shell">
-                <div class="insights-header">
-                    <div>
-                        <div class="section-kicker">洞察中心</div>
-                        <h2 class="section-title left">今日 AI 洞察</h2>
-                    </div>
-                    <a href="insights.html" class="btn btn-outline btn-sm">查看全部 →</a>
-                </div>
-                <div id="insights-preview-state" class="insights-preview-state">正在加载最新报告...</div>
-                <div id="insights-preview-grid" class="insights-preview-grid"></div>
-            </div>
+            报告生成时间: <span id="report-gen-time"></span> · 交个朋友控股 · 广告业务组内部文件 · 仅供内部参考
         </div>
-    </section>
+    </div>
 
-    <!-- Footer -->
-    <footer class="footer">
+    <!-- 页尾（PDF 导出时隐藏） -->
+    <footer class="footer no-print">
         <div class="container">
             <div class="footer-inner">
                 <div class="footer-brand">
@@ -206,7 +199,7 @@
     </footer>
 
     <script src="assets/js/config.js"></script>
-    <script src="script.js?v=202605050540"></script>
+    <script src="script.js?v=202605120930"></script>
     <script>
         const authHelpers = window.authHelpers || {};
         const INSIGHTS_PREVIEW_URL = authHelpers.getSupabaseUrl
@@ -222,286 +215,207 @@
         let homeCurrentPeriod = 'daily';
 
         /* ── 工具函数 ── */
-        function previewEscapeHtml(value) {
+        function escHtml(value) {
             return String(value ?? '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
-        function previewRiskLabel(level) {
-            const labels = { low: '低风险', medium: '中风险', high: '高风险', critical: '严重风险' };
-            return labels[level] || '未评级';
+        function riskLabel(level) {
+            return { low: '低风险', medium: '中风险', high: '高风险', critical: '严重风险' }[level] || '未评级';
         }
 
-        function formatCurrency(value) {
-            if (value == null || isNaN(value)) return '--';
-            if (value >= 10000) return '¥' + (value / 10000).toFixed(1) + '万';
-            return '¥' + value.toLocaleString('zh-CN', { maximumFractionDigits: 0 });
+        function formatCurrency(v) {
+            if (v == null || isNaN(v)) return '--';
+            return v >= 10000 ? '¥' + (v / 10000).toFixed(1) + '万' : '¥' + v.toLocaleString('zh-CN', { maximumFractionDigits: 0 });
         }
 
-        function formatRoi(value) {
-            if (value == null || isNaN(value)) return '--';
-            return value.toFixed(2);
+        function formatRoi(v) { return (v == null || isNaN(v)) ? '--' : v.toFixed(2); }
+        function formatInt(v) { return (v == null || isNaN(v)) ? '--' : Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 0 }); }
+        function formatPct(v) { return (v == null || isNaN(v)) ? '--' : (Number(v) * 100).toFixed(1) + '%'; }
+
+        function formatChange(cur, prev) {
+            if (prev == null || prev === 0 || cur == null) return { text: '--', cls: 'neutral' };
+            const pct = ((cur - prev) / Math.abs(prev)) * 100;
+            return { text: (pct > 0 ? '+' : '') + pct.toFixed(1) + '%', cls: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral' };
         }
 
-        function formatInteger(value) {
-            if (value == null || isNaN(value)) return '--';
-            return Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
-        }
-
-        function formatPercentValue(value) {
-            if (value == null || isNaN(value)) return '--';
-            return (Number(value) * 100).toFixed(1) + '%';
-        }
-
-        function formatChange(current, previous) {
-            if (previous == null || previous === 0 || current == null) return { text: '--', cls: 'neutral' };
-            const pct = ((current - previous) / Math.abs(previous)) * 100;
-            const sign = pct > 0 ? '+' : '';
-            const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral';
-            return { text: sign + pct.toFixed(1) + '%', cls: cls };
-        }
-
-        function setMetricValue(valueEl, changeEl, current, previous, formatter, fallbackLabel) {
-            if (valueEl) valueEl.textContent = formatter(current);
-            if (!changeEl) return;
-            if (current != null && previous != null) {
-                const change = formatChange(current, previous);
-                changeEl.textContent = '较前日 ' + change.text;
-                changeEl.className = 'metric-change ' + change.cls;
+        function setMetric(valEl, chgEl, cur, prev, fmt, fallback) {
+            if (valEl) valEl.textContent = fmt(cur);
+            if (!chgEl) return;
+            if (cur != null && prev != null) {
+                const c = formatChange(cur, prev);
+                chgEl.textContent = '较前日 ' + c.text;
+                chgEl.className = 'metric-change ' + c.cls;
             } else {
-                changeEl.textContent = fallbackLabel || '暂无对比';
-                changeEl.className = 'metric-change neutral';
+                chgEl.textContent = fallback || '暂无对比';
+                chgEl.className = 'metric-change neutral';
             }
         }
 
-        function setText(id, value) {
-            const el = document.getElementById(id);
-            if (el) el.textContent = value;
+        function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+        function getTopCrowd(p) { const r = p?.crowd || []; return Array.isArray(r) && r.length ? r[0] : null; }
+        function getTopProduct(p) { const r = p?.single?.items || []; return Array.isArray(r) && r.length ? r[0] : null; }
+        function getProductName(p) { return String(p?.商品名称 || p?.product_name || p?.name || '暂无商品数据'); }
+
+        function shanghaiToday() { return new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10); }
+        function shanghaiYesterday() { return new Date(Date.now() + 8 * 3600000 - 86400000).toISOString().slice(0, 10); }
+        function nDaysAgo(n) { return new Date(Date.now() + 8 * 3600000 - n * 86400000).toISOString().slice(0, 10); }
+
+        function formatDateLabel(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr + 'T00:00:00+08:00');
+            const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${weekdays[d.getDay()]}`;
         }
 
-        function getTopCrowd(payload) {
-            const rows = payload?.crowd || [];
-            return Array.isArray(rows) && rows.length ? rows[0] : null;
-        }
-
-        function getTopProduct(payload) {
-            const rows = payload?.single?.items || [];
-            return Array.isArray(rows) && rows.length ? rows[0] : null;
-        }
-
-        function getProductName(product) {
-            return String(product?.商品名称 || product?.product_name || product?.name || '暂无商品数据');
-        }
-
-        function getShanghaiToday() {
-            return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        }
-
-        function getShanghaiYesterday() {
-            return new Date(Date.now() + 8 * 60 * 60 * 1000 - 86400000).toISOString().slice(0, 10);
-        }
-
-        function getNdaysAgo(n) {
-            return new Date(Date.now() + 8 * 60 * 60 * 1000 - n * 86400000).toISOString().slice(0, 10);
-        }
-
-        function buildDailyTone(latestRow, prevRow, alertCount) {
-            if (!latestRow) return { level: 'neutral', text: '今日数据暂未同步，建议稍后刷新日报。' };
-            const roiChange = prevRow ? latestRow.roi - prevRow.roi : 0;
-            const spendChange = prevRow ? latestRow.cost - prevRow.cost : 0;
-            if (alertCount > 0) {
-                return { level: 'risk', text: `今日有 ${alertCount} 条高风险洞察需要处理，优先排查消耗异常与 ROI 下滑计划。` };
-            }
-            if (roiChange > 0 && spendChange >= 0) {
-                return { level: 'good', text: '今日 ROI 与消耗同步向好，可以优先寻找可复制的人群和计划。' };
-            }
-            if (roiChange < 0 && spendChange > 0) {
-                return { level: 'risk', text: '今日消耗上升但 ROI 回落，需要收紧低效投放并复盘流量质量。' };
-            }
-            if (roiChange > 0) {
-                return { level: 'good', text: '今日 ROI 较前日改善，建议复盘高效计划并准备加量策略。' };
-            }
-            if (roiChange < 0) {
-                return { level: 'watch', text: '今日 ROI 较前日回落，建议先看异常报告和高花费人群。' };
-            }
+        function buildDailyTone(latest, prev, alertCount) {
+            if (!latest) return { level: 'neutral', text: '今日数据暂未同步，建议稍后刷新日报。' };
+            const roiDelta = prev ? latest.roi - prev.roi : 0;
+            const spendDelta = prev ? latest.cost - prev.cost : 0;
+            if (alertCount > 0) return { level: 'risk', text: `今日有 ${alertCount} 条高风险洞察需要处理，优先排查消耗异常与 ROI 下滑计划。` };
+            if (roiDelta > 0 && spendDelta >= 0) return { level: 'good', text: '今日 ROI 与消耗同步向好，可以优先寻找可复制的人群和计划。' };
+            if (roiDelta < 0 && spendDelta > 0) return { level: 'risk', text: '今日消耗上升但 ROI 回落，需要收紧低效投放并复盘流量质量。' };
+            if (roiDelta > 0) return { level: 'good', text: '今日 ROI 较前日改善，建议复盘高效计划并准备加量策略。' };
+            if (roiDelta < 0) return { level: 'watch', text: '今日 ROI 较前日回落，建议先看异常报告和高花费人群。' };
             return { level: 'neutral', text: '今日大盘相对平稳，重点关注新增洞察和栏目变化。' };
         }
 
+        /* ── 渲染：日报主体 ── */
         function renderDailyBriefing(payload, alertItems) {
             const ads = payload?.ads || {};
             const daily = Array.isArray(ads.daily) ? ads.daily : [];
-            const latestRow = daily[0] || null;
-            const prevRow = daily[1] || null;
+            const latest = daily[0] || null;
+            const prev = daily[1] || null;
             const alertCount = Array.isArray(alertItems) ? alertItems.length : 0;
             const latestReport = homeReportItems[0] || null;
             const topCrowd = getTopCrowd(payload);
             const topProduct = getTopProduct(payload);
 
-            const latestDate = latestRow?.label || getShanghaiToday();
-            const dateLabel = latestDate === getShanghaiToday() ? '今日广告日报' : `${latestDate} 广告日报`;
-            const tone = buildDailyTone(latestRow, prevRow, alertCount);
-            const roiChange = prevRow ? formatChange(latestRow?.roi, prevRow.roi) : null;
-            const spendChange = prevRow ? formatChange(latestRow?.cost, prevRow.cost) : null;
+            const latestDate = latest?.label || shanghaiToday();
+            const isToday = latestDate === shanghaiToday();
+            const dateDisplay = formatDateLabel(latestDate);
+            const tone = buildDailyTone(latest, prev, alertCount);
+            const roiChange = prev ? formatChange(latest?.roi, prev.roi) : null;
+            const spendChange = prev ? formatChange(latest?.cost, prev.cost) : null;
 
-            setText('daily-date-label', dateLabel);
-            setText('daily-freshness', latestRow
-                ? `数据更新至 ${latestDate}，已汇总大盘、AI 洞察、人群与单品表现。`
-                : '暂无可用日报数据，稍后刷新可查看最新汇总。');
+            setText('daily-date-label', isToday ? `${dateDisplay} · 今日日报` : `${dateDisplay} · 日报`);
+            setText('daily-freshness', latest
+                ? `数据更新至 ${latestDate}`
+                : '暂无可用数据');
             setText('daily-headline', tone.text);
-            setText('daily-summary-text', latestRow
-                ? `今日花费 ${formatCurrency(latestRow.cost)}，成交金额 ${formatCurrency(latestRow.amount)}，ROI ${formatRoi(latestRow.roi)}，去退 ROI ${formatRoi(latestRow.returnRoi)}。`
+            setText('daily-summary-text', latest
+                ? `花费 ${formatCurrency(latest.cost)}，成交金额 ${formatCurrency(latest.amount)}，ROI ${formatRoi(latest.roi)}，去退 ROI ${formatRoi(latest.returnRoi)}，成交笔数 ${formatInt(latest.orders)}。`
                 : '系统还没有读取到今日大盘数据，请先确认数据看板是否已同步。');
 
-            const keyPoints = [];
-            if (latestRow && spendChange) keyPoints.push(`花费较前日 ${spendChange.text}，当前成交笔数 ${formatInteger(latestRow.orders)}。`);
-            if (latestRow && roiChange) keyPoints.push(`ROI 较前日 ${roiChange.text}，去退率约 ${formatPercentValue(latestRow.taobaoReturnRate || 0)}。`);
-            if (topCrowd) keyPoints.push(`人群仓库今日高消耗分层：${topCrowd.crowd || '未标注定向'}，花费 ${formatCurrency(topCrowd.summary?.cost || 0)}。`);
-            if (topProduct) keyPoints.push(`单品看板今日重点商品：${getProductName(topProduct)}，花费 ${formatCurrency(topProduct['花费'] || 0)}。`);
-            if (latestReport) keyPoints.push(`最新 AI 报告评级为「${previewRiskLabel(latestReport.risk_level)}」，建议同步查看洞察详情。`);
-            if (!keyPoints.length) keyPoints.push('暂无足够数据生成关键变化，请稍后刷新日报。');
+            const points = [];
+            if (latest && spendChange) points.push(`花费较前日 ${spendChange.text}，当前成交笔数 ${formatInt(latest.orders)}。`);
+            if (latest && roiChange) points.push(`ROI 较前日 ${roiChange.text}，去退率约 ${formatPct(latest.taobaoReturnRate || 0)}。`);
+            if (topCrowd) points.push(`人群高消耗分层：${topCrowd.crowd || '未标注定向'}，花费 ${formatCurrency(topCrowd.summary?.cost || 0)}。`);
+            if (topProduct) points.push(`重点商品：${getProductName(topProduct)}，花费 ${formatCurrency(topProduct['花费'] || 0)}。`);
+            if (latestReport) points.push(`最新 AI 报告评级「${riskLabel(latestReport.risk_level)}」，建议查看详情。`);
+            if (!points.length) points.push('暂无足够数据，请稍后刷新。');
 
-            const pointsEl = document.getElementById('daily-key-points');
-            if (pointsEl) {
-                pointsEl.innerHTML = keyPoints.slice(0, 5).map((text) => `<li>${previewEscapeHtml(text)}</li>`).join('');
-            }
+            const pEl = document.getElementById('daily-key-points');
+            if (pEl) pEl.innerHTML = points.slice(0, 5).map(t => `<li>${escHtml(t)}</li>`).join('');
 
             setText('daily-report-title', latestReport?.title || '等待报告同步');
             setText('daily-report-summary', latestReport?.summary || '洞察中心的日报会自动显示在这里。');
 
-            renderDailyActions(latestRow, prevRow, latestReport, alertItems);
-            renderDailyModules(payload, latestRow, latestReport, alertItems);
+            renderDailyActions(latest, prev, latestReport, alertItems);
+            renderDailyModules(payload, latest, latestReport, alertItems);
             renderDailyHistory(daily);
         }
 
-        function renderDailyActions(latestRow, prevRow, latestReport, alertItems) {
+        /* ── 渲染：优先动作（带编号） ── */
+        function renderDailyActions(latest, prev, latestReport, alertItems) {
             const actions = [];
             const hasAlerts = Array.isArray(alertItems) && alertItems.length > 0;
-            if (hasAlerts) {
-                actions.push({ title: '先处理高风险洞察', desc: `当前有 ${alertItems.length} 条高风险报告，优先确认是否需要暂停或降预算。`, href: 'insights.html' });
-            }
-            if (latestRow && prevRow && latestRow.roi < prevRow.roi) {
-                actions.push({ title: '复盘 ROI 下滑来源', desc: `ROI 较前日 ${formatChange(latestRow.roi, prevRow.roi).text}，建议按计划、人群、单品拆开看。`, href: 'supabase-dashboard.html' });
-            }
-            if (latestRow && latestRow.returnRoi && latestRow.roi && latestRow.returnRoi < latestRow.roi * 0.85) {
-                actions.push({ title: '关注退款后的真实效率', desc: `去退 ROI 为 ${formatRoi(latestRow.returnRoi)}，和表观 ROI 有差距。`, href: 'supabase-dashboard.html' });
-            }
-            if (latestReport) {
-                actions.push({ title: '阅读今日 AI 结论', desc: latestReport.summary || '查看最新报告中的动作建议与风险归因。', href: `insights.html?slug=${encodeURIComponent(latestReport.slug || '')}` });
-            }
-            actions.push({ title: '向 GenBI 追问一个具体问题', desc: '例如“昨天花费下降主要是哪类人群造成的？”', href: 'genbi.html' });
+            if (hasAlerts) actions.push({ title: '处理高风险洞察', desc: `当前有 ${alertItems.length} 条高风险报告，优先确认是否需要暂停或降预算。`, href: 'insights.html' });
+            if (latest && prev && latest.roi < prev.roi) actions.push({ title: '复盘 ROI 下滑来源', desc: `ROI 较前日 ${formatChange(latest.roi, prev.roi).text}，按计划、人群、单品逐层拆解。`, href: 'supabase-dashboard.html' });
+            if (latest && latest.returnRoi && latest.roi && latest.returnRoi < latest.roi * 0.85) actions.push({ title: '关注退款后真实效率', desc: `去退 ROI ${formatRoi(latest.returnRoi)}，与表观 ROI 有差距。`, href: 'supabase-dashboard.html' });
+            if (latestReport) actions.push({ title: '阅读今日 AI 结论', desc: latestReport.summary || '查看最新报告中的动作建议与风险归因。', href: `insights.html?slug=${encodeURIComponent(latestReport.slug || '')}` });
+            actions.push({ title: '追问具体问题', desc: '例如"昨天花费下降主要是哪类人群造成的？"', href: 'genbi.html' });
 
-            const listEl = document.getElementById('daily-action-list');
-            if (!listEl) return;
-            listEl.innerHTML = actions.slice(0, 4).map((item) => `
-                <a class="daily-action-item" href="${previewEscapeHtml(item.href)}">
-                    <strong>${previewEscapeHtml(item.title)}</strong>
-                    <span>${previewEscapeHtml(item.desc)}</span>
+            const el = document.getElementById('daily-action-list');
+            if (!el) return;
+            el.innerHTML = actions.slice(0, 5).map((item, i) => `
+                <a class="report-action-item" href="${escHtml(item.href)}">
+                    <span class="report-action-num">${i + 1}</span>
+                    <div class="report-action-content">
+                        <strong>${escHtml(item.title)}</strong>
+                        <span>${escHtml(item.desc)}</span>
+                    </div>
                 </a>
             `).join('');
         }
 
-        function renderDailyModules(payload, latestRow, latestReport, alertItems) {
+        /* ── 渲染：栏目速览 ── */
+        function renderDailyModules(payload, latest, latestReport, alertItems) {
             const topCrowd = getTopCrowd(payload);
             const topProduct = getTopProduct(payload);
             const singleKpi = payload?.single?.kpi || {};
             const modules = [
-                {
-                    name: '数据看板',
-                    href: 'supabase-dashboard.html',
-                    metric: latestRow ? `${formatCurrency(latestRow.cost)} 花费` : '等待同步',
-                    desc: latestRow ? `ROI ${formatRoi(latestRow.roi)}，成交金额 ${formatCurrency(latestRow.amount)}` : '今日大盘数据暂未返回。',
-                    status: latestRow && latestRow.roi >= 1 ? '效率可看' : '需要盯盘',
-                },
-                {
-                    name: '计划拆解',
-                    href: 'plan-dashboard.html',
-                    metric: latestRow ? `${formatInteger(latestRow.orders)} 笔成交` : '等待同步',
-                    desc: '查看预算节奏、活动期和计划完成度是否偏离。',
-                    status: '看节奏',
-                },
-                {
-                    name: '人群评分',
-                    href: 'budget-scorecard.html',
-                    metric: topCrowd ? '优先复核高消耗人群' : '等待评分',
-                    desc: '结合花费、转化与退款表现，判断是否加预算或降权。',
-                    status: '做决策',
-                },
-                {
-                    name: '洞察中心',
-                    href: 'insights.html',
-                    metric: latestReport ? previewRiskLabel(latestReport.risk_level) : '暂无报告',
-                    desc: latestReport?.summary || `当前高风险洞察 ${Array.isArray(alertItems) ? alertItems.length : 0} 条。`,
-                    status: '读结论',
-                },
-                {
-                    name: '单品表现',
-                    href: 'supabase-dashboard.html#single-product',
-                    metric: topProduct ? getProductName(topProduct) : `${singleKpi.productCount || 0} 个商品`,
-                    desc: topProduct ? `单品花费 ${formatCurrency(topProduct['花费'] || 0)}，直接成交 ${formatCurrency(topProduct['直接成交金额'] || 0)}` : '单品数据同步后展示重点商品。',
-                    status: '看商品',
-                },
+                { name: '数据看板', href: 'supabase-dashboard.html', metric: latest ? `${formatCurrency(latest.cost)} 花费` : '等待同步', desc: latest ? `ROI ${formatRoi(latest.roi)}，成交 ${formatCurrency(latest.amount)}` : '今日大盘数据暂未返回。', tag: latest && latest.roi >= 1 ? '效率可看' : '需要盯盘' },
+                { name: '计划拆解', href: 'plan-dashboard.html', metric: latest ? `${formatInt(latest.orders)} 笔成交` : '等待同步', desc: '查看预算节奏、活动期和计划完成度。', tag: '看节奏' },
+                { name: '人群评分', href: 'budget-scorecard.html', metric: topCrowd ? '优先复核高消耗人群' : '等待评分', desc: '结合花费、转化与退款，判断加预算或降权。', tag: '做决策' },
+                { name: '洞察中心', href: 'insights.html', metric: latestReport ? riskLabel(latestReport.risk_level) : '暂无报告', desc: latestReport?.summary || `高风险洞察 ${Array.isArray(alertItems) ? alertItems.length : 0} 条。`, tag: '读结论' },
+                { name: '单品表现', href: 'supabase-dashboard.html#single-product', metric: topProduct ? getProductName(topProduct) : `${singleKpi.productCount || 0} 个商品`, desc: topProduct ? `花费 ${formatCurrency(topProduct['花费'] || 0)}，直接成交 ${formatCurrency(topProduct['直接成交金额'] || 0)}` : '单品数据同步后展示重点商品。', tag: '看商品' },
             ];
 
-            const gridEl = document.getElementById('daily-module-grid');
-            if (!gridEl) return;
-            gridEl.innerHTML = modules.map((item) => `
-                <a class="daily-module-card" href="${previewEscapeHtml(item.href)}">
-                    <div class="daily-module-top">
-                        <strong>${previewEscapeHtml(item.name)}</strong>
-                        <span>${previewEscapeHtml(item.status)}</span>
+            const el = document.getElementById('daily-module-grid');
+            if (!el) return;
+            el.innerHTML = modules.map(m => `
+                <a class="report-module-card" href="${escHtml(m.href)}">
+                    <div class="report-module-top">
+                        <strong>${escHtml(m.name)}</strong>
+                        <span class="module-tag">${escHtml(m.tag)}</span>
                     </div>
-                    <div class="daily-module-metric">${previewEscapeHtml(item.metric)}</div>
-                    <p>${previewEscapeHtml(item.desc)}</p>
+                    <div class="report-module-metric">${escHtml(m.metric)}</div>
+                    <p>${escHtml(m.desc)}</p>
                 </a>
             `).join('');
         }
 
+        /* ── 渲染：7天历史 ── */
         function renderDailyHistory(dailyRows) {
-            const listEl = document.getElementById('daily-history-list');
-            if (!listEl) return;
+            const el = document.getElementById('daily-history-list');
+            if (!el) return;
             const rows = Array.isArray(dailyRows) ? dailyRows.slice(0, 7) : [];
-            if (!rows.length) {
-                listEl.innerHTML = '<div class="daily-history-empty">暂无历史日报数据</div>';
-                return;
-            }
-            listEl.innerHTML = rows.map((row) => `
-                <a class="daily-history-item" href="supabase-dashboard.html">
-                    <span>${previewEscapeHtml(row.label || '--')}</span>
-                    <strong>${formatRoi(row.roi)}</strong>
-                    <small>${formatCurrency(row.cost)} · ${formatInteger(row.orders)} 笔</small>
-                </a>
+            if (!rows.length) { el.innerHTML = '<div class="report-history-empty">暂无历史数据</div>'; return; }
+            el.innerHTML = rows.map(r => `
+                <div class="report-history-item">
+                    <span class="hist-date">${escHtml(r.label || '--')}</span>
+                    <span class="hist-roi">${formatRoi(r.roi)}</span>
+                    <span class="hist-detail">${formatCurrency(r.cost)} · ${formatInt(r.orders)} 笔</span>
+                </div>
             `).join('');
         }
 
-        /* ── 指标卡加载 ── */
+        /* ── 数据加载：指标卡 + 日报 ── */
         async function loadHomeMetrics() {
             const spendEl = document.getElementById('metric-spend');
-            const spendChangeEl = document.getElementById('metric-spend-change');
+            const spendChg = document.getElementById('metric-spend-change');
             const roiEl = document.getElementById('metric-roi');
-            const roiChangeEl = document.getElementById('metric-roi-change');
-            const returnRoiEl = document.getElementById('metric-return-roi');
-            const returnRoiChangeEl = document.getElementById('metric-return-roi-change');
-            const amountEl = document.getElementById('metric-amount');
-            const amountChangeEl = document.getElementById('metric-amount-change');
-            const ordersEl = document.getElementById('metric-orders');
-            const ordersChangeEl = document.getElementById('metric-orders-change');
-            const alertsEl = document.getElementById('metric-alerts');
-            const alertsChangeEl = document.getElementById('metric-alerts-change');
+            const roiChg = document.getElementById('metric-roi-change');
+            const rrEl = document.getElementById('metric-return-roi');
+            const rrChg = document.getElementById('metric-return-roi-change');
+            const amtEl = document.getElementById('metric-amount');
+            const amtChg = document.getElementById('metric-amount-change');
+            const ordEl = document.getElementById('metric-orders');
+            const ordChg = document.getElementById('metric-orders-change');
+            const alertEl = document.getElementById('metric-alerts');
+            const alertChg = document.getElementById('metric-alerts-change');
 
             try {
-                const today = getShanghaiToday();
-                const startDate = getNdaysAgo(14);
+                const today = shanghaiToday();
+                const start = nDaysAgo(14);
 
                 const result = await authHelpers.fetchFunctionJson('dashboard-data', {
-                    query: { sections: 'all', start_date: startDate, end_date: today },
-                    parseErrorMessage: '看板数据读取失败，请稍后重试',
-                    onUnauthorized: () => {
-                        redirectToHomeLogin('登录状态已失效，正在跳转重新登录...');
-                    },
+                    query: { sections: 'all', start_date: start, end_date: today },
+                    parseErrorMessage: '看板数据读取失败',
+                    onUnauthorized: () => redirectToLogin('登录已失效，正在跳转...'),
                 });
 
                 const data = result.data || result;
@@ -509,362 +423,190 @@
                 homeDashboardData = data.ads || null;
 
                 if (!homeDashboardData || !homeDashboardData.kpi) {
-                    spendEl.textContent = '--';
-                    roiEl.textContent = '--';
-                    if (returnRoiEl) returnRoiEl.textContent = '--';
-                    if (amountEl) amountEl.textContent = '--';
-                    if (ordersEl) ordersEl.textContent = '--';
-                    alertsEl.textContent = '--';
-                    spendChangeEl.textContent = '暂无数据';
-                    roiChangeEl.textContent = '暂无数据';
-                    if (returnRoiChangeEl) returnRoiChangeEl.textContent = '暂无数据';
-                    if (amountChangeEl) amountChangeEl.textContent = '暂无数据';
-                    if (ordersChangeEl) ordersChangeEl.textContent = '暂无数据';
-                    alertsChangeEl.textContent = '暂无数据';
+                    [spendEl, roiEl, rrEl, amtEl, ordEl, alertEl].forEach(e => { if (e) e.textContent = '--'; });
+                    [spendChg, roiChg, rrChg, amtChg, ordChg, alertChg].forEach(e => { if (e) { e.textContent = '暂无数据'; e.className = 'metric-change neutral'; } });
                     renderDailyBriefing(data, []);
                     return;
                 }
 
                 const daily = homeDashboardData.daily || [];
-
-                // 最新数据行（API 返回按日期倒序，daily[0] = 最近一天有数据的日期）
-                const latestRow = daily.length > 0 ? daily[0] : null;
-                const prevRow = daily.length > 1 ? daily[1] : null;
-
-                // 判断最新数据是否就是今天
-                const latestDate = latestRow ? latestRow.label : '';
+                const latest = daily[0] || null;
+                const prev = daily[1] || null;
+                const latestDate = latest ? latest.label : '';
                 const isToday = latestDate === today;
-                const dateLabel = isToday ? '今日' : (latestDate.slice(5) || '最新');
+                const prefix = isToday ? '今日' : (latestDate.slice(5) || '最新');
 
-                // 更新指标卡的 label，让用户知道这是哪天的数据
-                setText('metric-spend-label', dateLabel + '花费');
-                setText('metric-roi-label', dateLabel + ' ROI');
-                setText('metric-return-roi-label', dateLabel + '去退 ROI');
-                setText('metric-amount-label', dateLabel + '成交金额');
-                setText('metric-orders-label', dateLabel + '成交笔数');
+                setText('metric-spend-label', prefix + '花费');
+                setText('metric-roi-label', prefix + ' ROI');
+                setText('metric-return-roi-label', prefix + '去退 ROI');
+                setText('metric-amount-label', prefix + '成交金额');
+                setText('metric-orders-label', prefix + '成交笔数');
 
-                setMetricValue(spendEl, spendChangeEl, latestRow?.cost, prevRow?.cost, formatCurrency, latestRow ? dateLabel + '数据' : '暂无数据');
-                setMetricValue(roiEl, roiChangeEl, latestRow?.roi, prevRow?.roi, formatRoi, latestRow ? dateLabel + ' ROI' : '暂无数据');
-                setMetricValue(returnRoiEl, returnRoiChangeEl, latestRow?.returnRoi, prevRow?.returnRoi, formatRoi, latestRow ? dateLabel + '去退 ROI' : '暂无数据');
-                setMetricValue(amountEl, amountChangeEl, latestRow?.amount, prevRow?.amount, formatCurrency, latestRow ? dateLabel + '成交' : '暂无数据');
-                setMetricValue(ordersEl, ordersChangeEl, latestRow?.orders, prevRow?.orders, formatInteger, latestRow ? dateLabel + '成交' : '暂无数据');
+                setMetric(spendEl, spendChg, latest?.cost, prev?.cost, formatCurrency, prefix + '数据');
+                setMetric(roiEl, roiChg, latest?.roi, prev?.roi, formatRoi, prefix + ' ROI');
+                setMetric(rrEl, rrChg, latest?.returnRoi, prev?.returnRoi, formatRoi, prefix + '去退');
+                setMetric(amtEl, amtChg, latest?.amount, prev?.amount, formatCurrency, prefix + '成交');
+                setMetric(ordEl, ordChg, latest?.orders, prev?.orders, formatInt, prefix + '成交');
 
-                // 异常告警 - 从 AI 报告中获取 high/critical 风险等级数量
                 try {
-                    const alertsResult = await authHelpers.fetchFunctionJson('ai-reports', {
-                        query: { risk_level: 'high', limit: 10 },
-                    });
-                    const alertsData = alertsResult.data || alertsResult;
-                    const alertItems = alertsData.items || [];
-                    homeAlertItems = alertItems;
-                    alertsEl.textContent = alertItems.length;
-                    alertsChangeEl.textContent = alertItems.length > 0 ? '需要关注' : '一切正常';
-                    alertsChangeEl.className = 'metric-change ' + (alertItems.length > 0 ? 'down' : 'up');
+                    const alertRes = await authHelpers.fetchFunctionJson('ai-reports', { query: { risk_level: 'high', limit: 10 } });
+                    const aData = alertRes.data || alertRes;
+                    homeAlertItems = aData.items || [];
+                    alertEl.textContent = homeAlertItems.length;
+                    alertChg.textContent = homeAlertItems.length > 0 ? '需要关注' : '一切正常';
+                    alertChg.className = 'metric-change ' + (homeAlertItems.length > 0 ? 'down' : 'up');
                 } catch {
                     homeAlertItems = [];
-                    alertsEl.textContent = '--';
-                    alertsChangeEl.textContent = '告警查询失败';
-                    alertsChangeEl.className = 'metric-change neutral';
+                    alertEl.textContent = '--';
+                    alertChg.textContent = '告警查询失败';
+                    alertChg.className = 'metric-change neutral';
                 }
 
-                // 渲染图表
                 renderHomeChart(homeCurrentPeriod);
                 renderDailyBriefing(homeFullDashboardPayload, homeAlertItems);
 
-            } catch (error) {
-                spendEl.textContent = '--';
-                roiEl.textContent = '--';
-                if (returnRoiEl) returnRoiEl.textContent = '--';
-                if (amountEl) amountEl.textContent = '--';
-                if (ordersEl) ordersEl.textContent = '--';
-                alertsEl.textContent = '--';
-                spendChangeEl.textContent = '加载失败';
-                spendChangeEl.classList.add('neutral');
-                roiChangeEl.textContent = '加载失败';
-                roiChangeEl.classList.add('neutral');
-                if (returnRoiChangeEl) {
-                    returnRoiChangeEl.textContent = '加载失败';
-                    returnRoiChangeEl.classList.add('neutral');
-                }
-                if (amountChangeEl) {
-                    amountChangeEl.textContent = '加载失败';
-                    amountChangeEl.classList.add('neutral');
-                }
-                if (ordersChangeEl) {
-                    ordersChangeEl.textContent = '加载失败';
-                    ordersChangeEl.classList.add('neutral');
-                }
-                alertsChangeEl.textContent = '加载失败';
-                alertsChangeEl.classList.add('neutral');
-                console.error('[home] loadHomeMetrics failed:', error);
+            } catch (err) {
+                [spendEl, roiEl, rrEl, amtEl, ordEl, alertEl].forEach(e => { if (e) e.textContent = '--'; });
+                [spendChg, roiChg, rrChg, amtChg, ordChg, alertChg].forEach(e => { if (e) { e.textContent = '加载失败'; e.className = 'metric-change neutral'; } });
+                console.error('[home] loadHomeMetrics failed:', err);
             }
         }
 
-        /* ── Chart.js 趋势图 ── */
+        /* ── Chart.js ── */
         function renderHomeChart(period) {
             homeCurrentPeriod = period;
-
             if (!homeDashboardData) return;
-
             const canvas = document.getElementById('home-chart-canvas');
             if (!canvas) return;
-
-            // 销毁旧图表
-            if (homeChartInstance) {
-                homeChartInstance.destroy();
-                homeChartInstance = null;
-            }
+            if (homeChartInstance) { homeChartInstance.destroy(); homeChartInstance = null; }
 
             const ctx = canvas.getContext('2d');
             const rows = period === 'weekly'
                 ? (homeDashboardData.weekly || []).slice(0, 8).reverse()
                 : (homeDashboardData.daily || []).slice(0, 14).reverse();
-
-            if (!rows.length) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                return;
-            }
-
-            const labels = rows.map(r => {
-                const l = r.label || '';
-                return period === 'weekly' ? l : l.slice(5);
-            });
-            const costData = rows.map(r => r.cost || 0);
-            const roiData = rows.map(r => r.roi || 0);
-
-            const costColor = 'rgba(99, 102, 241, 0.85)';
-            const costBgColor = 'rgba(99, 102, 241, 0.15)';
-            const roiColor = 'rgba(139, 92, 246, 1)';
+            if (!rows.length) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
 
             homeChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: rows.map(r => (period === 'weekly' ? r.label : (r.label || '').slice(5)) || ''),
                     datasets: [
-                        {
-                            label: '花费',
-                            data: costData,
-                            backgroundColor: costBgColor,
-                            borderColor: costColor,
-                            borderWidth: 1.5,
-                            borderRadius: 4,
-                            yAxisID: 'y',
-                            order: 2,
-                        },
-                        {
-                            label: 'ROI',
-                            data: roiData,
-                            type: 'line',
-                            borderColor: roiColor,
-                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                            borderWidth: 2,
-                            pointRadius: 3,
-                            pointBackgroundColor: roiColor,
-                            tension: 0.3,
-                            yAxisID: 'y1',
-                            order: 1,
-                        }
+                        { label: '花费', data: rows.map(r => r.cost || 0), backgroundColor: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.85)', borderWidth: 1.5, borderRadius: 4, yAxisID: 'y', order: 2 },
+                        { label: 'ROI', data: rows.map(r => r.roi || 0), type: 'line', borderColor: 'rgba(139,92,246,1)', backgroundColor: 'rgba(139,92,246,0.1)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: 'rgba(139,92,246,1)', tension: 0.3, yAxisID: 'y1', order: 1 },
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                boxHeight: 12,
-                                padding: 16,
-                                font: { size: 11 },
-                                usePointStyle: true,
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.dataset.label || '';
-                                    const value = context.parsed.y;
-                                    if (label === '花费') return label + ': ¥' + value.toLocaleString('zh-CN', { maximumFractionDigits: 0 });
-                                    return label + ': ' + value.toFixed(2);
-                                }
-                            }
-                        }
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, padding: 16, font: { size: 11 }, usePointStyle: true } },
+                        tooltip: { callbacks: { label: ctx => ctx.dataset.label === '花费' ? `花费: ¥${ctx.parsed.y.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}` : `ROI: ${ctx.parsed.y.toFixed(2)}` } }
                     },
                     scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: { font: { size: 10 }, color: '#9ca3af' }
-                        },
-                        y: {
-                            position: 'left',
-                            grid: { color: 'rgba(0,0,0,0.04)' },
-                            ticks: {
-                                font: { size: 10 },
-                                color: '#6366f1',
-                                callback: function(value) {
-                                    if (value >= 10000) return (value / 10000).toFixed(0) + '万';
-                                    return value;
-                                }
-                            },
-                            title: { display: false }
-                        },
-                        y1: {
-                            position: 'right',
-                            grid: { display: false },
-                            ticks: {
-                                font: { size: 10 },
-                                color: '#8b5cf6',
-                                callback: function(value) { return value.toFixed(1); }
-                            },
-                            title: { display: false }
-                        }
+                        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#9ca3af' } },
+                        y: { position: 'left', grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 }, color: '#6366f1', callback: v => v >= 10000 ? (v / 10000).toFixed(0) + '万' : v } },
+                        y1: { position: 'right', grid: { display: false }, ticks: { font: { size: 10 }, color: '#8b5cf6', callback: v => v.toFixed(1) } }
                     }
                 }
             });
         }
 
         /* ── AI 洞察预览 ── */
-        function renderPreviewCards(items) {
+        function renderInsightCards(items) {
             const grid = document.getElementById('insights-preview-grid');
-            grid.innerHTML = items.map((item) => {
-                const metrics = item.overview_metrics || {};
-                const tags = Array.isArray(item.tags) ? item.tags.slice(0, 3) : [];
+            grid.innerHTML = items.map(item => {
+                const m = item.overview_metrics || {};
                 return `
-                    <article class="insight-preview-card">
-                        <div class="insight-preview-meta">
-                            <span>${previewEscapeHtml(item.report_date || '--')}</span>
-                            <span class="insight-risk ${previewEscapeHtml(item.risk_level || '')}">${previewEscapeHtml(previewRiskLabel(item.risk_level))}</span>
+                    <article class="report-insight-card">
+                        <div class="report-insight-meta">
+                            <span>${escHtml(item.report_date || '--')}</span>
+                            <span class="insight-risk ${escHtml(item.risk_level || '')}">${escHtml(riskLabel(item.risk_level))}</span>
                         </div>
-                        <h3>${previewEscapeHtml(item.title || '未命名报告')}</h3>
-                        <p class="insight-preview-summary">${previewEscapeHtml(item.summary || '暂无摘要')}</p>
-                        <div class="insight-preview-metrics">
-                            <div class="insight-metric-box">
-                                <span class="insight-metric-label">ROI</span>
-                                <strong>${previewEscapeHtml(metrics.roi || '--')}</strong>
-                            </div>
-                            <div class="insight-metric-box">
-                                <span class="insight-metric-label">去退 ROI</span>
-                                <strong>${previewEscapeHtml(metrics.returnRoi || '--')}</strong>
-                            </div>
+                        <h3>${escHtml(item.title || '未命名报告')}</h3>
+                        <p class="report-insight-summary">${escHtml(item.summary || '暂无摘要')}</p>
+                        <div class="report-insight-metrics">
+                            <span class="report-insight-metric">ROI <strong>${escHtml(m.roi || '--')}</strong></span>
+                            <span class="report-insight-metric">去退 <strong>${escHtml(m.returnRoi || '--')}</strong></span>
                         </div>
-                        <div class="insight-preview-tags">${tags.map((tag) => `<span class="insight-chip">${previewEscapeHtml(tag)}</span>`).join('')}</div>
-                        <a href="insights.html?slug=${encodeURIComponent(item.slug || '')}" class="btn btn-outline btn-sm insight-preview-link">查看详情</a>
                     </article>
                 `;
             }).join('');
         }
 
-        function rememberHomeRedirect() {
-            const currentUrl = window.location.origin + window.location.pathname + window.location.search + window.location.hash;
-            if (authHelpers.rememberRedirect) {
-                authHelpers.rememberRedirect(currentUrl);
-            } else {
-                try { localStorage.setItem('feishu_redirect', currentUrl); } catch (error) { console.warn('failed to remember redirect', error); }
-            }
+        function rememberRedirect() {
+            const url = window.location.href;
+            if (authHelpers.rememberRedirect) authHelpers.rememberRedirect(url);
+            else try { localStorage.setItem('feishu_redirect', url); } catch {}
         }
 
-        function redirectToHomeLogin(message) {
+        function redirectToLogin(msg) {
             if (homeInsightsAuthRedirectScheduled) return;
             homeInsightsAuthRedirectScheduled = true;
-
             const stateEl = document.getElementById('insights-preview-state');
-            if (stateEl) {
-                stateEl.classList.add('is-error');
-                stateEl.textContent = message || '登录状态已失效，正在跳转重新登录...';
-            }
-
+            if (stateEl) { stateEl.classList.add('is-error'); stateEl.textContent = msg || '登录已失效...'; }
             if (typeof authHelpers.handleReauthRequired === 'function') {
-                authHelpers.handleReauthRequired({
-                    source: 'home-insights',
-                    targetUrl: window.location.href,
-                    force: true,
-                    reason: 'prompt_admin_reauth_required',
-                    delayMs: 1200,
-                });
+                authHelpers.handleReauthRequired({ source: 'home', targetUrl: window.location.href, force: true, reason: 'reauth_required', delayMs: 1200 });
                 return;
             }
-
-            rememberHomeRedirect();
+            rememberRedirect();
             localStorage.removeItem('prompt_admin_token');
             localStorage.removeItem('prompt_admin_expires_at');
-            setTimeout(() => {
-                window.location.replace('auth/index.html?force=1');
-            }, 1200);
+            setTimeout(() => window.location.replace('auth/index.html?force=1'), 1200);
         }
 
         async function loadInsightsPreview(reportType) {
             const stateEl = document.getElementById('insights-preview-state');
             const gridEl = document.getElementById('insights-preview-grid');
-
             stateEl.style.display = '';
             stateEl.textContent = '正在加载最新报告...';
             stateEl.classList.remove('is-error');
             gridEl.innerHTML = '';
 
             try {
-                const queryParams = { limit: 3 };
-                if (reportType) {
-                    queryParams.report_type = reportType;
-                }
-
-                const resolved = await authHelpers.fetchFunctionJson('ai-reports', {
-                    query: queryParams,
-                    parseErrorMessage: '洞察服务返回了无法解析的响应，请稍后重试',
-                    onUnauthorized: () => {
-                        redirectToHomeLogin('登录状态已失效，正在跳转重新登录...');
-                    },
+                const q = { limit: 3 };
+                if (reportType) q.report_type = reportType;
+                const res = await authHelpers.fetchFunctionJson('ai-reports', {
+                    query: q,
+                    parseErrorMessage: '洞察服务返回了无法解析的响应',
+                    onUnauthorized: () => redirectToLogin('登录已失效...'),
                 }).then(({ data }) => data);
 
-                const items = Array.isArray(resolved.items) ? resolved.items : [];
+                const items = Array.isArray(res.items) ? res.items : [];
                 homeReportItems = items;
-                if (homeFullDashboardPayload) {
-                    renderDailyBriefing(homeFullDashboardPayload, homeAlertItems);
-                }
-                if (items.length === 0) {
-                    stateEl.textContent = '洞察中心还没有生成过报告，先去数据看板运行一次 AI 分析。';
-                    gridEl.innerHTML = '';
-                    return;
-                }
-
+                if (homeFullDashboardPayload) renderDailyBriefing(homeFullDashboardPayload, homeAlertItems);
+                if (!items.length) { stateEl.textContent = '洞察中心还没有生成过报告。'; gridEl.innerHTML = ''; return; }
                 stateEl.style.display = 'none';
-                renderPreviewCards(items);
-            } catch (error) {
+                renderInsightCards(items);
+            } catch (err) {
                 stateEl.classList.add('is-error');
-                const errorState = authHelpers.describeFetchError
-                    ? authHelpers.describeFetchError(error, '最新洞察读取失败，请稍后重试。')
-                    : { message: `最新洞察加载失败：${error.message || '请稍后重试'}` };
-                stateEl.textContent = errorState.message;
+                const desc = authHelpers.describeFetchError ? authHelpers.describeFetchError(err, '洞察加载失败') : { message: `洞察加载失败：${err.message || ''}` };
+                stateEl.textContent = desc.message;
                 gridEl.innerHTML = '';
             }
         }
 
-        // ── 分段选择器交互（通用） ──
-
-        // ── 日/周切换 ──
+        /* ── 日/周 切换 ── */
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('metric-period')) {
-                const actions = e.target.closest('.card-actions');
-                if (!actions) return;
-                actions.querySelectorAll('.metric-period').forEach(b => b.classList.remove('active'));
+                const toolbar = e.target.closest('.report-chart-toolbar');
+                if (!toolbar) return;
+                toolbar.querySelectorAll('.metric-period').forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
-                const period = e.target.textContent.trim() === '周' ? 'weekly' : 'daily';
-                if (homeDashboardData) {
-                    renderHomeChart(period);
-                }
+                const period = e.target.dataset.period || 'daily';
+                if (homeDashboardData) renderHomeChart(period);
             }
         });
 
+        /* ── 初始化 ── */
         document.addEventListener('DOMContentLoaded', function() {
+            // 报告生成时间
+            const now = new Date(Date.now() + 8 * 3600000);
+            const genTime = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,'0')}-${String(now.getUTCDate()).padStart(2,'0')} ${String(now.getUTCHours()).padStart(2,'0')}:${String(now.getUTCMinutes()).padStart(2,'0')}`;
+            setText('report-gen-time', genTime);
+
             loadHomeMetrics();
             loadInsightsPreview('daily');
         });
     </script>
-
 </body>
 </html>
