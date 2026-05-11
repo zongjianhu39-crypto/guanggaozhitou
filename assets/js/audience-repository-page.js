@@ -260,8 +260,8 @@
     const rowAudienceId = parseNumber(getRowValue(row, ['达摩盘人群包ID', '达摩盘人群包 ID', '人群仓库ID', '人群包ID', 'audience_id', 'Audience ID']));
     const audienceId = rowAudienceId || fallbackAudienceId;
     const dimension = String(getRowValue(row, ['维度', 'dimension']) || '').trim();
-    const category = String(getRowValue(row, ['分类', '类别', '等级', 'category']) || '').trim();
-    const share = parseUploadShare(getRowValue(row, ['分析人群占比', '占比', 'share', 'percentage', 'percent']));
+    const category = String(getRowValue(row, ['分类', ' 分类', '类别', '等级', '标签名称', 'category']) || '').trim();
+    const share = parseUploadShare(getRowValue(row, ['分析人群占比(%)', '分析人群占比', '占比', 'share', 'percentage', 'percent']));
     if (!audienceId || !dimension || !category || share === null) return null;
     return {
       audience_id: audienceId,
