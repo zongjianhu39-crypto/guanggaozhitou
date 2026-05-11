@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # 确保 rg 等工具在 PATH 中（Git hook 环境的 PATH 可能不完整）
-export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+export PATH="/Users/jiangfeng/.local/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
