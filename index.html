@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>618大促日报 · 交个朋友广告智投工作台</title>
     <meta name="description" content="618大促广告投放日报：每日核心KPI、经营结论、优先动作与AI洞察，一键导出PDF分享">
-    <link rel="stylesheet" href="style.css?v=202605120930">
+    <link rel="stylesheet" href="style.css?v=202605121400">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body class="home-page">
-    <script src="assets/js/auth-helpers.js?v=202605120930"></script>
-    <script src="auth.js?v=202605120930"></script>
+    <script src="assets/js/auth-helpers.js?v=202605121400"></script>
+    <script src="auth.js?v=202605121400"></script>
 
     <!-- 导航栏（PDF 导出时隐藏） -->
     <nav class="navbar no-print">
@@ -67,72 +67,94 @@
     <main class="report-body">
         <div class="container">
 
-            <!-- ====== 核心指标 ====== -->
-            <section class="report-section report-kpi">
-                <div class="metric-row">
-                    <div class="metric-card status-default">
-                        <div class="metric-label" id="metric-spend-label">今日花费</div>
-                        <div class="metric-value" id="metric-spend">--</div>
-                        <div class="metric-change neutral" id="metric-spend-change">加载中</div>
-                    </div>
-                    <div class="metric-card status-positive">
-                        <div class="metric-label" id="metric-roi-label">今日 ROI</div>
-                        <div class="metric-value" id="metric-roi">--</div>
-                        <div class="metric-change neutral" id="metric-roi-change">加载中</div>
-                    </div>
-                    <div class="metric-card status-accent">
-                        <div class="metric-label" id="metric-return-roi-label">去退 ROI</div>
-                        <div class="metric-value" id="metric-return-roi">--</div>
-                        <div class="metric-change neutral" id="metric-return-roi-change">加载中</div>
-                    </div>
-                    <div class="metric-card status-default">
-                        <div class="metric-label" id="metric-amount-label">成交金额</div>
-                        <div class="metric-value" id="metric-amount">--</div>
-                        <div class="metric-change neutral" id="metric-amount-change">加载中</div>
-                    </div>
-                    <div class="metric-card status-positive">
-                        <div class="metric-label" id="metric-orders-label">成交笔数</div>
-                        <div class="metric-value" id="metric-orders">--</div>
-                        <div class="metric-change neutral" id="metric-orders-change">加载中</div>
-                    </div>
-                    <div class="metric-card status-warning">
-                        <div class="metric-label">异常告警</div>
-                        <div class="metric-value" id="metric-alerts">--</div>
-                        <div class="metric-change neutral" id="metric-alerts-change">加载中</div>
-                    </div>
+            <!-- ====== 一句话结论 ====== -->
+            <section class="report-section">
+                <div class="report-executive-banner" id="executive-banner">
+                    <span class="executive-icon">📌</span>
+                    <span id="executive-text">正在汇总今日大盘表现...</span>
                 </div>
             </section>
 
-            <!-- ====== 经营结论 + 优先动作 ====== -->
+            <!-- ====== 核心KPI对比表 ====== -->
             <section class="report-section">
-                <div class="report-columns report-columns--summary">
+                <h3 class="report-section-title">📊 核心指标</h3>
+                <div class="report-card report-card--flush">
+                    <table class="report-table" id="kpi-table">
+                        <thead>
+                            <tr>
+                                <th class="col-label">指标</th>
+                                <th class="col-num" id="kpi-col-today">今日</th>
+                                <th class="col-num" id="kpi-col-yesterday">昨日</th>
+                                <th class="col-num">较前日</th>
+                                <th class="col-num">近7日均值</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kpi-table-body">
+                            <tr><td colspan="5" class="table-loading">正在加载数据...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ====== 今日关键发现 + 风险提示 ====== -->
+            <section class="report-section">
+                <div class="report-columns report-columns--findings">
                     <div class="report-card">
-                        <div class="report-card-title">📋 今日经营结论</div>
-                        <div class="report-headline" id="daily-headline">正在生成今日经营摘要...</div>
-                        <p class="report-summary-text" id="daily-summary-text">系统正在读取大盘表现、异常报告和栏目数据，稍后会给出今天最值得关注的变化。</p>
-                        <ul class="report-key-points" id="daily-key-points">
-                            <li>正在加载今日关键变化...</li>
-                        </ul>
-                        <div class="report-ai-highlight" id="daily-report-highlight">
-                            <div class="report-ai-badge">AI 报告</div>
-                            <div>
-                                <strong id="daily-report-title">等待报告同步</strong>
-                                <p id="daily-report-summary">洞察中心的日报会自动显示在这里。</p>
-                            </div>
+                        <div class="report-card-title">🔍 今日关键发现</div>
+                        <div id="daily-findings" class="report-findings-list">
+                            <div class="finding-loading">正在分析今日数据变化...</div>
                         </div>
                     </div>
                     <div class="report-card">
-                        <div class="report-card-title">⚡ 今日优先动作</div>
-                        <div class="report-action-list" id="daily-action-list">
-                            <div class="report-action-item is-loading">正在生成今日待办...</div>
+                        <div class="report-card-title">⚠️ 风险 &amp; 异常</div>
+                        <div id="daily-risks" class="report-risk-list">
+                            <div class="finding-loading">正在检查异常告警...</div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- ====== 趋势图 + 近7天历史 ====== -->
+            <!-- ====== 人群 & 单品速览 ====== -->
             <section class="report-section">
-                <div class="report-columns report-columns--chart">
+                <div class="report-columns report-columns--data">
+                    <div class="report-card">
+                        <div class="report-card-title">👥 人群花费 TOP<span class="title-extra" id="crowd-count"></span></div>
+                        <table class="report-table report-table--compact" id="crowd-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-label">人群定向</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">ROI</th>
+                                    <th class="col-num">成交金额</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crowd-table-body">
+                                <tr><td colspan="4" class="table-loading">等待数据同步...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-card-title">📦 单品花费 TOP<span class="title-extra" id="product-count"></span></div>
+                        <table class="report-table report-table--compact" id="product-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-label">商品名称</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">直接成交</th>
+                                    <th class="col-num">加购数</th>
+                                </tr>
+                            </thead>
+                            <tbody id="product-table-body">
+                                <tr><td colspan="4" class="table-loading">等待数据同步...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ====== 花费趋势 + 7天明细 ====== -->
+            <section class="report-section">
+                <div class="report-columns report-columns--trend">
                     <div class="report-card">
                         <div class="report-card-title">
                             📈 花费 &amp; ROI 趋势
@@ -146,27 +168,41 @@
                         </div>
                     </div>
                     <div class="report-card">
-                        <div class="report-card-title">📅 最近 7 天</div>
-                        <div class="report-history-list" id="daily-history-list">
-                            <div class="report-history-empty">正在加载历史数据...</div>
-                        </div>
+                        <div class="report-card-title">📅 近7天明细</div>
+                        <table class="report-table report-table--compact" id="history-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-label">日期</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">ROI</th>
+                                    <th class="col-num">去退ROI</th>
+                                    <th class="col-num">成交笔数</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr><td colspan="5" class="table-loading">加载中...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
 
-            <!-- ====== 栏目速览 ====== -->
+            <!-- ====== AI 分析摘要（内联展示） ====== -->
             <section class="report-section">
-                <h3 class="report-section-title">📊 栏目速览</h3>
-                <div class="report-module-grid" id="daily-module-grid">
-                    <div class="report-module-card is-loading">正在汇总栏目日报...</div>
+                <h3 class="report-section-title">🤖 AI 分析摘要</h3>
+                <div class="report-card" id="ai-analysis-card">
+                    <div id="ai-analysis-content" class="ai-analysis-content">
+                        <div class="finding-loading">正在加载 AI 报告...</div>
+                    </div>
                 </div>
             </section>
 
-            <!-- ====== AI 洞察 ====== -->
+            <!-- ====== 执行建议 ====== -->
             <section class="report-section">
-                <h3 class="report-section-title">🤖 今日 AI 洞察</h3>
-                <div id="insights-preview-state" class="report-insights-state">正在加载最新报告...</div>
-                <div id="insights-preview-grid" class="report-insights-grid"></div>
+                <h3 class="report-section-title">⚡ 执行建议</h3>
+                <div class="report-action-list" id="daily-action-list">
+                    <div class="report-action-item is-loading">正在生成执行建议...</div>
+                </div>
             </section>
 
         </div>
@@ -199,280 +235,428 @@
     </footer>
 
     <script src="assets/js/config.js"></script>
-    <script src="script.js?v=202605120930"></script>
+    <script src="script.js?v=202605121400"></script>
     <script>
         const authHelpers = window.authHelpers || {};
-        const INSIGHTS_PREVIEW_URL = authHelpers.getSupabaseUrl
-            ? authHelpers.getSupabaseUrl()
-            : ((typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SB_URL) ? CONFIG.SB_URL : 'https://qjscsikithbxuxmjyjsp.supabase.co');
 
         let homeInsightsAuthRedirectScheduled = false;
         let homeChartInstance = null;
         let homeDashboardData = null;
-        let homeFullDashboardPayload = null;
-        let homeReportItems = [];
+        let homeFullPayload = null;
+        let homeReportItem = null;   // 最新一篇 AI 报告（完整对象）
         let homeAlertItems = [];
         let homeCurrentPeriod = 'daily';
 
-        /* ── 工具函数 ── */
-        function escHtml(value) {
-            return String(value ?? '')
-                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        /* ══════════════════════════════════
+           工具函数
+           ══════════════════════════════════ */
+        function esc(v) {
+            return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
-        function riskLabel(level) {
-            return { low: '低风险', medium: '中风险', high: '高风险', critical: '严重风险' }[level] || '未评级';
-        }
-
-        function formatCurrency(v) {
+        function fmtCurrency(v) {
             if (v == null || isNaN(v)) return '--';
-            return v >= 10000 ? '¥' + (v / 10000).toFixed(1) + '万' : '¥' + v.toLocaleString('zh-CN', { maximumFractionDigits: 0 });
+            return v >= 10000 ? '¥' + (v / 10000).toFixed(1) + '万' : '¥' + Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
         }
+        function fmtRoi(v) { return (v == null || isNaN(v)) ? '--' : Number(v).toFixed(2); }
+        function fmtInt(v) { return (v == null || isNaN(v)) ? '--' : Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 0 }); }
+        function fmtPct(v) { return (v == null || isNaN(v)) ? '--' : (Number(v) * 100).toFixed(1) + '%'; }
+        function fmtCost(v) { return (v == null || isNaN(v) || v <= 0) ? '--' : '¥' + Number(v).toFixed(2); }
 
-        function formatRoi(v) { return (v == null || isNaN(v)) ? '--' : v.toFixed(2); }
-        function formatInt(v) { return (v == null || isNaN(v)) ? '--' : Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 0 }); }
-        function formatPct(v) { return (v == null || isNaN(v)) ? '--' : (Number(v) * 100).toFixed(1) + '%'; }
-
-        function formatChange(cur, prev) {
+        function changePct(cur, prev) {
             if (prev == null || prev === 0 || cur == null) return { text: '--', cls: 'neutral' };
             const pct = ((cur - prev) / Math.abs(prev)) * 100;
             return { text: (pct > 0 ? '+' : '') + pct.toFixed(1) + '%', cls: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral' };
         }
 
-        function setMetric(valEl, chgEl, cur, prev, fmt, fallback) {
-            if (valEl) valEl.textContent = fmt(cur);
-            if (!chgEl) return;
-            if (cur != null && prev != null) {
-                const c = formatChange(cur, prev);
-                chgEl.textContent = '较前日 ' + c.text;
-                chgEl.className = 'metric-change ' + c.cls;
-            } else {
-                chgEl.textContent = fallback || '暂无对比';
-                chgEl.className = 'metric-change neutral';
-            }
+        function avg7(daily, field) {
+            const vals = (daily || []).slice(0, 7).map(r => r[field]).filter(v => v != null && !isNaN(v));
+            return vals.length >= 1 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+        }
+
+        function riskLabel(level) {
+            return { low: '低风险', medium: '中风险', high: '高风险', critical: '严重' }[level] || '未评级';
         }
 
         function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
-        function getTopCrowd(p) { const r = p?.crowd || []; return Array.isArray(r) && r.length ? r[0] : null; }
-        function getTopProduct(p) { const r = p?.single?.items || []; return Array.isArray(r) && r.length ? r[0] : null; }
-        function getProductName(p) { return String(p?.商品名称 || p?.product_name || p?.name || '暂无商品数据'); }
-
         function shanghaiToday() { return new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10); }
-        function shanghaiYesterday() { return new Date(Date.now() + 8 * 3600000 - 86400000).toISOString().slice(0, 10); }
         function nDaysAgo(n) { return new Date(Date.now() + 8 * 3600000 - n * 86400000).toISOString().slice(0, 10); }
 
         function formatDateLabel(dateStr) {
             if (!dateStr) return '';
             const d = new Date(dateStr + 'T00:00:00+08:00');
-            const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-            return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${weekdays[d.getDay()]}`;
+            const wd = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${wd[d.getDay()]}`;
         }
 
-        function buildDailyTone(latest, prev, alertCount) {
-            if (!latest) return { level: 'neutral', text: '今日数据暂未同步，建议稍后刷新日报。' };
-            const roiDelta = prev ? latest.roi - prev.roi : 0;
-            const spendDelta = prev ? latest.cost - prev.cost : 0;
-            if (alertCount > 0) return { level: 'risk', text: `今日有 ${alertCount} 条高风险洞察需要处理，优先排查消耗异常与 ROI 下滑计划。` };
-            if (roiDelta > 0 && spendDelta >= 0) return { level: 'good', text: '今日 ROI 与消耗同步向好，可以优先寻找可复制的人群和计划。' };
-            if (roiDelta < 0 && spendDelta > 0) return { level: 'risk', text: '今日消耗上升但 ROI 回落，需要收紧低效投放并复盘流量质量。' };
-            if (roiDelta > 0) return { level: 'good', text: '今日 ROI 较前日改善，建议复盘高效计划并准备加量策略。' };
-            if (roiDelta < 0) return { level: 'watch', text: '今日 ROI 较前日回落，建议先看异常报告和高花费人群。' };
-            return { level: 'neutral', text: '今日大盘相对平稳，重点关注新增洞察和栏目变化。' };
-        }
-
-        /* ── 渲染：日报主体 ── */
-        function renderDailyBriefing(payload, alertItems) {
-            const ads = payload?.ads || {};
-            const daily = Array.isArray(ads.daily) ? ads.daily : [];
-            const latest = daily[0] || null;
-            const prev = daily[1] || null;
-            const alertCount = Array.isArray(alertItems) ? alertItems.length : 0;
-            const latestReport = homeReportItems[0] || null;
-            const topCrowd = getTopCrowd(payload);
-            const topProduct = getTopProduct(payload);
-
-            const latestDate = latest?.label || shanghaiToday();
-            const isToday = latestDate === shanghaiToday();
-            const dateDisplay = formatDateLabel(latestDate);
-            const tone = buildDailyTone(latest, prev, alertCount);
-            const roiChange = prev ? formatChange(latest?.roi, prev.roi) : null;
-            const spendChange = prev ? formatChange(latest?.cost, prev.cost) : null;
-
-            setText('daily-date-label', isToday ? `${dateDisplay} · 今日日报` : `${dateDisplay} · 日报`);
-            setText('daily-freshness', latest
-                ? `数据更新至 ${latestDate}`
-                : '暂无可用数据');
-            setText('daily-headline', tone.text);
-            setText('daily-summary-text', latest
-                ? `花费 ${formatCurrency(latest.cost)}，成交金额 ${formatCurrency(latest.amount)}，ROI ${formatRoi(latest.roi)}，去退 ROI ${formatRoi(latest.returnRoi)}，成交笔数 ${formatInt(latest.orders)}。`
-                : '系统还没有读取到今日大盘数据，请先确认数据看板是否已同步。');
-
-            const points = [];
-            if (latest && spendChange) points.push(`花费较前日 ${spendChange.text}，当前成交笔数 ${formatInt(latest.orders)}。`);
-            if (latest && roiChange) points.push(`ROI 较前日 ${roiChange.text}，去退率约 ${formatPct(latest.taobaoReturnRate || 0)}。`);
-            if (topCrowd) points.push(`人群高消耗分层：${topCrowd.crowd || '未标注定向'}，花费 ${formatCurrency(topCrowd.summary?.cost || 0)}。`);
-            if (topProduct) points.push(`重点商品：${getProductName(topProduct)}，花费 ${formatCurrency(topProduct['花费'] || 0)}。`);
-            if (latestReport) points.push(`最新 AI 报告评级「${riskLabel(latestReport.risk_level)}」，建议查看详情。`);
-            if (!points.length) points.push('暂无足够数据，请稍后刷新。');
-
-            const pEl = document.getElementById('daily-key-points');
-            if (pEl) pEl.innerHTML = points.slice(0, 5).map(t => `<li>${escHtml(t)}</li>`).join('');
-
-            setText('daily-report-title', latestReport?.title || '等待报告同步');
-            setText('daily-report-summary', latestReport?.summary || '洞察中心的日报会自动显示在这里。');
-
-            renderDailyActions(latest, prev, latestReport, alertItems);
-            renderDailyModules(payload, latest, latestReport, alertItems);
-            renderDailyHistory(daily);
-        }
-
-        /* ── 渲染：优先动作（带编号） ── */
-        function renderDailyActions(latest, prev, latestReport, alertItems) {
-            const actions = [];
-            const hasAlerts = Array.isArray(alertItems) && alertItems.length > 0;
-            if (hasAlerts) actions.push({ title: '处理高风险洞察', desc: `当前有 ${alertItems.length} 条高风险报告，优先确认是否需要暂停或降预算。`, href: 'insights.html' });
-            if (latest && prev && latest.roi < prev.roi) actions.push({ title: '复盘 ROI 下滑来源', desc: `ROI 较前日 ${formatChange(latest.roi, prev.roi).text}，按计划、人群、单品逐层拆解。`, href: 'supabase-dashboard.html' });
-            if (latest && latest.returnRoi && latest.roi && latest.returnRoi < latest.roi * 0.85) actions.push({ title: '关注退款后真实效率', desc: `去退 ROI ${formatRoi(latest.returnRoi)}，与表观 ROI 有差距。`, href: 'supabase-dashboard.html' });
-            if (latestReport) actions.push({ title: '阅读今日 AI 结论', desc: latestReport.summary || '查看最新报告中的动作建议与风险归因。', href: `insights.html?slug=${encodeURIComponent(latestReport.slug || '')}` });
-            actions.push({ title: '追问具体问题', desc: '例如"昨天花费下降主要是哪类人群造成的？"', href: 'genbi.html' });
-
-            const el = document.getElementById('daily-action-list');
+        /* ══════════════════════════════════
+           渲染：一句话结论
+           ══════════════════════════════════ */
+        function renderExecutiveBanner(latest, prev, alertCount, aiReport) {
+            const el = document.getElementById('executive-text');
             if (!el) return;
-            el.innerHTML = actions.slice(0, 5).map((item, i) => `
-                <a class="report-action-item" href="${escHtml(item.href)}">
-                    <span class="report-action-num">${i + 1}</span>
-                    <div class="report-action-content">
-                        <strong>${escHtml(item.title)}</strong>
-                        <span>${escHtml(item.desc)}</span>
-                    </div>
-                </a>
-            `).join('');
+
+            // 优先使用 AI 报告的 executive_summary
+            const aiHeadline = aiReport?.executive_summary?.headline
+                || aiReport?.executive_summary
+                || '';
+            if (typeof aiHeadline === 'string' && aiHeadline.length > 5) {
+                el.textContent = aiHeadline;
+                return;
+            }
+
+            // 降级：根据数据自动生成
+            if (!latest) { el.textContent = '今日数据暂未同步，建议稍后刷新。'; return; }
+            const parts = [];
+            parts.push(`花费 ${fmtCurrency(latest.cost)}`);
+            parts.push(`ROI ${fmtRoi(latest.roi)}`);
+            parts.push(`成交 ${fmtCurrency(latest.amount)}`);
+            if (prev) {
+                const roiDelta = changePct(latest.roi, prev.roi);
+                parts.push(`ROI 较前日 ${roiDelta.text}`);
+            }
+            if (alertCount > 0) parts.push(`${alertCount} 条风险告警需处理`);
+            el.textContent = '今日大盘：' + parts.join('，') + '。';
         }
 
-        /* ── 渲染：栏目速览 ── */
-        function renderDailyModules(payload, latest, latestReport, alertItems) {
-            const topCrowd = getTopCrowd(payload);
-            const topProduct = getTopProduct(payload);
-            const singleKpi = payload?.single?.kpi || {};
-            const modules = [
-                { name: '数据看板', href: 'supabase-dashboard.html', metric: latest ? `${formatCurrency(latest.cost)} 花费` : '等待同步', desc: latest ? `ROI ${formatRoi(latest.roi)}，成交 ${formatCurrency(latest.amount)}` : '今日大盘数据暂未返回。', tag: latest && latest.roi >= 1 ? '效率可看' : '需要盯盘' },
-                { name: '计划拆解', href: 'plan-dashboard.html', metric: latest ? `${formatInt(latest.orders)} 笔成交` : '等待同步', desc: '查看预算节奏、活动期和计划完成度。', tag: '看节奏' },
-                { name: '人群评分', href: 'budget-scorecard.html', metric: topCrowd ? '优先复核高消耗人群' : '等待评分', desc: '结合花费、转化与退款，判断加预算或降权。', tag: '做决策' },
-                { name: '洞察中心', href: 'insights.html', metric: latestReport ? riskLabel(latestReport.risk_level) : '暂无报告', desc: latestReport?.summary || `高风险洞察 ${Array.isArray(alertItems) ? alertItems.length : 0} 条。`, tag: '读结论' },
-                { name: '单品表现', href: 'supabase-dashboard.html#single-product', metric: topProduct ? getProductName(topProduct) : `${singleKpi.productCount || 0} 个商品`, desc: topProduct ? `花费 ${formatCurrency(topProduct['花费'] || 0)}，直接成交 ${formatCurrency(topProduct['直接成交金额'] || 0)}` : '单品数据同步后展示重点商品。', tag: '看商品' },
+        /* ══════════════════════════════════
+           渲染：核心KPI对比表
+           ══════════════════════════════════ */
+        function renderKpiTable(daily, latest, prev) {
+            const tbody = document.getElementById('kpi-table-body');
+            if (!tbody) return;
+
+            const latestDate = latest?.label || '';
+            const isToday = latestDate === shanghaiToday();
+            const colLabel = isToday ? '今日' : (latestDate.slice(5) || '最新');
+            setText('kpi-col-today', colLabel);
+            setText('kpi-col-yesterday', prev ? prev.label?.slice(5) || '前日' : '前日');
+
+            const rows = [
+                { label: '花费',     cur: latest?.cost,      prev: prev?.cost,      avg: avg7(daily, 'cost'),      fmt: fmtCurrency },
+                { label: '成交金额', cur: latest?.amount,    prev: prev?.amount,    avg: avg7(daily, 'amount'),    fmt: fmtCurrency },
+                { label: '成交笔数', cur: latest?.orders,    prev: prev?.orders,    avg: avg7(daily, 'orders'),    fmt: fmtInt },
+                { label: 'ROI',      cur: latest?.roi,       prev: prev?.roi,       avg: avg7(daily, 'roi'),       fmt: fmtRoi },
+                { label: '直接ROI',  cur: latest?.directRoi, prev: prev?.directRoi, avg: avg7(daily, 'directRoi'), fmt: fmtRoi },
+                { label: '去退ROI',  cur: latest?.returnRoi, prev: prev?.returnRoi, avg: avg7(daily, 'returnRoi'), fmt: fmtRoi },
+                { label: '观看成本', cur: latest?.viewCost,  prev: prev?.viewCost,  avg: avg7(daily, 'viewCost'),  fmt: fmtCost },
+                { label: '订单成本', cur: latest?.orderCost, prev: prev?.orderCost, avg: avg7(daily, 'orderCost'), fmt: fmtCost },
+                { label: '退货率',   cur: latest?.taobaoReturnRate, prev: prev?.taobaoReturnRate, avg: avg7(daily, 'taobaoReturnRate'), fmt: fmtPct },
             ];
 
-            const el = document.getElementById('daily-module-grid');
-            if (!el) return;
-            el.innerHTML = modules.map(m => `
-                <a class="report-module-card" href="${escHtml(m.href)}">
-                    <div class="report-module-top">
-                        <strong>${escHtml(m.name)}</strong>
-                        <span class="module-tag">${escHtml(m.tag)}</span>
-                    </div>
-                    <div class="report-module-metric">${escHtml(m.metric)}</div>
-                    <p>${escHtml(m.desc)}</p>
-                </a>
-            `).join('');
+            tbody.innerHTML = rows.map(r => {
+                const chg = changePct(r.cur, r.prev);
+                return `<tr>
+                    <td class="col-label">${esc(r.label)}</td>
+                    <td class="col-num col-primary">${esc(r.fmt(r.cur))}</td>
+                    <td class="col-num">${esc(r.fmt(r.prev))}</td>
+                    <td class="col-num chg-${chg.cls}">${esc(chg.text)}</td>
+                    <td class="col-num">${esc(r.fmt(r.avg))}</td>
+                </tr>`;
+            }).join('');
         }
 
-        /* ── 渲染：7天历史 ── */
-        function renderDailyHistory(dailyRows) {
-            const el = document.getElementById('daily-history-list');
+        function renderKpiError() {
+            const tbody = document.getElementById('kpi-table-body');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="table-loading table-error">数据加载失败</td></tr>';
+        }
+
+        /* ══════════════════════════════════
+           渲染：今日关键发现
+           ══════════════════════════════════ */
+        function renderFindings(latest, prev, payload, aiReport) {
+            const el = document.getElementById('daily-findings');
             if (!el) return;
-            const rows = Array.isArray(dailyRows) ? dailyRows.slice(0, 7) : [];
-            if (!rows.length) { el.innerHTML = '<div class="report-history-empty">暂无历史数据</div>'; return; }
-            el.innerHTML = rows.map(r => `
-                <div class="report-history-item">
-                    <span class="hist-date">${escHtml(r.label || '--')}</span>
-                    <span class="hist-roi">${formatRoi(r.roi)}</span>
-                    <span class="hist-detail">${formatCurrency(r.cost)} · ${formatInt(r.orders)} 笔</span>
+
+            const items = [];
+
+            // 1. 从 AI 报告提取 highlights
+            const highlights = aiReport?.highlights || aiReport?.raw_payload?.issues || [];
+            highlights.forEach(h => {
+                const text = typeof h === 'string' ? h : (h.title || h.description || h.text || '');
+                if (text) items.push({ icon: '💡', text });
+            });
+
+            // 2. 从数据计算关键变化
+            if (latest && prev) {
+                const roiChg = changePct(latest.roi, prev.roi);
+                const costChg = changePct(latest.cost, prev.cost);
+                if (roiChg.cls === 'down') items.push({ icon: '📉', text: `ROI 从 ${fmtRoi(prev.roi)} 降至 ${fmtRoi(latest.roi)}（${roiChg.text}），需关注转化效率。` });
+                else if (roiChg.cls === 'up') items.push({ icon: '📈', text: `ROI 从 ${fmtRoi(prev.roi)} 升至 ${fmtRoi(latest.roi)}（${roiChg.text}），投放效率改善。` });
+                if (costChg.cls === 'up' && Math.abs(parseFloat(costChg.text)) > 15) items.push({ icon: '💰', text: `花费较前日 ${costChg.text}，上升至 ${fmtCurrency(latest.cost)}，关注预算消耗节奏。` });
+                if (costChg.cls === 'down' && Math.abs(parseFloat(costChg.text)) > 15) items.push({ icon: '💰', text: `花费较前日 ${costChg.text}，回落至 ${fmtCurrency(latest.cost)}，检查是否因限额或竞争导致。` });
+                if (latest.taobaoReturnRate > 0.15) items.push({ icon: '🔄', text: `退货率 ${fmtPct(latest.taobaoReturnRate)}，去退 ROI ${fmtRoi(latest.returnRoi)}，注意真实盈亏。` });
+            }
+
+            // 3. 人群/单品关键信息
+            const topCrowd = (payload?.crowd || [])[0];
+            if (topCrowd) {
+                const cs = topCrowd.summary || {};
+                items.push({ icon: '👥', text: `人群高消耗：「${topCrowd.crowd || '未标注'}」花费 ${fmtCurrency(cs.cost || 0)}，ROI ${fmtRoi(cs.roi || 0)}。` });
+            }
+            const topProduct = (payload?.single?.items || [])[0];
+            if (topProduct) {
+                items.push({ icon: '📦', text: `重点单品：「${topProduct.商品名称 || topProduct.product_name || '未知'}」花费 ${fmtCurrency(topProduct['花费'] || 0)}。` });
+            }
+
+            if (!items.length) {
+                el.innerHTML = '<div class="finding-empty">暂无足够数据生成关键发现，请确认数据已同步。</div>';
+                return;
+            }
+            el.innerHTML = items.slice(0, 8).map(i => `<div class="finding-item"><span class="finding-icon">${i.icon}</span><span>${esc(i.text)}</span></div>`).join('');
+        }
+
+        /* ══════════════════════════════════
+           渲染：风险 & 异常
+           ══════════════════════════════════ */
+        function renderRisks(alertItems, aiReport) {
+            const el = document.getElementById('daily-risks');
+            if (!el) return;
+
+            const items = [];
+
+            // 从高风险 AI 报告提取
+            if (Array.isArray(alertItems)) {
+                alertItems.forEach(a => {
+                    items.push({
+                        level: a.risk_level || 'high',
+                        title: a.title || '风险告警',
+                        desc: a.summary || ''
+                    });
+                });
+            }
+
+            // 从当前 AI 报告的 highlights 中提取风险项
+            const issues = aiReport?.highlights || aiReport?.raw_payload?.issues || [];
+            issues.forEach(issue => {
+                const severity = issue.severity || issue.level || '';
+                if (severity === 'high' || severity === 'critical') {
+                    const text = typeof issue === 'string' ? issue : (issue.title || issue.description || '');
+                    if (text && !items.some(i => i.title === text)) {
+                        items.push({ level: severity, title: text, desc: issue.description || issue.detail || '' });
+                    }
+                }
+            });
+
+            if (!items.length) {
+                el.innerHTML = '<div class="risk-ok">✅ 当前无高风险告警，大盘运行平稳。</div>';
+                return;
+            }
+
+            el.innerHTML = items.slice(0, 5).map(i => `
+                <div class="risk-item risk-${esc(i.level)}">
+                    <span class="risk-badge">${esc(riskLabel(i.level))}</span>
+                    <div class="risk-content">
+                        <strong>${esc(i.title)}</strong>
+                        ${i.desc ? '<p>' + esc(i.desc) + '</p>' : ''}
+                    </div>
                 </div>
             `).join('');
         }
 
-        /* ── 数据加载：指标卡 + 日报 ── */
-        async function loadHomeMetrics() {
-            const spendEl = document.getElementById('metric-spend');
-            const spendChg = document.getElementById('metric-spend-change');
-            const roiEl = document.getElementById('metric-roi');
-            const roiChg = document.getElementById('metric-roi-change');
-            const rrEl = document.getElementById('metric-return-roi');
-            const rrChg = document.getElementById('metric-return-roi-change');
-            const amtEl = document.getElementById('metric-amount');
-            const amtChg = document.getElementById('metric-amount-change');
-            const ordEl = document.getElementById('metric-orders');
-            const ordChg = document.getElementById('metric-orders-change');
-            const alertEl = document.getElementById('metric-alerts');
-            const alertChg = document.getElementById('metric-alerts-change');
+        /* ══════════════════════════════════
+           渲染：人群 TOP
+           ══════════════════════════════════ */
+        function renderCrowdTable(payload) {
+            const tbody = document.getElementById('crowd-table-body');
+            const countEl = document.getElementById('crowd-count');
+            if (!tbody) return;
 
-            try {
-                const today = shanghaiToday();
-                const start = nDaysAgo(14);
+            const crowds = payload?.crowd || [];
+            // crowd 结构: [{crowd, plan_type, summary: {cost, amount, orders, roi, ...}, audiences: [...]}]
+            // 取 summary 存在且有 cost 的
+            const sorted = crowds
+                .filter(c => c.summary && c.summary.cost > 0)
+                .sort((a, b) => (b.summary.cost || 0) - (a.summary.cost || 0));
 
-                const result = await authHelpers.fetchFunctionJson('dashboard-data', {
-                    query: { sections: 'all', start_date: start, end_date: today },
-                    parseErrorMessage: '看板数据读取失败',
-                    onUnauthorized: () => redirectToLogin('登录已失效，正在跳转...'),
-                });
+            if (countEl) countEl.textContent = sorted.length > 5 ? `（共 ${sorted.length} 个人群，展示前 5）` : '';
 
-                const data = result.data || result;
-                homeFullDashboardPayload = data;
-                homeDashboardData = data.ads || null;
-
-                if (!homeDashboardData || !homeDashboardData.kpi) {
-                    [spendEl, roiEl, rrEl, amtEl, ordEl, alertEl].forEach(e => { if (e) e.textContent = '--'; });
-                    [spendChg, roiChg, rrChg, amtChg, ordChg, alertChg].forEach(e => { if (e) { e.textContent = '暂无数据'; e.className = 'metric-change neutral'; } });
-                    renderDailyBriefing(data, []);
-                    return;
-                }
-
-                const daily = homeDashboardData.daily || [];
-                const latest = daily[0] || null;
-                const prev = daily[1] || null;
-                const latestDate = latest ? latest.label : '';
-                const isToday = latestDate === today;
-                const prefix = isToday ? '今日' : (latestDate.slice(5) || '最新');
-
-                setText('metric-spend-label', prefix + '花费');
-                setText('metric-roi-label', prefix + ' ROI');
-                setText('metric-return-roi-label', prefix + '去退 ROI');
-                setText('metric-amount-label', prefix + '成交金额');
-                setText('metric-orders-label', prefix + '成交笔数');
-
-                setMetric(spendEl, spendChg, latest?.cost, prev?.cost, formatCurrency, prefix + '数据');
-                setMetric(roiEl, roiChg, latest?.roi, prev?.roi, formatRoi, prefix + ' ROI');
-                setMetric(rrEl, rrChg, latest?.returnRoi, prev?.returnRoi, formatRoi, prefix + '去退');
-                setMetric(amtEl, amtChg, latest?.amount, prev?.amount, formatCurrency, prefix + '成交');
-                setMetric(ordEl, ordChg, latest?.orders, prev?.orders, formatInt, prefix + '成交');
-
-                try {
-                    const alertRes = await authHelpers.fetchFunctionJson('ai-reports', { query: { risk_level: 'high', limit: 10 } });
-                    const aData = alertRes.data || alertRes;
-                    homeAlertItems = aData.items || [];
-                    alertEl.textContent = homeAlertItems.length;
-                    alertChg.textContent = homeAlertItems.length > 0 ? '需要关注' : '一切正常';
-                    alertChg.className = 'metric-change ' + (homeAlertItems.length > 0 ? 'down' : 'up');
-                } catch {
-                    homeAlertItems = [];
-                    alertEl.textContent = '--';
-                    alertChg.textContent = '告警查询失败';
-                    alertChg.className = 'metric-change neutral';
-                }
-
-                renderHomeChart(homeCurrentPeriod);
-                renderDailyBriefing(homeFullDashboardPayload, homeAlertItems);
-
-            } catch (err) {
-                [spendEl, roiEl, rrEl, amtEl, ordEl, alertEl].forEach(e => { if (e) e.textContent = '--'; });
-                [spendChg, roiChg, rrChg, amtChg, ordChg, alertChg].forEach(e => { if (e) { e.textContent = '加载失败'; e.className = 'metric-change neutral'; } });
-                console.error('[home] loadHomeMetrics failed:', err);
+            if (!sorted.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="table-loading">暂无人群数据</td></tr>';
+                return;
             }
+
+            tbody.innerHTML = sorted.slice(0, 5).map(c => {
+                const s = c.summary;
+                return `<tr>
+                    <td class="col-label td-name">${esc(c.crowd || '未标注定向')}</td>
+                    <td class="col-num">${fmtCurrency(s.cost)}</td>
+                    <td class="col-num">${fmtRoi(s.roi)}</td>
+                    <td class="col-num">${fmtCurrency(s.amount)}</td>
+                </tr>`;
+            }).join('');
         }
 
-        /* ── Chart.js ── */
+        /* ══════════════════════════════════
+           渲染：单品 TOP
+           ══════════════════════════════════ */
+        function renderProductTable(payload) {
+            const tbody = document.getElementById('product-table-body');
+            const countEl = document.getElementById('product-count');
+            if (!tbody) return;
+
+            const items = payload?.single?.items || [];
+            const sorted = items
+                .filter(p => p && (p['花费'] > 0 || p.cost > 0))
+                .sort((a, b) => (Number(b['花费'] || b.cost || 0)) - (Number(a['花费'] || a.cost || 0)));
+
+            if (countEl) countEl.textContent = sorted.length > 5 ? `（共 ${sorted.length} 个商品，展示前 5）` : '';
+
+            if (!sorted.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="table-loading">暂无单品数据</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sorted.slice(0, 5).map(p => {
+                const name = p.商品名称 || p.product_name || p.name || '未知商品';
+                const cost = Number(p['花费'] || p.cost || 0);
+                const directAmt = Number(p['直接成交金额'] || p.directAmount || 0);
+                const cart = Number(p['该商品加购数'] || p.cartCount || 0);
+                return `<tr>
+                    <td class="col-label td-name">${esc(name.length > 20 ? name.slice(0, 20) + '…' : name)}</td>
+                    <td class="col-num">${fmtCurrency(cost)}</td>
+                    <td class="col-num">${fmtCurrency(directAmt)}</td>
+                    <td class="col-num">${fmtInt(cart)}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        /* ══════════════════════════════════
+           渲染：7天明细表
+           ══════════════════════════════════ */
+        function renderHistoryTable(daily) {
+            const tbody = document.getElementById('history-table-body');
+            if (!tbody) return;
+            const rows = (daily || []).slice(0, 7);
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="table-loading">暂无历史数据</td></tr>';
+                return;
+            }
+            tbody.innerHTML = rows.map(r => `<tr>
+                <td class="col-label">${esc(r.label || '--')}</td>
+                <td class="col-num">${fmtCurrency(r.cost)}</td>
+                <td class="col-num">${fmtRoi(r.roi)}</td>
+                <td class="col-num">${fmtRoi(r.returnRoi)}</td>
+                <td class="col-num">${fmtInt(r.orders)}</td>
+            </tr>`).join('');
+        }
+
+        /* ══════════════════════════════════
+           渲染：AI 分析摘要（内联）
+           ══════════════════════════════════ */
+        function renderAiAnalysis(report) {
+            const el = document.getElementById('ai-analysis-content');
+            if (!el) return;
+
+            if (!report) {
+                el.innerHTML = '<div class="finding-empty">洞察中心尚未生成今日报告，稍后自动刷新。</div>';
+                return;
+            }
+
+            const payload = report.raw_payload || {};
+            const metrics = report.overview_metrics || payload.overviewMetrics || {};
+            const summary = report.summary || '';
+            const execSummary = report.executive_summary?.headline || report.executive_summary || '';
+            const highlights = report.highlights || payload.issues || [];
+            const actions = report.actions || payload.actions || [];
+            const crowds = report.high_spend_crowds || payload.highSpendCrowds || [];
+
+            let html = '';
+
+            // 报告 meta
+            html += `<div class="ai-report-meta">
+                <span class="ai-report-title">${esc(report.title || '今日分析报告')}</span>
+                <span class="risk-badge risk-badge--inline risk-${esc(report.risk_level || '')}">${esc(riskLabel(report.risk_level))}</span>
+                <span class="ai-report-date">${esc(report.report_date || '')}</span>
+            </div>`;
+
+            // 摘要
+            if (summary) {
+                html += `<div class="ai-report-summary">${esc(summary)}</div>`;
+            }
+
+            // KPI 速览
+            if (metrics.roi || metrics.returnRoi || metrics.cost) {
+                html += '<div class="ai-report-metrics">';
+                if (metrics.roi) html += `<span class="ai-metric">ROI <strong>${esc(metrics.roi)}</strong></span>`;
+                if (metrics.returnRoi) html += `<span class="ai-metric">去退ROI <strong>${esc(metrics.returnRoi)}</strong></span>`;
+                if (metrics.cost) html += `<span class="ai-metric">花费 <strong>${esc(metrics.cost)}</strong></span>`;
+                if (metrics.amount) html += `<span class="ai-metric">成交 <strong>${esc(metrics.amount)}</strong></span>`;
+                html += '</div>';
+            }
+
+            // 关键发现
+            if (highlights.length) {
+                html += '<div class="ai-report-section"><h4>关键发现</h4><ul>';
+                highlights.slice(0, 5).forEach(h => {
+                    const text = typeof h === 'string' ? h : (h.title || h.description || h.text || '');
+                    if (text) html += `<li>${esc(text)}</li>`;
+                });
+                html += '</ul></div>';
+            }
+
+            // 高消耗人群
+            if (crowds.length) {
+                html += '<div class="ai-report-section"><h4>高消耗人群</h4><ul>';
+                crowds.slice(0, 3).forEach(c => {
+                    const name = typeof c === 'string' ? c : (c.crowd || c.name || c.audience || '');
+                    const detail = c.summary || c.detail || '';
+                    const text = detail ? `${name}（${typeof detail === 'string' ? detail : JSON.stringify(detail)}）` : name;
+                    if (text) html += `<li>${esc(text)}</li>`;
+                });
+                html += '</ul></div>';
+            }
+
+            el.innerHTML = html;
+        }
+
+        /* ══════════════════════════════════
+           渲染：执行建议
+           ══════════════════════════════════ */
+        function renderActionItems(latest, prev, aiReport, alertItems) {
+            const el = document.getElementById('daily-action-list');
+            if (!el) return;
+
+            const actions = [];
+
+            // 1. 从 AI 报告提取 actions
+            const aiActions = aiReport?.actions || aiReport?.raw_payload?.actions || [];
+            aiActions.forEach(a => {
+                const text = typeof a === 'string' ? a : (a.title || a.action || a.description || '');
+                const detail = typeof a === 'object' ? (a.description || a.detail || a.reason || '') : '';
+                if (text) actions.push({ title: text, desc: detail });
+            });
+
+            // 2. 数据驱动的建议
+            if (Array.isArray(alertItems) && alertItems.length > 0 && !actions.some(a => a.title.includes('风险'))) {
+                actions.push({ title: '处理高风险洞察', desc: `当前有 ${alertItems.length} 条高风险报告，优先确认是否需要暂停或降预算。` });
+            }
+            if (latest && prev && latest.roi < prev.roi && !actions.some(a => a.title.includes('ROI'))) {
+                actions.push({ title: '复盘 ROI 下滑来源', desc: `ROI 较前日 ${changePct(latest.roi, prev.roi).text}，按计划、人群、单品逐层拆解。` });
+            }
+            if (latest && latest.returnRoi && latest.roi && latest.returnRoi < latest.roi * 0.85 && !actions.some(a => a.title.includes('退款'))) {
+                actions.push({ title: '关注退款后真实效率', desc: `去退 ROI ${fmtRoi(latest.returnRoi)}，与表观 ROI ${fmtRoi(latest.roi)} 有差距，需分析退货集中品。` });
+            }
+
+            if (!actions.length) {
+                actions.push({ title: '保持当前投放节奏', desc: '大盘表现平稳，维持现有策略即可。' });
+            }
+
+            el.innerHTML = actions.slice(0, 6).map((item, i) => `
+                <div class="report-action-item">
+                    <span class="report-action-num">${i + 1}</span>
+                    <div class="report-action-content">
+                        <strong>${esc(item.title)}</strong>
+                        ${item.desc ? '<span>' + esc(item.desc) + '</span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /* ══════════════════════════════════
+           Chart.js
+           ══════════════════════════════════ */
         function renderHomeChart(period) {
             homeCurrentPeriod = period;
             if (!homeDashboardData) return;
@@ -511,28 +695,9 @@
             });
         }
 
-        /* ── AI 洞察预览 ── */
-        function renderInsightCards(items) {
-            const grid = document.getElementById('insights-preview-grid');
-            grid.innerHTML = items.map(item => {
-                const m = item.overview_metrics || {};
-                return `
-                    <article class="report-insight-card">
-                        <div class="report-insight-meta">
-                            <span>${escHtml(item.report_date || '--')}</span>
-                            <span class="insight-risk ${escHtml(item.risk_level || '')}">${escHtml(riskLabel(item.risk_level))}</span>
-                        </div>
-                        <h3>${escHtml(item.title || '未命名报告')}</h3>
-                        <p class="report-insight-summary">${escHtml(item.summary || '暂无摘要')}</p>
-                        <div class="report-insight-metrics">
-                            <span class="report-insight-metric">ROI <strong>${escHtml(m.roi || '--')}</strong></span>
-                            <span class="report-insight-metric">去退 <strong>${escHtml(m.returnRoi || '--')}</strong></span>
-                        </div>
-                    </article>
-                `;
-            }).join('');
-        }
-
+        /* ══════════════════════════════════
+           数据加载
+           ══════════════════════════════════ */
         function rememberRedirect() {
             const url = window.location.href;
             if (authHelpers.rememberRedirect) authHelpers.rememberRedirect(url);
@@ -542,47 +707,83 @@
         function redirectToLogin(msg) {
             if (homeInsightsAuthRedirectScheduled) return;
             homeInsightsAuthRedirectScheduled = true;
-            const stateEl = document.getElementById('insights-preview-state');
-            if (stateEl) { stateEl.classList.add('is-error'); stateEl.textContent = msg || '登录已失效...'; }
             if (typeof authHelpers.handleReauthRequired === 'function') {
                 authHelpers.handleReauthRequired({ source: 'home', targetUrl: window.location.href, force: true, reason: 'reauth_required', delayMs: 1200 });
                 return;
             }
             rememberRedirect();
-            localStorage.removeItem('prompt_admin_token');
-            localStorage.removeItem('prompt_admin_expires_at');
             setTimeout(() => window.location.replace('auth/index.html?force=1'), 1200);
         }
 
-        async function loadInsightsPreview(reportType) {
-            const stateEl = document.getElementById('insights-preview-state');
-            const gridEl = document.getElementById('insights-preview-grid');
-            stateEl.style.display = '';
-            stateEl.textContent = '正在加载最新报告...';
-            stateEl.classList.remove('is-error');
-            gridEl.innerHTML = '';
+        /* 主渲染：拿到所有数据后统一渲染 */
+        function renderAll() {
+            const payload = homeFullPayload;
+            const ads = homeDashboardData;
+            const daily = ads?.daily || [];
+            const latest = daily[0] || null;
+            const prev = daily[1] || null;
+            const report = homeReportItem;
+            const alerts = homeAlertItems;
+            const alertCount = alerts.length;
 
+            // 报头
+            const latestDate = latest?.label || shanghaiToday();
+            const isToday = latestDate === shanghaiToday();
+            setText('daily-date-label', isToday ? `${formatDateLabel(latestDate)} · 今日日报` : `${formatDateLabel(latestDate)} · 日报`);
+            setText('daily-freshness', latest ? `数据更新至 ${latestDate}` : '暂无可用数据');
+
+            // 各区域渲染
+            renderExecutiveBanner(latest, prev, alertCount, report);
+            renderKpiTable(daily, latest, prev);
+            renderFindings(latest, prev, payload, report);
+            renderRisks(alerts, report);
+            renderCrowdTable(payload);
+            renderProductTable(payload);
+            renderHistoryTable(daily);
+            renderHomeChart(homeCurrentPeriod);
+            renderAiAnalysis(report);
+            renderActionItems(latest, prev, report, alerts);
+        }
+
+        async function loadHomeData() {
             try {
-                const q = { limit: 3 };
-                if (reportType) q.report_type = reportType;
-                const res = await authHelpers.fetchFunctionJson('ai-reports', {
-                    query: q,
-                    parseErrorMessage: '洞察服务返回了无法解析的响应',
-                    onUnauthorized: () => redirectToLogin('登录已失效...'),
-                }).then(({ data }) => data);
+                const today = shanghaiToday();
+                const start = nDaysAgo(14);
 
-                const items = Array.isArray(res.items) ? res.items : [];
-                homeReportItems = items;
-                if (homeFullDashboardPayload) renderDailyBriefing(homeFullDashboardPayload, homeAlertItems);
-                if (!items.length) { stateEl.textContent = '洞察中心还没有生成过报告。'; gridEl.innerHTML = ''; return; }
-                stateEl.style.display = 'none';
-                renderInsightCards(items);
+                const result = await authHelpers.fetchFunctionJson('dashboard-data', {
+                    query: { sections: 'all', start_date: start, end_date: today },
+                    parseErrorMessage: '看板数据读取失败',
+                    onUnauthorized: () => redirectToLogin('登录已失效，正在跳转...'),
+                });
+
+                const data = result.data || result;
+                homeFullPayload = data;
+                homeDashboardData = data.ads || null;
+
             } catch (err) {
-                stateEl.classList.add('is-error');
-                const desc = authHelpers.describeFetchError ? authHelpers.describeFetchError(err, '洞察加载失败') : { message: `洞察加载失败：${err.message || ''}` };
-                stateEl.textContent = desc.message;
-                gridEl.innerHTML = '';
+                console.error('[home] dashboard-data failed:', err);
+                renderKpiError();
             }
+
+            // 加载高风险告警
+            try {
+                const alertRes = await authHelpers.fetchFunctionJson('ai-reports', { query: { risk_level: 'high', limit: 10 } });
+                homeAlertItems = (alertRes.data || alertRes).items || [];
+            } catch {
+                homeAlertItems = [];
+            }
+
+            // 加载最新 AI 日报
+            try {
+                const reportRes = await authHelpers.fetchFunctionJson('ai-reports', { query: { report_type: 'daily', limit: 1 } });
+                const items = (reportRes.data || reportRes).items || [];
+                homeReportItem = items[0] || null;
+            } catch {
+                homeReportItem = null;
+            }
+
+            // 统一渲染
+            renderAll();
         }
 
         /* ── 日/周 切换 ── */
@@ -599,13 +800,10 @@
 
         /* ── 初始化 ── */
         document.addEventListener('DOMContentLoaded', function() {
-            // 报告生成时间
             const now = new Date(Date.now() + 8 * 3600000);
             const genTime = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,'0')}-${String(now.getUTCDate()).padStart(2,'0')} ${String(now.getUTCHours()).padStart(2,'0')}:${String(now.getUTCMinutes()).padStart(2,'0')}`;
             setText('report-gen-time', genTime);
-
-            loadHomeMetrics();
-            loadInsightsPreview('daily');
+            loadHomeData();
         });
     </script>
 </body>
