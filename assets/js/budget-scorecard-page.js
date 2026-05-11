@@ -250,8 +250,8 @@
         return scored;
     }
 
-    function getTomorrowDate() {
-        return getRelativeDate(1);
+    function getBudgetDate() {
+        return getRelativeDate(0);
     }
 
     function normalizeBudgetRatio(value) {
@@ -460,7 +460,7 @@
         var tbody = $('bs-plan-allocation-tbody');
         var ratio = getBudgetRatio();
 
-        if (budgetDateInput && !budgetDateInput.value) budgetDateInput.value = state.budgetDate || getTomorrowDate();
+        if (budgetDateInput && !budgetDateInput.value) budgetDateInput.value = state.budgetDate || getBudgetDate();
         setBudgetRatioInputs(ratio);
         if (wanxiangEl) wanxiangEl.textContent = state.wanxiangPlan === null ? '--' : formatMoney(state.wanxiangPlan);
         if (ratioDisplay) ratioDisplay.textContent = formatPct(ratio);
@@ -547,7 +547,7 @@
         options = options || {};
         var budgetDateInput = $('bs-budget-date');
         var ratioInput = $('bs-budget-ratio');
-        var budgetDate = budgetDateInput && budgetDateInput.value ? budgetDateInput.value : (state.budgetDate || getTomorrowDate());
+        var budgetDate = budgetDateInput && budgetDateInput.value ? budgetDateInput.value : (state.budgetDate || getBudgetDate());
         var ratio = normalizeBudgetRatio(ratioInput && ratioInput.value);
 
         state.budgetDate = budgetDate;
@@ -702,7 +702,7 @@
         var ratioInput = $('bs-budget-ratio');
         var refreshBtn = $('bs-budget-refresh-btn');
         var ratio = getBudgetRatio();
-        state.budgetDate = getTomorrowDate();
+        state.budgetDate = getBudgetDate();
         if (budgetDateInput) budgetDateInput.value = state.budgetDate;
         if (ratioInput) {
             setBudgetRatioInputs(ratio);
