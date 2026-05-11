@@ -276,7 +276,16 @@
   function buildAudienceFromLabelRow(row, audienceId, existing, fileName) {
     const validRange = parseValidRange(row);
     const audienceName = String(getRowValue(row, ['达摩盘人群名称', '人群名称', 'audience_name']) || existing?.audience_name || '').trim();
-    const audienceType = normalizeAudienceType(getRowValue(row, ['人群包类型', '人群类型', 'audience_type']) || existing?.audience_type || 'master');
+    const parentAudienceName = String(getRowValue(row, ['所属主人群包', '主人群包名称', 'parent_audience_name']) || '').trim();
+    const explicitType = getRowValue(row, ['人群包类型', '人群类型', 'audience_type']);
+    let audienceType;
+    if (explicitType) {
+      audienceType = normalizeAudienceType(explicitType);
+    } else if (parentAudienceName && parentAudienceName !== audienceName) {
+      audienceType = 'split';
+    } else {
+      audienceType = normalizeAudienceType(existing?.audience_type || 'master');
+    }
     const parentAudienceId = audienceType === 'split'
       ? parseNumber(getRowValue(row, ['主人群包ID', '父人群包ID', 'parent_audience_id', 'parent_id']) || existing?.parent_audience_id)
       : null;
@@ -285,6 +294,7 @@
       audience_name: audienceName,
       audience_type: audienceType,
       parent_audience_id: parentAudienceId,
+      _parent_audience_name: parentAudienceName || null,
       valid_from: validRange.valid_from || existing?.valid_from || null,
       valid_to: validRange.valid_to || existing?.valid_to || null,
       valid_range_text: validRange.valid_range_text || existing?.valid_range_text || '',
@@ -338,6 +348,25 @@
           metric_summary: buildMetricSummary(itemMetrics),
         });
       });
+
+    const nameToIdMap = new Map();
+    audiences.forEach((a) => {
+      if (a.audience_name) nameToIdMap.set(a.audience_name, a.audience_id);
+    });
+    state.saved.audiences.forEach((a) => {
+      if (a.audience_name && !nameToIdMap.has(a.audience_name)) {
+        nameToIdMap.set(a.audience_name, a.audience_id);
+      }
+    });
+    audiences.forEach((audience) => {
+      if (audience.audience_type === 'split' && !audience.parent_audience_id && audience._parent_audience_name) {
+        const resolvedId = nameToIdMap.get(audience._parent_audience_name);
+        if (resolvedId) {
+          audience.parent_audience_id = Number(resolvedId);
+        }
+      }
+      delete audience._parent_audience_name;
+    });
 
     return {
       audiences,
