@@ -232,7 +232,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <a href="index.html" class="nav-logo">
-                <span>🎯</span>
+                <span class="logo-emoji">🎯</span>
                 <span>广告智投工作台</span>
             </a>
             <ul class="nav-menu">
@@ -243,11 +243,12 @@
                 <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
                 <li><a href="insights.html" class="nav-link">洞察中心</a></li>
                 <li class="nav-item-dropdown">
-                    <span class="nav-link active">更多 <span class="nav-dropdown-arrow">▾</span></span>
-                    <div class="nav-dropdown">
+                    <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">
+                        更多 <span class="nav-dropdown-arrow">▾</span>
+                    </button>
+                    <div class="nav-dropdown" role="menu">
                         <a href="genbi.html">GenBI</a>
                         <a href="genbi-rule-admin.html">GenBI 规则管理</a>
-                        <a href="metric-rules.html" class="active">指标规则</a>
                         <a href="prompt-admin.html">Prompt 管理</a>
                     </div>
                 </li>
@@ -295,10 +296,10 @@
         <section id="rules-list" class="rules-list"></section>
     </main>
 
-    <script src="assets/js/auth-helpers.js?v=202605050540"></script>
-    <script src="auth.js?v=202605050540"></script>
+    <script src="assets/js/auth-helpers.js?v=202605122054"></script>
+    <script src="auth.js?v=202605122054"></script>
     <script src="assets/js/shared-utils.js"></script>
-    <script src="script.js?v=202605050540"></script>
-    <script src="assets/js/metric-rules-page.js?v=202605050540"></script>
+    <script src="script.js?v=202605122054"></script>
+    <script src="assets/js/metric-rules-page.js?v=202605122054"></script>
 </body>
 </html>

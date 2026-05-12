@@ -372,7 +372,8 @@
             const classified = app.classifyDashboardError(error);
             app.showGlobalDashboardError(error, '当前数据加载失败，请稍后重试。');
             app.setDashboardStatus(classified.type, stateMessage, 4000);
-            setTimeout(app.hideLoading, 1000);
+        } finally {
+            app.hideLoading();
         }
     }
 

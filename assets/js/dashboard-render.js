@@ -1,4 +1,7 @@
 (function attachDashboardRender(window) {
+    const ROI_WARNING_THRESHOLD = 1;
+    const AD_SHARE_WARNING_THRESHOLD = 30;
+
     let dashboardStatusTimer = null;
     let loadingStatusActive = false;
 
@@ -206,16 +209,16 @@
     }
 
     function getRoiClass(roi) {
-        if (roi >= 30) return 'good';
-        if (roi < 1) return 'bad';
+        if (roi >= AD_SHARE_WARNING_THRESHOLD) return 'good';
+        if (roi < ROI_WARNING_THRESHOLD) return 'bad';
         return '';
     }
 
     function getBreakevenRoiClass(roi) {
         const numeric = Number(roi);
         if (!Number.isFinite(numeric)) return '';
-        if (numeric >= 1) return 'good';
-        if (numeric < 1) return 'bad';
+        if (numeric >= ROI_WARNING_THRESHOLD) return 'good';
+        if (numeric < ROI_WARNING_THRESHOLD) return 'bad';
         return '';
     }
 
@@ -240,7 +243,7 @@
             : '-';
         const taobaoReturnRate = row.taobaoReturnRate > 0 ? (row.taobaoReturnRate * 100).toFixed(2) + '%' : '-';
         let html = `<tr>
-            <td>${label}</td>
+            <td>${escapeHtml(label)}</td>
             <td>¥${formatMoney(row.cost)}</td>
             <td>¥${formatMoney(row.amount)}</td>
             <td>${formatNum(row.orders)}</td>
@@ -285,7 +288,7 @@
 
     function buildCrowdMainRow(label, row) {
         return `<tr class="crowd-row" data-crowd-row="toggle" tabindex="0" role="button" aria-expanded="false">
-            <td><span class="expand-icon">▶</span> ${label}</td>
+            <td><span class="expand-icon">▶</span> ${escapeHtml(label)}</td>
             <td>¥${formatMoney(row.cost)}</td>
             <td>¥${formatMoney(row.amount)}</td>
             <td>${formatNum(row.orders)}</td>

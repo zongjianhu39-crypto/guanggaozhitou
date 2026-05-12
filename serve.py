@@ -1,8 +1,16 @@
-import os, functools
+import os
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+import functools
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-handler = functools.partial(SimpleHTTPRequestHandler, directory=os.getcwd())
-server = HTTPServer(("", 8765), handler)
-print(f"Serving on http://localhost:8765 from {os.getcwd()}")
-server.serve_forever()
+ROOT = os.path.dirname(os.path.abspath(__file__))
+Handler = functools.partial(SimpleHTTPRequestHandler, directory=ROOT)
+
+if __name__ == '__main__':
+    server = HTTPServer(("127.0.0.1", 8765), Handler)
+    print(f"Serving {ROOT} at http://127.0.0.1:8765")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nShutting down...")
+    finally:
+        server.server_close()

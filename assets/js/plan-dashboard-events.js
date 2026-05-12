@@ -82,8 +82,11 @@
   function normalizeImportDate(value) {
     if (value == null || value === '') return '';
     const raw = String(value).trim().replace(/^\uFEFF/, '');
-    const serial = Number(raw);
+    let serial = Number(raw);
     if (/^\d{5}(\.\d+)?$/.test(raw) && Number.isFinite(serial)) {
+      // Excel 错误地将 1900 年视为闰年，serial 60 对应虚假的 1900-02-29
+      // 对于 serial >= 60 的值需要减 1 来修正偏移
+      if (serial >= 60) serial -= 1;
       const date = new Date(Date.UTC(1899, 11, 30 + Math.floor(serial)));
       return date.toISOString().slice(0, 10);
     }
@@ -602,9 +605,9 @@
       }
 
       if (target.id === 'month-note-save-btn') {
-        var ns = stateModule.state.monthNote;
-        var noteTextarea = document.getElementById('month-note-textarea');
-        var newContent = noteTextarea ? noteTextarea.value : '';
+        const ns = stateModule.state.monthNote;
+        const noteTextarea = document.getElementById('month-note-textarea');
+        const newContent = noteTextarea ? noteTextarea.value : '';
         ns.saving = true;
         render.renderMonthNote();
         try {

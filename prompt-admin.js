@@ -4,6 +4,15 @@
  * 依赖：auth.js 提供 getStoredUser()
  */
 
+// ── 工具函数 ──────────────────────────────────────────────────────────────
+function debounce(fn, ms) {
+    let timer;
+    return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), ms);
+    };
+}
+
 // ── 配置 ──────────────────────────────────────────────────────────────────
 const authHelpers = window.authHelpers || {};
 const SB_URL  = authHelpers.getSupabaseUrl ? authHelpers.getSupabaseUrl() : ((typeof CONFIG !== 'undefined' && CONFIG.SB_URL) ? CONFIG.SB_URL : '');
@@ -21,7 +30,6 @@ const CATEGORIES = {
 // ── 状态 ──────────────────────────────────────────────────────────────────
 let currentKey     = 'memory';  // 当前分类 key
 let loadedContent  = '';        // 上次从服务器加载的内容（判断是否有改动用）
-let latestDraftId  = '';        // 最新草稿 version_id（用于 publish）
 let authRedirectScheduled = false;
 
 const DRAFT_STORAGE_PREFIX = 'prompt_admin_draft_v2';
@@ -30,7 +38,8 @@ const DRAFT_CIPHER = { name: 'AES-GCM', length: 256 };
 
 // ── Web Crypto 加密/解密 ──────────────────────────────────────────────────
 async function getDraftCryptoKey() {
-    const material = `prompt-draft:${window.location.origin}:${navigator.userAgent}`;
+    // 使用 origin + 固定 salt 派生密钥，避免 UA 变化导致旧草稿丢失
+    const material = `prompt-draft:${window.location.origin}:prompt-admin-draft-v1`;
     const encoder = new TextEncoder();
     const keyMaterial = await crypto.subtle.digest('SHA-256', encoder.encode(material));
     return crypto.subtle.importKey('raw', keyMaterial, DRAFT_CIPHER, false, ['encrypt', 'decrypt']);
@@ -220,6 +229,7 @@ function redirectToPromptAdminLogin(message) {
 
 function showToast(msg) {
     const el = document.getElementById('page-toast');
+    if (!el) return;
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(showToast._t);
@@ -228,25 +238,31 @@ function showToast(msg) {
 
 function setStatus(msg, kind = '') {
     const el = document.getElementById('save-status');
+    if (!el) return;
     el.textContent = msg;
     el.className = 'pa-status' + (kind ? ` ${kind}` : '');
 }
 
 function showError(msg) {
     const el = document.getElementById('err-banner');
+    if (!el) return;
     el.textContent = msg;
     el.classList.add('show');
 }
 
 function hideError() {
     const el = document.getElementById('err-banner');
+    if (!el) return;
     el.classList.remove('show');
 }
 
 function setEditorLoading(loading) {
-    document.getElementById('editor-loading').style.display  = loading ? '' : 'none';
-    document.getElementById('prompt-editor').style.display   = loading ? 'none' : '';
-    document.getElementById('save-btn').disabled             = loading;
+    const elLoading = document.getElementById('editor-loading');
+    const elEditor = document.getElementById('prompt-editor');
+    const elBtn = document.getElementById('save-btn');
+    if (elLoading) elLoading.style.display = loading ? '' : 'none';
+    if (elEditor) elEditor.style.display = loading ? 'none' : '';
+    if (elBtn) elBtn.disabled = loading;
 }
 
 function formatDateTime(iso) {
@@ -301,8 +317,7 @@ async function loadCategory(key) {
         // 内容：优先取已发布版本，其次用草稿
         const content = data.published_version?.content ?? data.drafts?.[0]?.content ?? '';
         loadedContent = content;
-        latestDraftId = '';
-
+        
         document.getElementById('prompt-editor').value = await maybeRestoreDraft(key, content);
 
         // 版本元数据
@@ -365,6 +380,7 @@ async function saveAndPublish() {
         showToast(`内容过长（${content.length} 字符），最大允许 5000 字符`);
         return;
     }
+    // 注意：此正则仅作为前端输入提示，不构成 XSS 防御。最终安全校验由服务端负责。
     if (/<\s*script|javascript\s*:|on\w+\s*=/i.test(content)) {
         showToast('内容包含潜在的不安全字符，请修改后保存');
         return;
@@ -392,7 +408,6 @@ async function saveAndPublish() {
         });
 
         loadedContent = content;
-        latestDraftId = '';
         clearLocalDraft(currentKey);
 
         // 更新版本元数据
@@ -443,18 +458,29 @@ function bindPromptAdminInteractions() {
 
     const editor = document.getElementById('prompt-editor');
     if (editor) {
-        editor.addEventListener('input', () => {
-            syncCurrentDraft(); // fire-and-forget, encryption is fast enough
+        const debouncedSync = debounce(() => {
+            syncCurrentDraft();
             if (editor.value !== loadedContent) {
                 setStatus('有未发布的本地修改', 'warn');
             }
-        });
+        }, 300);
+        editor.addEventListener('input', debouncedSync);
     }
 
+    // 页面隐藏时保存草稿（visibilitychange 可被浏览器可靠执行）
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            const currentValue = editor?.value || '';
+            if (currentValue !== loadedContent) {
+                syncCurrentDraft();
+            }
+        }
+    });
+
+    // beforeunload 仅做同步提示，不执行异步保存
     window.addEventListener('beforeunload', (event) => {
         const currentValue = editor?.value || '';
         if (currentValue !== loadedContent) {
-            syncCurrentDraft(); // fire-and-forget
             event.preventDefault();
             event.returnValue = '';
         }

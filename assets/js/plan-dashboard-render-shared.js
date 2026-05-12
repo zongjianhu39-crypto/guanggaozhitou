@@ -5,10 +5,10 @@
   const DOUBLE11_REFERENCE_MONTHS = refData.DOUBLE11_REFERENCE_MONTHS || [5, 6];
 
   function debounce(fn, delay) {
-    var timer = null;
+    let timer = null;
     return function () {
-      var context = this;
-      var args = arguments;
+      const context = this;
+      const args = arguments;
       if (timer) clearTimeout(timer);
       timer = setTimeout(function () { fn.apply(context, args); }, delay);
     };
@@ -49,7 +49,7 @@
     { label: '渠道拆分', value: '772.0万 / 838.6万', helper: '有客代投 / 万相台' },
     { label: '预售成交', value: '127.6万', helper: '万相台总预售成交笔数' },
   ];
-  var DOUBLE11_REFERENCE_PHASES = refData.DOUBLE11_REFERENCE_PHASES || [];
+  const DOUBLE11_REFERENCE_PHASES = refData.DOUBLE11_REFERENCE_PHASES || [];
 
   const SIX18_REFERENCE_MONTHS = refData.SIX18_REFERENCE_MONTHS || [5, 6];
   const SIX18_RHYTHM_MONTHS = refData.SIX18_RHYTHM_MONTHS || [5, 6];
@@ -155,10 +155,10 @@
 
   function buildRhythmSegments(days) {
     if (!days.length) return [];
-    var segs = [];
-    var cur = { key: rhythmKey(days[0]), days: [days[0]] };
-    for (var i = 1; i < days.length; i++) {
-      var k = rhythmKey(days[i]);
+    const segs = [];
+    let cur = { key: rhythmKey(days[0]), days: [days[0]] };
+    for (let i = 1; i < days.length; i++) {
+      const k = rhythmKey(days[i]);
       if (k === cur.key) { cur.days.push(days[i]); }
       else { segs.push(cur); cur = { key: k, days: [days[i]] }; }
     }
@@ -168,23 +168,23 @@
 
   function rhythmLabel(seg) {
     if (seg.key === 'none') return '<span class="plan-muted">\u2013</span>';
-    var d = seg.days[0];
-    var meta = utils.getActivityTypeMeta(d.activity_type);
+    const d = seg.days[0];
+    const meta = utils.getActivityTypeMeta(d.activity_type);
     return '<span class="activity-inherited-tag ' + meta.className + '">' + utils.escapeHtml(meta.label) + '</span> ' + utils.escapeHtml(d.activity || '');
   }
 
   function rhythmLabelText(seg) {
     if (seg.key === 'none') return '-';
-    var d = seg.days[0];
-    var meta = utils.getActivityTypeMeta(d.activity_type);
+    const d = seg.days[0];
+    const meta = utils.getActivityTypeMeta(d.activity_type);
     return meta.label + ' ' + (d.activity || '');
   }
 
   function sDiv(n, d) {
-    var num = utils.toNumber(n);
-    var den = utils.toNumber(d);
+    const num = utils.toNumber(n);
+    const den = utils.toNumber(d);
     if (den <= 0 || !Number.isFinite(num)) return null;
-    var r = num / den;
+    const r = num / den;
     return Number.isFinite(r) ? r : null;
   }
 
@@ -194,7 +194,7 @@
 
   function fmtP(v) {
     if (v == null) return '<span class="plan-muted">-</span>';
-    var pct = v * 100;
+    const pct = v * 100;
     return Number.isFinite(pct) ? utils.escapeHtml(pct.toFixed(2) + '%') : '<span class="plan-muted">-</span>';
   }
 
@@ -203,12 +203,12 @@
   }
 
   function fmtRef(v) {
-    var n = utils.toNumber(v);
+    const n = utils.toNumber(v);
     return n > 0 ? utils.escapeHtml(utils.formatCurrency(n)) : '<span class="plan-muted">-</span>';
   }
 
   function fmtRefN(v) {
-    var n = utils.toNumber(v);
+    const n = utils.toNumber(v);
     return n > 0 ? utils.escapeHtml(utils.formatNumber(n)) : '<span class="plan-muted">-</span>';
   }
 
@@ -222,7 +222,7 @@
   }
 
   function judgmentCls(j) {
-    var m = {
+    const m = {
       '\u5927\u5e45\u52a0\u6295': 'rhythm-j rhythm-j-strong-up',
       '\u52a0\u6295': 'rhythm-j rhythm-j-up',
       '\u6301\u5e73': 'rhythm-j rhythm-j-flat',
@@ -233,21 +233,21 @@
   }
 
   function summarizeRhythmDays(ds, monthTotal) {
-    var n = ds.length;
-    var wx = utils.sum(ds.map(function(d) { return d.wanxiang_plan; }));
-    var ag = utils.sum(ds.map(function(d) { return d.agent_plan; }));
-    var tp = utils.sum(ds.map(function(d) { return d.total_plan_amount; }));
-    var ac = utils.sum(ds.map(function(d) { return utils.toNumber(d.actual_cost); }));
-    var aa = utils.sum(ds.map(function(d) { return utils.toNumber(d.agent_amount); }));
-    var ra = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_amount != null ? d.reference_amount : d.reference_2025_amount); }));
-    var rwta = ra + aa;
-    var rv = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_views); }));
-    var ro = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_orders); }));
-    var rdo = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_direct_orders); }));
-    var rc = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_cart); }));
-    var rp = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_pre_orders); }));
-    var rt = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_taobao_orders); }));
-    var rb = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_buyers); }));
+    const n = ds.length;
+    const wx = utils.sum(ds.map(function(d) { return d.wanxiang_plan; }));
+    const ag = utils.sum(ds.map(function(d) { return d.agent_plan; }));
+    const tp = utils.sum(ds.map(function(d) { return d.total_plan_amount; }));
+    const ac = utils.sum(ds.map(function(d) { return utils.toNumber(d.actual_cost); }));
+    const aa = utils.sum(ds.map(function(d) { return utils.toNumber(d.agent_amount); }));
+    const ra = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_amount != null ? d.reference_amount : d.reference_2025_amount); }));
+    const rwta = ra + aa;
+    const rv = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_views); }));
+    const ro = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_orders); }));
+    const rdo = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_direct_orders); }));
+    const rc = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_cart); }));
+    const rp = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_pre_orders); }));
+    const rt = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_taobao_orders); }));
+    const rb = utils.sum(ds.map(function(d) { return utils.toNumber(d.reference_buyers); }));
     return {
       days: n,
       wx: wx,
@@ -280,9 +280,9 @@
   }
 
   function buildRhythmCells(data, options) {
-    var opts = options || {};
-    var judgment = opts.judgment || '';
-    var judgmentClass = opts.judgmentClass || 'rhythm-j';
+    const opts = options || {};
+    const judgment = opts.judgment || '';
+    const judgmentClass = opts.judgmentClass || 'rhythm-j';
     return ''
       + '<td class="plan-date-cell rs-date ' + (opts.dateClass || '') + '">' + utils.escapeHtml(opts.range || '-') + '</td>'
       + '<td class="rs-label">' + (opts.labelHtml || '<span class="plan-muted">-</span>') + '</td>'
@@ -317,14 +317,14 @@
   }
 
   function buildRhythmRow(seg, monthTotal, referenceTotalWithAgent) {
-    var ds = seg.days;
-    var d0 = ds[0].date;
-    var d1 = ds[ds.length - 1].date;
-    var range = d0 === d1 ? d0 : d0 + ' ~ ' + d1;
-    var data = summarizeRhythmDays(ds, monthTotal);
+    const ds = seg.days;
+    const d0 = ds[0].date;
+    const d1 = ds[ds.length - 1].date;
+    const range = d0 === d1 ? d0 : d0 + ' ~ ' + d1;
+    const data = summarizeRhythmDays(ds, monthTotal);
     data.rwtaShare = sDiv(data.rwta, referenceTotalWithAgent);
-    var jt = rhythmJudgment(data.growth);
-    var jc = judgmentCls(jt);
+    const jt = rhythmJudgment(data.growth);
+    const jc = judgmentCls(jt);
     return '<tr>' + buildRhythmCells(data, {
       range: range,
       labelHtml: rhythmLabel(seg),
@@ -334,7 +334,7 @@
   }
 
   function buildRhythmTotalRow(days, monthTotal, referenceTotalWithAgent) {
-    var data = summarizeRhythmDays(days, monthTotal);
+    const data = summarizeRhythmDays(days, monthTotal);
     data.rwtaShare = sDiv(data.rwta, referenceTotalWithAgent);
     return '<tr class="rhythm-summary-total-row">' + buildRhythmCells(data, {
       range: '汇总',
@@ -381,8 +381,8 @@
   }
 
   function getRhythmSummaryExportData() {
-    var days = getEffectiveDays();
-    var headers = [
+    const days = getEffectiveDays();
+    const headers = [
       '时间范围',
       '活动节奏',
       '天数',
@@ -415,20 +415,20 @@
       '节奏判断',
     ];
     if (!days.length) return { headers: headers, rows: [] };
-    var segs = buildRhythmSegments(days);
-    var monthTotal = utils.sum(days.map(function(d) { return d.total_plan_amount; }));
-    var referenceTotalWithAgent = summarizeRhythmDays(days, monthTotal).rwta;
-    var rows = segs.map(function(seg) {
-      var ds = seg.days;
-      var d0 = ds[0].date;
-      var d1 = ds[ds.length - 1].date;
-      var range = d0 === d1 ? d0 : d0 + ' ~ ' + d1;
-      var data = summarizeRhythmDays(ds, monthTotal);
+    const segs = buildRhythmSegments(days);
+    const monthTotal = utils.sum(days.map(function(d) { return d.total_plan_amount; }));
+    const referenceTotalWithAgent = summarizeRhythmDays(days, monthTotal).rwta;
+    const rows = segs.map(function(seg) {
+      const ds = seg.days;
+      const d0 = ds[0].date;
+      const d1 = ds[ds.length - 1].date;
+      const range = d0 === d1 ? d0 : d0 + ' ~ ' + d1;
+      const data = summarizeRhythmDays(ds, monthTotal);
       data.rwtaShare = sDiv(data.rwta, referenceTotalWithAgent);
-      var judgment = rhythmJudgment(data.growth);
+      const judgment = rhythmJudgment(data.growth);
       return buildRhythmExportRow(data, range, rhythmLabelText(seg), judgment);
     });
-    var totalData = summarizeRhythmDays(days, monthTotal);
+    const totalData = summarizeRhythmDays(days, monthTotal);
     totalData.rwtaShare = sDiv(totalData.rwta, referenceTotalWithAgent);
     rows.push(buildRhythmExportRow(totalData, '汇总', '-', '-'));
     return { headers: headers, rows: rows };

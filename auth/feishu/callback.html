@@ -62,7 +62,7 @@
     </div>
 
     <script src="../../assets/js/config.js"></script>
-    <script src="../../assets/js/auth-helpers.js?v=202605050540"></script>
+    <script src="../../assets/js/auth-helpers.js?v=202605122054"></script>
     <script>
         // Load runtime config from assets/js/config.js
         if (typeof CONFIG === 'undefined' || !CONFIG || !CONFIG.SUPABASE_ANON_KEY || !CONFIG.SB_URL) {
@@ -154,46 +154,54 @@
             // 检查 state 防止 CSRF
             const savedState = localStorage.getItem('oauth_state');
             const stateMismatch = state !== savedState;
-            // savedState 为空 = 跨浏览器上下文（飞书 WebView → 系统浏览器），不是 CSRF
-            const isCrossContext = stateMismatch && !savedState && !!state;
 
-            if (stateMismatch && !isCrossContext) {
-                console.warn('[feishu callback] state mismatch', { received_state: state, saved_state: savedState });
+            if (stateMismatch) {
+                const isCrossContext = !savedState && !!state;
+                console.warn('[feishu callback] state mismatch', { received_state: state, saved_state: savedState, cross_context: isCrossContext });
                 document.getElementById('spinner').style.display = 'none';
-                document.getElementById('title').textContent = '安全验证失败';
-                document.getElementById('title').className = 'error';
-                const messageEl = document.getElementById('message');
-                messageEl.replaceChildren();
-                appendCodeLine(messageEl, '收到的 state: ', state || '');
-                appendCodeLine(messageEl, '本地保存的 state: ', savedState || '');
-                const p3 = document.createElement('div');
-                p3.style.marginTop = '8px';
-                p3.textContent = '排查建议：请确认在同一浏览器/同一窗口发起登录，避免手动打开回调页；若使用 127.0.0.1，请改为 localhost；如浏览器清理了本地存储，请重试。';
-                messageEl.appendChild(p3);
-                (async function sendDebug() {
-                    try {
-                        await window.authHelpers.fetchFunctionJson('feishu-callback-debug', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: {
-                                received_state: state || null,
-                                saved_state: savedState || null,
-                                cross_context: false,
-                                path: window.location.pathname + window.location.search,
-                                user_agent: navigator.userAgent || null,
-                                recorded_at: new Date().toISOString(),
-                            },
-                            publicAuth: true,
-                            anonKey: SUPABASE_ANON_KEY,
-                        });
-                    } catch (e) {
-                        console.warn('[feishu callback] failed to POST debug info', e);
-                    }
-                })();
+
+                if (isCrossContext) {
+                    // 跨上下文（飞书 WebView → 系统浏览器）：友好提示后重定向重新授权
+                    document.getElementById('title').textContent = '授权状态异常';
+                    document.getElementById('title').className = 'error';
+                    document.getElementById('message').textContent = '授权状态异常，正在重新跳转...';
+                    setTimeout(() => {
+                        window.location.href = '/auth/index.html';
+                    }, 1500);
+                } else {
+                    // 真正的 state 不匹配：显示错误详情
+                    document.getElementById('title').textContent = '安全验证失败';
+                    document.getElementById('title').className = 'error';
+                    const messageEl = document.getElementById('message');
+                    messageEl.replaceChildren();
+                    appendCodeLine(messageEl, '收到的 state: ', state || '');
+                    appendCodeLine(messageEl, '本地保存的 state: ', savedState || '');
+                    const p3 = document.createElement('div');
+                    p3.style.marginTop = '8px';
+                    p3.textContent = '排查建议：请确认在同一浏览器/同一窗口发起登录，避免手动打开回调页；若使用 127.0.0.1，请改为 localhost；如浏览器清理了本地存储，请重试。';
+                    messageEl.appendChild(p3);
+                    (async function sendDebug() {
+                        try {
+                            await window.authHelpers.fetchFunctionJson('feishu-callback-debug', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: {
+                                    received_state: state || null,
+                                    saved_state: savedState || null,
+                                    cross_context: false,
+                                    path: window.location.pathname + window.location.search,
+                                    user_agent: navigator.userAgent || null,
+                                    recorded_at: new Date().toISOString(),
+                                },
+                                publicAuth: true,
+                                anonKey: SUPABASE_ANON_KEY,
+                            });
+                        } catch (e) {
+                            console.warn('[feishu callback] failed to POST debug info', e);
+                        }
+                    })();
+                }
                 return;
-            }
-            if (isCrossContext) {
-                console.info('[feishu callback] cross-context login detected (Feishu WebView → system browser), proceeding');
             }
             
             if (!code) {
@@ -263,15 +271,17 @@
                     throw new Error(responseError);
                 }
 
-                // 保存完整的调试信息
-                safeSetLocalStorage('feishu_login_last_response', JSON.stringify({
-                    success: result.success,
-                    user: resolvedUser,
-                    login_debug: loginDebug,
-                    prompt_admin: promptAdmin,
-                    raw_result: result,
-                    received_at: new Date().toISOString()
-                }));
+                // 仅在 debug 模式下保存完整调试信息
+                if (new URLSearchParams(window.location.search).get('debug') === '1') {
+                    safeSetLocalStorage('feishu_login_last_response', JSON.stringify({
+                        success: result.success,
+                        user: resolvedUser,
+                        login_debug: loginDebug,
+                        prompt_admin: promptAdmin,
+                        raw_result: result,
+                        received_at: new Date().toISOString()
+                    }));
+                }
 
                 const normalizedUser = (window.authHelpers && window.authHelpers.normalizeUser)
                     ? window.authHelpers.normalizeUser(resolvedUser)

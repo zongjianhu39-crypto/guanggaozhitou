@@ -9,10 +9,10 @@
 (function (window) {
     'use strict';
 
-    var authHelpers = window.authHelpers || {};
-    var CONFIG_KEY = 'bs_score_config';
-    var MIN_EXECUTION_BUDGET = 100;
-    var STAGE_CONFIG = {
+    const authHelpers = window.authHelpers || {};
+    const CONFIG_KEY = 'bs_score_config';
+    const MIN_EXECUTION_BUDGET = 100;
+    const STAGE_CONFIG = {
         warmup: {
             label: '预热期',
             costKey: 'cartCost',
@@ -43,7 +43,7 @@
     };
 
     // 默认评分配置
-    var DEFAULT_CONFIG = {
+    const DEFAULT_CONFIG = {
         analysisStage: 'spot',
         targetCosts: {
             warmup: 20,
@@ -60,10 +60,10 @@
     // 加载配置
     function loadConfig() {
         try {
-            var saved = localStorage.getItem(CONFIG_KEY);
+            const saved = localStorage.getItem(CONFIG_KEY);
             if (saved) {
-                var parsed = JSON.parse(saved);
-                var merged = Object.assign({}, DEFAULT_CONFIG, parsed);
+                const parsed = JSON.parse(saved);
+                const merged = Object.assign({}, DEFAULT_CONFIG, parsed);
                 merged.targetCosts = Object.assign({}, DEFAULT_CONFIG.targetCosts, parsed.targetCosts || {});
                 if (parsed.orderCostTarget !== undefined && parsed.targetCosts === undefined) {
                     merged.targetCosts.spot = parsed.orderCostTarget;
@@ -86,9 +86,9 @@
         }
     }
 
-    var scoreConfig = loadConfig();
-    var ACTIVE_STAGE = scoreConfig.analysisStage;
-    var TARGET_COST = getTargetCost(ACTIVE_STAGE);
+    let scoreConfig = loadConfig();
+    let ACTIVE_STAGE = scoreConfig.analysisStage;
+    let TARGET_COST = getTargetCost(ACTIVE_STAGE);
 
     // ── 工具函数 ──
 
@@ -109,7 +109,7 @@
 
     function formatDeltaPct(n) {
         if (!isFinite(n)) return '--';
-        var pct = n * 100;
+        const pct = n * 100;
         if (Math.abs(pct) < 0.05) return '持平';
         return (pct > 0 ? '+' : '') + pct.toFixed(1) + 'pct';
     }
@@ -129,8 +129,8 @@
     }
 
     function getTargetCost(stage) {
-        var stageKey = STAGE_CONFIG[stage] ? stage : DEFAULT_CONFIG.analysisStage;
-        var value = scoreConfig.targetCosts && scoreConfig.targetCosts[stageKey];
+        const stageKey = STAGE_CONFIG[stage] ? stage : DEFAULT_CONFIG.analysisStage;
+        const value = scoreConfig.targetCosts && scoreConfig.targetCosts[stageKey];
         return isFinite(value) && value > 0 ? value : DEFAULT_CONFIG.targetCosts[stageKey];
     }
 
@@ -143,14 +143,14 @@
     }
 
     function formatDateInput(d) {
-        var year = d.getFullYear();
-        var month = String(d.getMonth() + 1).padStart(2, '0');
-        var day = String(d.getDate()).padStart(2, '0');
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
         return year + '-' + month + '-' + day;
     }
 
     function getRelativeDate(offset) {
-        var d = new Date();
+        const d = new Date();
         d.setHours(12, 0, 0, 0);
         d.setDate(d.getDate() + offset);
         return formatDateInput(d);
@@ -162,7 +162,7 @@
 
     // ── 状态管理 ──
 
-    var state = {
+    const state = {
         loading: false,
         startDate: '',
         endDate: '',
@@ -185,7 +185,7 @@
      */
     function computeCostHealthScore(orderCost, targetCost) {
         if (orderCost <= 0 || targetCost <= 0) return 0;
-        var ratio = targetCost / orderCost;
+        const ratio = targetCost / orderCost;
         return Math.min(ratio, 1.25) / 1.25 * 100;
     }
 
@@ -199,8 +199,8 @@
     }
 
     function getSuggestedShareMultiplier(item) {
-        var minVolume = Math.max(scoreConfig.minOrdersForDecision, 1);
-        var confidence = Math.min(item.volume / minVolume, 1);
+        const minVolume = Math.max(scoreConfig.minOrdersForDecision, 1);
+        const confidence = Math.min(item.volume / minVolume, 1);
 
         switch (item.grade) {
             case 'A':
@@ -235,7 +235,7 @@
     }
 
     function applySuggestedSpendShares(scored) {
-        var totalWeight = scored.reduce(function (sum, item) {
+        const totalWeight = scored.reduce(function (sum, item) {
             item.suggestedWeight = item.spendPct * getSuggestedShareMultiplier(item);
             return sum + item.suggestedWeight;
         }, 0);
@@ -255,7 +255,7 @@
     }
 
     function normalizeBudgetRatio(value) {
-        var numeric = parseFloat(value);
+        const numeric = parseFloat(value);
         if (!isFinite(numeric)) return DEFAULT_CONFIG.budgetAllocationRatio;
         if (numeric < 0) return 0;
         if (numeric > 1) return 1;
@@ -267,27 +267,27 @@
     }
 
     function setBudgetRatioInputs(value) {
-        var ratio = normalizeBudgetRatio(value);
+        const ratio = normalizeBudgetRatio(value);
         ['bs-budget-ratio', 'cfg-budget-ratio'].forEach(function (id) {
-            var input = $(id);
+            const input = $(id);
             if (input) input.value = ratio;
         });
     }
 
     function getSuggestedBudgetAmount(item) {
-        var budget = toNum(state.allocatableBudget);
+        const budget = toNum(state.allocatableBudget);
         return budget > 0 && isFinite(item.suggestedSpendPct) ? budget * item.suggestedSpendPct : 0;
     }
 
     function getExecutableBudgetAmount(amount) {
-        var numeric = toNum(amount);
+        const numeric = toNum(amount);
         if (numeric <= 0) return 0;
         return Math.max(numeric, MIN_EXECUTION_BUDGET);
     }
 
     function formatSuggestedAmount(rawAmount, executableAmount) {
-        var adjusted = toNum(executableAmount) > toNum(rawAmount) && toNum(rawAmount) > 0;
-        var label = formatMoney(executableAmount);
+        const adjusted = toNum(executableAmount) > toNum(rawAmount) && toNum(rawAmount) > 0;
+        const label = formatMoney(executableAmount);
         if (!adjusted) return label;
         return label + '<span class="bs-min-budget-tag">最低100</span>';
     }
@@ -302,9 +302,9 @@
     }
 
     function buildPlanAllocations(scored) {
-        var byPlan = {};
+        const byPlan = {};
         scored.forEach(function (item) {
-            var key = item.planName || '未标注计划';
+            const key = item.planName || '未标注计划';
             if (!byPlan[key]) {
                 byPlan[key] = {
                     planName: key,
@@ -330,7 +330,7 @@
             byPlan[key].crowdCount += 1;
         });
         return Object.keys(byPlan).map(function (key) {
-            var row = byPlan[key];
+            const row = byPlan[key];
             row.orderCost = row.orders > 0 ? row.spend / row.orders : 0;
             row.cartCost = row.cart > 0 ? row.spend / row.cart : 0;
             return row;
@@ -340,8 +340,8 @@
     }
 
     function updateBudgetAllocations() {
-        var ratio = getBudgetRatio();
-        var wanxiangPlan = toNum(state.wanxiangPlan);
+        const ratio = getBudgetRatio();
+        const wanxiangPlan = toNum(state.wanxiangPlan);
         state.allocatableBudget = wanxiangPlan * ratio;
         applySuggestedBudgetAmounts(state.scoredCrowds);
         state.planAllocations = buildPlanAllocations(state.scoredCrowds);
@@ -352,17 +352,17 @@
     }
 
     function scoreItems(items, type) {
-        var totalSpend = items.reduce(function (s, item) { return s + toNum(item.spend); }, 0);
+        const totalSpend = items.reduce(function (s, item) { return s + toNum(item.spend); }, 0);
         if (totalSpend <= 0) return [];
-        var stage = getStageConfig(ACTIVE_STAGE);
+        const stage = getStageConfig(ACTIVE_STAGE);
 
-        var scored = items.map(function (item) {
-            var roi = toNum(item.roi);
-            var spend = toNum(item.spend);
-            var volume = toNum(item[stage.volumeKey]);
-            var metricCost = toNum(item[stage.costKey]) || (volume > 0 ? spend / volume : 0);
-            var score = computeCostHealthScore(metricCost, TARGET_COST);
-            var grade = getGrade(score, volume, spend);
+        const scored = items.map(function (item) {
+            const roi = toNum(item.roi);
+            const spend = toNum(item.spend);
+            const volume = toNum(item[stage.volumeKey]);
+            const metricCost = toNum(item[stage.costKey]) || (volume > 0 ? spend / volume : 0);
+            const score = computeCostHealthScore(metricCost, TARGET_COST);
+            const grade = getGrade(score, volume, spend);
             return {
                 id: type + ':' + (item.planName || '') + ':' + item.name,
                 name: item.name,
@@ -396,9 +396,9 @@
     function $(id) { return document.getElementById(id); }
 
     function setStatus(type, text) {
-        var el = $('bs-status');
-        var badge = $('bs-status-badge');
-        var textEl = $('bs-status-text');
+        const el = $('bs-status');
+        const badge = $('bs-status-badge');
+        const textEl = $('bs-status-text');
         if (!el) return;
         el.style.display = 'flex';
         el.className = 'bs-status' + (type ? ' is-' + type : '');
@@ -407,37 +407,37 @@
     }
 
     function hideStatus() {
-        var el = $('bs-status');
+        const el = $('bs-status');
         if (el) el.style.display = 'none';
     }
 
     function showContent() {
         ['bs-allocation-section'].forEach(function (id) {
-            var el = $(id);
+            const el = $(id);
             if (el) el.style.display = '';
         });
-        var empty = $('bs-empty');
+        const empty = $('bs-empty');
         if (empty) empty.style.display = 'none';
     }
 
     function hideContent() {
         ['bs-allocation-section'].forEach(function (id) {
-            var el = $(id);
+            const el = $(id);
             if (el) el.style.display = 'none';
         });
-        var empty = $('bs-empty');
+        const empty = $('bs-empty');
         if (empty) empty.style.display = '';
     }
 
     function updateStageCopy() {
-        var stage = getStageConfig(ACTIVE_STAGE);
-        var targetLabel = $('cfg-target-label');
-        var targetHint = $('cfg-target-hint');
-        var targetInput = $('cfg-target-cost');
-        var minVolumeLabel = $('cfg-min-volume-label');
-        var minVolumeHint = $('cfg-min-volume-hint');
-        var volumeTh = $('bs-volume-th');
-        var costTh = $('bs-cost-th');
+        const stage = getStageConfig(ACTIVE_STAGE);
+        const targetLabel = $('cfg-target-label');
+        const targetHint = $('cfg-target-hint');
+        const targetInput = $('cfg-target-cost');
+        const minVolumeLabel = $('cfg-min-volume-label');
+        const minVolumeHint = $('cfg-min-volume-hint');
+        const volumeTh = $('bs-volume-th');
+        const costTh = $('bs-cost-th');
 
         if (targetLabel) targetLabel.textContent = stage.targetLabel;
         if (targetHint) targetHint.textContent = stage.targetHint;
@@ -449,16 +449,16 @@
     }
 
     function renderAllocationPanel() {
-        var budgetDateInput = $('bs-budget-date');
-        var wanxiangEl = $('bs-wanxiang-plan');
-        var ratioDisplay = $('bs-budget-ratio-display');
-        var allocatableEl = $('bs-allocatable-budget');
-        var executableEl = $('bs-executable-budget');
-        var minBudgetDeltaEl = $('bs-min-budget-delta');
-        var planCountEl = $('bs-plan-count');
-        var hint = $('bs-allocation-hint');
-        var tbody = $('bs-plan-allocation-tbody');
-        var ratio = getBudgetRatio();
+        const budgetDateInput = $('bs-budget-date');
+        const wanxiangEl = $('bs-wanxiang-plan');
+        const ratioDisplay = $('bs-budget-ratio-display');
+        const allocatableEl = $('bs-allocatable-budget');
+        const executableEl = $('bs-executable-budget');
+        const minBudgetDeltaEl = $('bs-min-budget-delta');
+        const planCountEl = $('bs-plan-count');
+        const hint = $('bs-allocation-hint');
+        const tbody = $('bs-plan-allocation-tbody');
+        const ratio = getBudgetRatio();
 
         if (budgetDateInput && !budgetDateInput.value) budgetDateInput.value = state.budgetDate || getBudgetDate();
         setBudgetRatioInputs(ratio);
@@ -469,7 +469,7 @@
         if (minBudgetDeltaEl) minBudgetDeltaEl.textContent = state.wanxiangPlan === null ? '--' : formatMoney(state.minBudgetDelta);
         if (planCountEl) planCountEl.textContent = String(state.planAllocations.length || 0);
         if (hint) {
-            var budgetDate = state.budgetDate || (budgetDateInput ? budgetDateInput.value : '');
+            const budgetDate = state.budgetDate || (budgetDateInput ? budgetDateInput.value : '');
             hint.textContent = state.wanxiangPlan === null
                 ? '预算日期 ' + budgetDate + ' 暂未读取到万相台计划；评分占比仍可查看。'
                 : '预算日期 ' + budgetDate + '，按万相台计划 × ' + formatPct(ratio) + ' 计算可分配预算；单个人群建议执行金额最低按 ' + formatMoney(MIN_EXECUTION_BUDGET) + ' 处理。';
@@ -498,7 +498,7 @@
     // ── 数据获取 ──
 
     async function fetchScorecardData(startDate, endDate) {
-        var result;
+        let result;
         try {
             result = await authHelpers.fetchFunctionJson('dashboard-data', {
                 query: {
@@ -522,7 +522,7 @@
     }
 
     async function fetchPlanBudgetData(budgetDate) {
-        var result;
+        let result;
         try {
             result = await authHelpers.fetchFunctionJson('plan-dashboard-summary', {
                 query: {
@@ -545,10 +545,10 @@
 
     async function refreshPlanBudget(options) {
         options = options || {};
-        var budgetDateInput = $('bs-budget-date');
-        var ratioInput = $('bs-budget-ratio');
-        var budgetDate = budgetDateInput && budgetDateInput.value ? budgetDateInput.value : (state.budgetDate || getBudgetDate());
-        var ratio = normalizeBudgetRatio(ratioInput && ratioInput.value);
+        const budgetDateInput = $('bs-budget-date');
+        const ratioInput = $('bs-budget-ratio');
+        const budgetDate = budgetDateInput && budgetDateInput.value ? budgetDateInput.value : (state.budgetDate || getBudgetDate());
+        const ratio = normalizeBudgetRatio(ratioInput && ratioInput.value);
 
         state.budgetDate = budgetDate;
         scoreConfig.budgetAllocationRatio = ratio;
@@ -566,8 +566,8 @@
             setStatus('', '正在读取 ' + budgetDate + ' 的万相台计划...');
         }
 
-        var planData = await fetchPlanBudgetData(budgetDate);
-        var day = planData && Array.isArray(planData.days) ? planData.days[0] : null;
+        const planData = await fetchPlanBudgetData(budgetDate);
+        const day = planData && Array.isArray(planData.days) ? planData.days[0] : null;
         state.wanxiangPlan = day ? toNum(day.wanxiang_plan) : null;
         updateBudgetAllocations();
         renderActiveTab();
@@ -585,10 +585,10 @@
     // ── 主流程 ──
 
     async function loadAndScore() {
-        var startEl = $('bs-start');
-        var endEl = $('bs-end');
-        var startDate = startEl ? startEl.value : '';
-        var endDate = endEl ? endEl.value : '';
+        const startEl = $('bs-start');
+        const endEl = $('bs-end');
+        const startDate = startEl ? startEl.value : '';
+        const endDate = endEl ? endEl.value : '';
 
         if (!startDate || !endDate) {
             setStatus('warn', '请选择日期范围');
@@ -605,14 +605,14 @@
         setStatus('', '正在加载数据并计算评分...');
 
         try {
-            var data = await fetchScorecardData(startDate, endDate);
+            const data = await fetchScorecardData(startDate, endDate);
             if (!data) {
                 hideContent();
                 return;
             }
 
             // 解析人群数据
-            var crowdRaw = data && data.crowd && data.crowd.summary ? data.crowd.summary : [];
+            const crowdRaw = data && data.crowd && data.crowd.summary ? data.crowd.summary : [];
             state.crowdItems = [];
             crowdRaw.forEach(function (group) {
                 if (group.subRows && group.subRows.length > 0) {
@@ -660,26 +660,26 @@
     // ── 事件绑定 ──
 
     function initDatePresets() {
-        var presets = {
-            t2: function () { var d = getDefaultScoreDate(); return { start: d, end: d }; },
-            yesterday: function () { var d = getRelativeDate(-1); return { start: d, end: d }; },
+        const presets = {
+            t2: function () { const d = getDefaultScoreDate(); return { start: d, end: d }; },
+            yesterday: function () { const d = getRelativeDate(-1); return { start: d, end: d }; },
             last7: function () { return { start: getRelativeDate(-7), end: getRelativeDate(-1) }; },
             thisMonth: function () {
-                var d = new Date();
+                const d = new Date();
                 return { start: formatDateInput(new Date(d.getFullYear(), d.getMonth(), 1)), end: formatDateInput(d) };
             },
         };
 
-        var btns = document.querySelectorAll('.bs-preset-btn');
+        const btns = document.querySelectorAll('.bs-preset-btn');
         btns.forEach(function (btn) {
             btn.addEventListener('click', function () {
                 btns.forEach(function (b) { b.classList.remove('active'); });
                 btn.classList.add('active');
-                var p = presets[btn.dataset.preset];
+                const p = presets[btn.dataset.preset];
                 if (p) {
-                    var range = p();
-                    var startEl2 = $('bs-start');
-                    var endEl2 = $('bs-end');
+                    const range = p();
+                    const startEl2 = $('bs-start');
+                    const endEl2 = $('bs-end');
                     if (startEl2) startEl2.value = range.start;
                     if (endEl2) endEl2.value = range.end;
                 }
@@ -690,18 +690,18 @@
         btns.forEach(function (btn) {
             btn.classList.toggle('active', btn.dataset.preset === 't2');
         });
-        var defaultRange = presets.t2();
-        var startEl3 = $('bs-start');
-        var endEl3 = $('bs-end');
+        const defaultRange = presets.t2();
+        const startEl3 = $('bs-start');
+        const endEl3 = $('bs-end');
         if (startEl3) startEl3.value = defaultRange.start;
         if (endEl3) endEl3.value = defaultRange.end;
     }
 
     function initBudgetControls() {
-        var budgetDateInput = $('bs-budget-date');
-        var ratioInput = $('bs-budget-ratio');
-        var refreshBtn = $('bs-budget-refresh-btn');
-        var ratio = getBudgetRatio();
+        const budgetDateInput = $('bs-budget-date');
+        const ratioInput = $('bs-budget-ratio');
+        const refreshBtn = $('bs-budget-refresh-btn');
+        const ratio = getBudgetRatio();
         state.budgetDate = getBudgetDate();
         if (budgetDateInput) budgetDateInput.value = state.budgetDate;
         if (ratioInput) {
@@ -727,7 +727,7 @@
     }
 
     function initLoadButton() {
-        var btn = $('bs-load-btn');
+        const btn = $('bs-load-btn');
         if (!btn) return;
         btn.addEventListener('click', function () {
             if (state.loading) return;
@@ -736,15 +736,15 @@
     }
 
     function initExport() {
-        var btn = $('bs-export-btn');
+        const btn = $('bs-export-btn');
         if (!btn) return;
         btn.addEventListener('click', function () {
-            var scored = state.scoredCrowds;
+            const scored = state.scoredCrowds;
             if (scored.length === 0) return;
 
-            var stage = getStageConfig(ACTIVE_STAGE);
-            var header = '阶段,预算日期,万相台计划,执行预算比例,可分配预算,建议执行合计,最低预算差额,等级,计划,人群,花费,当前花费占比,建议花费占比,测算花费金额,建议执行金额,最低预算修正,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成交笔数,订单成本,总购物车数,加购成本,成本健康分,ROI,建议动作\n';
-            var rows = scored.map(function (s) {
+            const stage = getStageConfig(ACTIVE_STAGE);
+            const header = '阶段,预算日期,万相台计划,执行预算比例,可分配预算,建议执行合计,最低预算差额,等级,计划,人群,花费,当前花费占比,建议花费占比,测算花费金额,建议执行金额,最低预算修正,调整幅度,' + stage.volumeLabel + ',' + stage.costLabel + ',成交笔数,订单成本,总购物车数,加购成本,成本健康分,ROI,建议动作\n';
+            const rows = scored.map(function (s) {
                 return [
                     stage.label,
                     state.budgetDate || '',
@@ -775,10 +775,10 @@
                 ].join(',');
             }).join('\n');
 
-            var csv = '\uFEFF' + header + rows;
-            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
+            const csv = '\uFEFF' + header + rows;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
             a.href = url;
             a.download = 'budget_scorecard_' + state.startDate + '_' + state.endDate + '.csv';
             document.body.appendChild(a);
@@ -800,7 +800,7 @@
 
     // 基于当前已加载数据重新计算(不重新请求API)
     function recomputeScores() {
-        var hasData = false;
+        let hasData = false;
         if (state.crowdItems && state.crowdItems.length > 0) {
             state.scoredCrowds = scoreItems(state.crowdItems, 'crowd');
             updateBudgetAllocations();
@@ -814,18 +814,18 @@
     }
 
     function initConfigPanel() {
-        var toggle = $('bs-config-toggle');
-        var body = $('bs-config-body');
-        var section = $('bs-config-section');
-        var saveBtn = $('bs-config-save');
-        var resetBtn = $('bs-config-reset');
-        var stageInput = $('cfg-analysis-stage');
-        var targetCostInput = $('cfg-target-cost');
-        var minOrdersInput = $('cfg-min-orders');
-        var aInput = $('cfg-grade-a');
-        var bInput = $('cfg-grade-b');
-        var cInput = $('cfg-grade-c');
-        var budgetRatioInput = $('cfg-budget-ratio');
+        const toggle = $('bs-config-toggle');
+        const body = $('bs-config-body');
+        const section = $('bs-config-section');
+        const saveBtn = $('bs-config-save');
+        const resetBtn = $('bs-config-reset');
+        const stageInput = $('cfg-analysis-stage');
+        const targetCostInput = $('cfg-target-cost');
+        const minOrdersInput = $('cfg-min-orders');
+        const aInput = $('cfg-grade-a');
+        const bInput = $('cfg-grade-b');
+        const cInput = $('cfg-grade-c');
+        const budgetRatioInput = $('cfg-budget-ratio');
 
         if (!toggle || !body || !section) {
             console.warn('[budget-scorecard] 配置面板DOM元素未找到');
@@ -845,14 +845,14 @@
         toggle.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            var isExpanded = section.classList.toggle('expanded');
+            const isExpanded = section.classList.toggle('expanded');
             body.style.display = isExpanded ? '' : 'none';
         });
 
         if (stageInput) {
             stageInput.addEventListener('change', function () {
-                var nextStage = STAGE_CONFIG[stageInput.value] ? stageInput.value : DEFAULT_CONFIG.analysisStage;
-                var nextConfig = Object.assign({}, scoreConfig, {
+                const nextStage = STAGE_CONFIG[stageInput.value] ? stageInput.value : DEFAULT_CONFIG.analysisStage;
+                const nextConfig = Object.assign({}, scoreConfig, {
                     analysisStage: nextStage,
                     targetCosts: Object.assign({}, scoreConfig.targetCosts),
                 });
@@ -869,16 +869,16 @@
                 e.preventDefault();
                 e.stopPropagation();
 
-                var selectedStage = stageInput && STAGE_CONFIG[stageInput.value] ? stageInput.value : ACTIVE_STAGE;
-                var targetCostValue = parseFloat(targetCostInput.value);
-                var minOrdersValue = parseInt(minOrdersInput.value, 10);
-                var gradeAValue = parseInt(aInput.value, 10);
-                var gradeBValue = parseInt(bInput.value, 10);
-                var gradeCValue = parseInt(cInput.value, 10);
-                var budgetRatioValue = normalizeBudgetRatio(budgetRatioInput && budgetRatioInput.value);
-                var nextTargetCosts = Object.assign({}, scoreConfig.targetCosts);
+                const selectedStage = stageInput && STAGE_CONFIG[stageInput.value] ? stageInput.value : ACTIVE_STAGE;
+                const targetCostValue = parseFloat(targetCostInput.value);
+                const minOrdersValue = parseInt(minOrdersInput.value, 10);
+                const gradeAValue = parseInt(aInput.value, 10);
+                const gradeBValue = parseInt(bInput.value, 10);
+                const gradeCValue = parseInt(cInput.value, 10);
+                const budgetRatioValue = normalizeBudgetRatio(budgetRatioInput && budgetRatioInput.value);
+                const nextTargetCosts = Object.assign({}, scoreConfig.targetCosts);
                 nextTargetCosts[selectedStage] = isFinite(targetCostValue) ? targetCostValue : getTargetCost(selectedStage);
-                var newConfig = {
+                const newConfig = {
                     analysisStage: selectedStage,
                     targetCosts: nextTargetCosts,
                     minOrdersForDecision: isFinite(minOrdersValue) ? minOrdersValue : 5,
@@ -910,7 +910,7 @@
                 setBudgetRatioInputs(budgetRatioValue);
 
                 // 如果已有数据,立即重新计算
-                var recomputed = recomputeScores();
+                const recomputed = recomputeScores();
                 if (recomputed) {
                     setStatus('success', '配置已保存，评分已按新标准重新计算');
                 } else {
@@ -936,7 +936,7 @@
                 if (cInput) cInput.value = DEFAULT_CONFIG.gradeCThreshold;
                 setBudgetRatioInputs(DEFAULT_CONFIG.budgetAllocationRatio);
 
-                var recomputed = recomputeScores();
+                const recomputed = recomputeScores();
                 if (recomputed) {
                     setStatus('success', '已恢复默认配置，评分已重新计算');
                 } else {

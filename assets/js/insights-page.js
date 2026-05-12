@@ -1,7 +1,4 @@
         const authHelpers = window.authHelpers || {};
-        const SB_URL = authHelpers.getSupabaseUrl
-            ? authHelpers.getSupabaseUrl()
-            : ((typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SB_URL) ? CONFIG.SB_URL : 'https://qjscsikithbxuxmjyjsp.supabase.co');
         let currentDetailItem = null;
         let authRedirectScheduled = false;
         let reportListCache = {
@@ -398,8 +395,8 @@ async function loadList(force = false) {
             });
         }
 
-        const _originalRenderList = renderList;
-        renderList = function(items) {
+        const _originalRenderList = window.renderList;
+        window.renderList = function(items) {
             allReportItems = Array.isArray(items) ? items : allReportItems;
             if (filterState.type !== 'all' || filterState.range !== 'all' || filterState.tag) {
                 applyFilters();

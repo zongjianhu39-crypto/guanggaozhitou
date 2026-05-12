@@ -209,12 +209,12 @@
   /* ---- 618 Beauty Industry Traffic Reference ---- */
 
   function shouldShowSix18Reference() {
-    var range = stateModule.state.range || {};
-    var startIndex = getYearMonthIndex(range.start);
-    var endIndex = getYearMonthIndex(range.end);
+    const range = stateModule.state.range || {};
+    const startIndex = getYearMonthIndex(range.start);
+    const endIndex = getYearMonthIndex(range.end);
     if (startIndex == null || endIndex == null || startIndex > endIndex) return false;
-    for (var index = startIndex; index <= endIndex && index <= startIndex + 24; index += 1) {
-      var month = (index % 12) + 1;
+    for (let index = startIndex; index <= endIndex && index <= startIndex + 24; index += 1) {
+      const month = (index % 12) + 1;
       if (SIX18_REFERENCE_MONTHS.includes(month)) return true;
     }
     return false;
@@ -230,10 +230,10 @@
   }
 
   function drawSix18Chart() {
-    var canvas = document.getElementById('six18-ref-chart');
+    const canvas = document.getElementById('six18-ref-chart');
     if (!canvas) return;
-    var container = canvas.parentElement;
-    var W = container.clientWidth;
+    const container = canvas.parentElement;
+    const W = container.clientWidth;
     
     // 如果容器宽度为0，延迟绘制
     if (W === 0) {
@@ -241,47 +241,47 @@
       return;
     }
     
-    var dpr = window.devicePixelRatio || 1;
-    var H = 320;
+    const dpr = window.devicePixelRatio || 1;
+    const H = 320;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = '100%';
     canvas.style.height = H + 'px';
-    var ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.scale(dpr, dpr);
 
-    var data = SIX18_REFERENCE_DAILY;
+    const data = SIX18_REFERENCE_DAILY;
     if (!data || data.length === 0) return;
     
-    var pad = { top: 20, right: 20, bottom: 50, left: 65 };
-    var chartW = W - pad.left - pad.right;
-    var chartH = H - pad.top - pad.bottom;
+    const pad = { top: 20, right: 20, bottom: 50, left: 65 };
+    const chartW = W - pad.left - pad.right;
+    const chartH = H - pad.top - pad.bottom;
 
     // 动态计算Y轴范围
-    var views = data.map(function(d) { return d.views; });
-    var minView = Math.min.apply(null, views);
-    var maxView = Math.max.apply(null, views);
-    var yMin = Math.floor(minView / 10000000) * 10000000 - 10000000;
-    var yMax = Math.ceil(maxView / 10000000) * 10000000 + 10000000;
-    var yRange = yMax - yMin;
+    const views = data.map(function(d) { return d.views; });
+    const minView = Math.min.apply(null, views);
+    const maxView = Math.max.apply(null, views);
+    const yMin = Math.floor(minView / 10000000) * 10000000 - 10000000;
+    const yMax = Math.ceil(maxView / 10000000) * 10000000 + 10000000;
+    const yRange = yMax - yMin;
     
-    var yScale = function(v) { return pad.top + chartH - ((v - yMin) / yRange) * chartH; };
-    var xScale = function(i) { return pad.left + (i / (data.length - 1)) * chartW; };
+    const yScale = function(v) { return pad.top + chartH - ((v - yMin) / yRange) * chartH; };
+    const xScale = function(i) { return pad.left + (i / (data.length - 1)) * chartW; };
 
     // 清空画布
     ctx.clearRect(0, 0, W, H);
 
     // Phase background bands
-    var prevPhase = '';
-    var phaseStart = 0;
-    for (var i = 0; i <= data.length; i++) {
-      var phase = i < data.length ? data[i].phase : '';
+    let prevPhase = '';
+    let phaseStart = 0;
+    for (let i = 0; i <= data.length; i++) {
+      const phase = i < data.length ? data[i].phase : '';
       if (phase !== prevPhase) {
         if (prevPhase) {
-          var meta = getPhaseMeta(prevPhase);
-          var x0 = xScale(phaseStart);
-          var x1 = xScale(i - 1);
+          const meta = getPhaseMeta(prevPhase);
+          const x0 = xScale(phaseStart);
+          const x1 = xScale(i - 1);
           ctx.fillStyle = meta.bgColor;
           ctx.fillRect(x0, pad.top, x1 - x0 + chartW / (data.length - 1), chartH);
         }
@@ -297,14 +297,14 @@
     ctx.textAlign = 'right';
     
     // 动态生成Y轴刻度
-    var yTicks = [];
-    var tickInterval = 20000000;
-    for (var v = Math.ceil(yMin / tickInterval) * tickInterval; v <= yMax; v += tickInterval) {
+    const yTicks = [];
+    const tickInterval = 20000000;
+    for (let v = Math.ceil(yMin / tickInterval) * tickInterval; v <= yMax; v += tickInterval) {
       yTicks.push(v);
     }
     
     yTicks.forEach(function(v) {
-      var y = yScale(v);
+      const y = yScale(v);
       if (y >= pad.top && y <= pad.top + chartH) {
         ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
         ctx.fillText(formatWan(v), pad.left - 8, y + 4);
@@ -316,7 +316,7 @@
     ctx.fillStyle = '#94a3b8';
     data.forEach(function(d, i) {
       if (i % 5 === 0 || i === data.length - 1) {
-        var x = xScale(i);
+        const x = xScale(i);
         ctx.fillText(d.date, x, H - pad.bottom + 18);
       }
     });
@@ -324,8 +324,8 @@
     // Line
     ctx.beginPath();
     data.forEach(function(d, i) {
-      var x = xScale(i);
-      var y = yScale(d.views);
+      const x = xScale(i);
+      const y = yScale(d.views);
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
     ctx.strokeStyle = '#6366f1';
@@ -334,9 +334,9 @@
 
     // Data points colored by phase
     data.forEach(function(d, i) {
-      var x = xScale(i);
-      var y = yScale(d.views);
-      var m = getPhaseMeta(d.phase);
+      const x = xScale(i);
+      const y = yScale(d.views);
+      const m = getPhaseMeta(d.phase);
       ctx.beginPath();
       ctx.arc(x, y, 3, 0, Math.PI * 2);
       ctx.fillStyle = m.color;
@@ -347,15 +347,15 @@
     });
 
     // Peak and trough annotations
-    var peakItem = data.reduce(function(m, d) { return d.views > m.views ? d : m; });
-    var troughItem = data.reduce(function(m, d) { return d.views < m.views ? d : m; });
+    const peakItem = data.reduce(function(m, d) { return d.views > m.views ? d : m; });
+    const troughItem = data.reduce(function(m, d) { return d.views < m.views ? d : m; });
     [
       { item: peakItem, label: '峰值 ' + formatWan(peakItem.views), color: '#ef4444' },
       { item: troughItem, label: '谷值 ' + formatWan(troughItem.views), color: '#64748b' },
     ].forEach(function(ann) {
-      var idx = data.indexOf(ann.item);
-      var x = xScale(idx);
-      var y = yScale(ann.item.views);
+      const idx = data.indexOf(ann.item);
+      const x = xScale(idx);
+      const y = yScale(ann.item.views);
       ctx.setLineDash([4, 3]);
       ctx.strokeStyle = ann.color;
       ctx.lineWidth = 1;
@@ -369,24 +369,24 @@
   }
 
   function bindSix18ChartEvents() {
-    var canvas = document.getElementById('six18-ref-chart');
-    var tooltip = document.getElementById('six18-ref-tooltip');
+    const canvas = document.getElementById('six18-ref-chart');
+    const tooltip = document.getElementById('six18-ref-tooltip');
     if (!canvas || !tooltip) return;
 
     canvas.addEventListener('mousemove', function(e) {
-      var rect = canvas.getBoundingClientRect();
-      var mx = e.clientX - rect.left;
-      var W = rect.width;
-      var pad = { left: 65, right: 20 };
-      var chartW = W - pad.left - pad.right;
-      var data = SIX18_REFERENCE_DAILY;
-      var idx = Math.round(((mx - pad.left) / chartW) * (data.length - 1));
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const W = rect.width;
+      const pad = { left: 65, right: 20 };
+      const chartW = W - pad.left - pad.right;
+      const data = SIX18_REFERENCE_DAILY;
+      const idx = Math.round(((mx - pad.left) / chartW) * (data.length - 1));
       if (idx < 0 || idx >= data.length) { tooltip.style.display = 'none'; return; }
-      var d = data[idx];
-      var meta = getPhaseMeta(d.phase);
+      const d = data[idx];
+      const meta = getPhaseMeta(d.phase);
       tooltip.innerHTML = '<strong>' + d.date + '</strong>  展现指数 <strong>' + formatWan(d.views) + '</strong><br><span style="color:' + meta.color + '">' + d.phase + '</span>';
       tooltip.style.display = 'block';
-      var tx = Math.min(Math.max(8, mx - 80), W - 180);
+      const tx = Math.min(Math.max(8, mx - 80), W - 180);
       tooltip.style.left = tx + 'px';
       tooltip.style.top = '8px';
     });
@@ -394,9 +394,9 @@
   }
 
   function renderSix18Reference() {
-    var section = document.getElementById('six18-reference-section');
-    var el = document.getElementById('six18-reference-container');
-    var toggle = document.getElementById('six18-reference-toggle');
+    const section = document.getElementById('six18-reference-section');
+    const el = document.getElementById('six18-reference-container');
+    const toggle = document.getElementById('six18-reference-toggle');
     if (!section || !el) return;
     if (!shouldShowSix18Reference()) {
       section.classList.add('hidden');
@@ -407,7 +407,7 @@
     }
     section.classList.remove('hidden');
     section.setAttribute('aria-hidden', 'false');
-    var isExpanded = Boolean(stateModule.state.ui.six18ReferenceExpanded);
+    const isExpanded = Boolean(stateModule.state.ui.six18ReferenceExpanded);
     section.classList.toggle('six18-ref-collapsed', !isExpanded);
     if (toggle) {
       toggle.setAttribute('aria-expanded', String(isExpanded));
@@ -421,7 +421,7 @@
       return;
     }
 
-    var legend = SIX18_REFERENCE_PHASE_META.map(function(m) {
+    const legend = SIX18_REFERENCE_PHASE_META.map(function(m) {
       return '<span class="six18-ref-legend-item"><i style="background:' + m.color + '"></i>' + utils.escapeHtml(m.phase) + '</span>';
     }).join('');
 
@@ -440,9 +440,9 @@
     bindSix18ChartEvents();
 
     if (window._six18ResizeObs) window._six18ResizeObs.disconnect();
-    var chartWrap = el.querySelector('.six18-ref-chart-wrap');
+    const chartWrap = el.querySelector('.six18-ref-chart-wrap');
     if (chartWrap) {
-      var debouncedRedraw = debounce(function () { drawSix18Chart(); }, 150);
+      const debouncedRedraw = debounce(function () { drawSix18Chart(); }, 150);
       window._six18ResizeObs = new ResizeObserver(function () { debouncedRedraw(); });
       window._six18ResizeObs.observe(chartWrap);
     }
@@ -451,21 +451,21 @@
   /* ---- 25年618节奏 ---- */
 
   function shouldShowSix18Rhythm() {
-    var range = stateModule.state.range || {};
-    var startIndex = getYearMonthIndex(range.start);
-    var endIndex = getYearMonthIndex(range.end);
+    const range = stateModule.state.range || {};
+    const startIndex = getYearMonthIndex(range.start);
+    const endIndex = getYearMonthIndex(range.end);
     if (startIndex == null || endIndex == null || startIndex > endIndex) return false;
-    for (var index = startIndex; index <= endIndex && index <= startIndex + 24; index += 1) {
-      var month = (index % 12) + 1;
+    for (let index = startIndex; index <= endIndex && index <= startIndex + 24; index += 1) {
+      const month = (index % 12) + 1;
       if (SIX18_RHYTHM_MONTHS.includes(month)) return true;
     }
     return false;
   }
 
   function renderSix18Rhythm() {
-    var section = document.getElementById('six18-rhythm-section');
-    var el = document.getElementById('six18-rhythm-container');
-    var toggle = document.getElementById('six18-rhythm-toggle');
+    const section = document.getElementById('six18-rhythm-section');
+    const el = document.getElementById('six18-rhythm-container');
+    const toggle = document.getElementById('six18-rhythm-toggle');
     if (!section || !el) return;
     if (!shouldShowSix18Rhythm()) {
       section.classList.add('hidden');
@@ -476,7 +476,7 @@
     }
     section.classList.remove('hidden');
     section.setAttribute('aria-hidden', 'false');
-    var isExpanded = Boolean(stateModule.state.ui.six18RhythmExpanded);
+    const isExpanded = Boolean(stateModule.state.ui.six18RhythmExpanded);
     section.classList.toggle('six18-rhythm-collapsed', !isExpanded);
     if (toggle) {
       toggle.setAttribute('aria-expanded', String(isExpanded));
@@ -491,13 +491,13 @@
     }
 
     // 生成横向表格HTML
-    var dateRow = SIX18_RHYTHM_PHASES.map(function(p) {
+    const dateRow = SIX18_RHYTHM_PHASES.map(function(p) {
       return '<td style="border-top:3px solid ' + p.color + '">'
         + '<div class="six18-rhythm-date">' + utils.escapeHtml(p.dateRange) + '</div>'
         + '</td>';
     }).join('');
 
-    var rhythmRow = SIX18_RHYTHM_PHASES.map(function(p) {
+    const rhythmRow = SIX18_RHYTHM_PHASES.map(function(p) {
       return '<td>'
         + '<span class="six18-rhythm-tag" style="background:' + p.color + '20;color:' + p.color + '">' 
         + utils.escapeHtml(p.platformRhythm) + '</span>'
@@ -505,8 +505,8 @@
         + '</td>';
     }).join('');
 
-    var sessionRow = SIX18_RHYTHM_PHASES.map(function(p) {
-      var hasSession = p.keySession && p.keySession !== '–';
+    const sessionRow = SIX18_RHYTHM_PHASES.map(function(p) {
+      const hasSession = p.keySession && p.keySession !== '–';
       return '<td>'
         + (hasSession 
           ? '<span class="six18-rhythm-session">' + utils.escapeHtml(p.keySession) + '</span>'
@@ -514,7 +514,7 @@
         + '</td>';
     }).join('');
 
-    var operationRow = SIX18_RHYTHM_PHASES.map(function(p) {
+    const operationRow = SIX18_RHYTHM_PHASES.map(function(p) {
       return '<td>'
         + '<div class="six18-rhythm-operation">' + utils.escapeHtml(p.operation) + '</div>'
         + '</td>';
@@ -616,10 +616,10 @@
 
   function getSix18ReferenceExportSections() {
     if (!shouldShowSix18Reference()) return [];
-    var total = SIX18_REFERENCE_DAILY.reduce(function(s, d) { return s + d.views; }, 0);
-    var avg = total / SIX18_REFERENCE_DAILY.length;
-    var peak = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views > m.views ? d : m; });
-    var trough = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views < m.views ? d : m; });
+    const total = SIX18_REFERENCE_DAILY.reduce(function(s, d) { return s + d.views; }, 0);
+    const avg = total / SIX18_REFERENCE_DAILY.length;
+    const peak = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views > m.views ? d : m; });
+    const trough = SIX18_REFERENCE_DAILY.reduce(function(m, d) { return d.views < m.views ? d : m; });
     return [
       {
         title: '25年618美妆行业流量参考-摘要',

@@ -119,8 +119,7 @@ function safeSetStorage(storage, key, value) {
     }
   }
 
-  pruneStorageForQuota(localStorage);
-  pruneStorageForQuota(sessionStorage);
+  pruneStorageForQuota(storage);
   try {
     storage.setItem(key, value);
     return true;
@@ -484,7 +483,9 @@ async function fetchJson(url, options = {}) {
     if (typeof options.onUnauthorized === 'function') {
       options.onUnauthorized({ response, data, rawText, errorMessage });
     }
-    throw new Error(options.unauthorizedMessage || errorMessage || '登录状态已失效，请重新登录');
+    const authErr = new Error(options.unauthorizedMessage || errorMessage || '登录状态已失效，请重新登录');
+    authErr.code = 'AUTH_EXPIRED';
+    throw authErr;
   }
 
   if (!response.ok || errorMessage) {

@@ -2,12 +2,16 @@
 document.addEventListener('DOMContentLoaded', function() {
   const hamburger = document.querySelector('.mobile-menu-btn');
   const navMenu = document.querySelector('.nav-menu');
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reduceMotion = motionQuery.matches;
+  motionQuery.addEventListener('change', (e) => {
+      reduceMotion = e.matches;
+  });
   const hero = document.querySelector('.home-page .home-hero');
 
-  if (hamburger) {
+  if (hamburger && navMenu) {
     hamburger.setAttribute('aria-expanded', 'false');
-    if (navMenu) hamburger.setAttribute('aria-controls', navMenu.id || 'nav-menu');
+    hamburger.setAttribute('aria-controls', navMenu.id || 'nav-menu');
 
     hamburger.addEventListener('click', function() {
       const isActive = hamburger.classList.toggle('active');

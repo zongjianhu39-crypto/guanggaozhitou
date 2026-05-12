@@ -1,4 +1,6 @@
 (function attachDashboardAi(window) {
+    const AI_ANALYSIS_TIMEOUT = 150000; // 2.5 分钟
+
     let currentReportSlug = '';
     let currentAbortController = null;
 
@@ -92,8 +94,9 @@
             return;
         }
 
-        currentAbortController = new AbortController();
-        const timeout = setTimeout(() => currentAbortController.abort(), 150000);
+        const controller = new AbortController();
+        currentAbortController = controller;
+        const timeout = setTimeout(() => controller.abort(), AI_ANALYSIS_TIMEOUT);
         try {
             const requestBody = {
                 start_date: startDate,
@@ -110,7 +113,7 @@
                 body: requestBody,
                 useSessionToken: true,
                 includePromptAdminToken: true,
-                signal: currentAbortController.signal,
+                signal: controller.signal,
                 parseErrorMessage: 'AI 分析接口返回了无法解析的响应，请稍后重试',
                 unauthorizedPattern: /Missing Authorization header or invalid token/i,
                 unauthorizedMessage: 'AI 分析权限已失效，请重新登录',
@@ -135,14 +138,16 @@
             body.style.display = 'block';
             if (error.name === 'AbortError') {
                 setAnalysisContent(text, '请求超时（150秒），请稍后重试。', { asPlainText: true });
-            } else if (window.__dashboardAuthRedirecting || (error.message || '').includes('AI 分析权限已失效')) {
+            } else if (window.__dashboardAuthRedirecting || error.code === 'AUTH_EXPIRED') {
                 setAnalysisContent(text, '当前登录会话缺少 AI 分析权限令牌，正在跳转重新登录...', { asPlainText: true });
             } else {
                 setAnalysisContent(text, '分析失败：' + error.message + '\n\n请稍后重试。', { asPlainText: true });
             }
         } finally {
             clearTimeout(timeout);
-            currentAbortController = null;
+            if (currentAbortController === controller) {
+                currentAbortController = null;
+            }
             app.resetButtonState(button);
         }
     }

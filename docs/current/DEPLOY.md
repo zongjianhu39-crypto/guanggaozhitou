@@ -70,14 +70,12 @@ curl -T 本地文件 "ftp://<FTP_USER>:<FTP_PASS>@<FTP_HOST>/wwwroot/目标文�
 ### 数据上传脚本
 | 文件 | 说明 |
 |------|------|
-| scripts/deploy_lftp.sh | **推荐** — lftp 多文件上传脚本（解决 curl 425 错误） |
-| scripts/deploy_final.py | 静态文件部署脚本 |
-| scripts/deploy_ftp.py | FTP 上传脚本（curl 版） |
+| scripts/deploy_ftp.py | **推荐** — Python FTP 部署脚本（零依赖，自动扫描目录，智能排除） |
 | scripts/deploy_report_center.py | AI 报告中心一键部署脚本 |
 | scripts/verify_report_center.py | 报告中心核验脚本 |
 | scripts/verify_dashboard_flow.py | 数据看板回归核验脚本（增强版） |
 
-> **推荐使用 `deploy_lftp.sh`**，lftp 专门解决 curl 多文件上传时的 425 数据连接错误和卡死问题，每个文件最多重试 3 次，失败自动清理锁文件，上传后自动验证 HTTP 200。
+> **推荐使用 `deploy_ftp.py`**，Python 标准库零依赖，自动扫描目录上传，支持 `--dry-run` 预览，版本号自动注入。
 
 ### 数据库 SQL
 | 文件 | 说明 |
@@ -140,14 +138,14 @@ supabase secrets set FEISHU_APP_ID="你的飞书 App ID" FEISHU_APP_SECRET="你�
 
 **重要**：西部数码虚拟主机只上传静态资源（.html .css .js .svg），不要把 supabase/functions、supabase/migrations 这些后端源码上传到站点目录。
 
-#### 方式一：lftp 一键上传（推荐）
+#### 方式一：Python FTP 一键上传（推荐）
 ```bash
 cd /Users/zhouhao/Desktop/website
-bash scripts/deploy_lftp.sh
+python3 scripts/deploy_ftp.py
 ```
-- 自动上传所有前端文件（index、css、js、auth、assets 等，详见脚本中 FILES 列表）
-- 每个文件最多重试 3 次，失败自动清理残留锁文件
-- 上传完成后自动验证所有文件的 HTTP 200 状态
+- 自动扫描目录上传所有前端文件（智能排除规则，无需手动维护文件列表）
+- 自动注入版本号用于缓存破坏
+- 上传完成后在线验证 HTTP 状态
 - 支持 `--dry-run` 模式只预览不上传
 
 #### 方式二：curl 单文件上传（备用）
@@ -290,7 +288,7 @@ npm run check:release:online
    ```
 4. 若 lftp 卡在 `[正等待传输完成]` 超过 3 分钟，强制终止并重传（文件数据可能已写入，先 curl 验证再决定是否重传）。
 
-**预防**：每次部署统一使用 `bash scripts/deploy_lftp.sh`，该脚本含自动重试和 HTTP 验证。
+**预防**：每次部署统一使用 `python3 scripts/deploy_ftp.py`，该脚本含自动重试和 HTTP 验证。
 
 ---
 

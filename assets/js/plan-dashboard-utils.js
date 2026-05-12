@@ -27,7 +27,7 @@
     }).format(num)}`;
   }
 
-  var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
+  const escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
   function sum(values) {
     return values.reduce((acc, item) => acc + toNumber(item), 0);

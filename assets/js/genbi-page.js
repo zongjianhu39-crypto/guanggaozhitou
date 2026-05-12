@@ -4,13 +4,13 @@
     let lastSavedReportSlug = '';
     let isSubmitting = false;
 
-    var escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
+    const escapeHtml = window.sharedUtils && window.sharedUtils.escapeHtml;
 
-    var EXAMPLE_LS_KEY = 'genbi_example_questions';
-    var MAX_CSV_BYTES = 512 * 1024;
-    var MAX_CSV_ROWS = 200;
-    var MAX_CSV_COLUMNS = 40;
-    var DEFAULT_EXAMPLES = [
+    const EXAMPLE_LS_KEY = 'genbi_example_questions';
+    const MAX_CSV_BYTES = 512 * 1024;
+    const MAX_CSV_ROWS = 200;
+    const MAX_CSV_COLUMNS = 40;
+    const DEFAULT_EXAMPLES = [
         '哪些具体人群效果好需要增加预算，哪些人群差需要降低预算',
         '单品广告里哪些商品花费高但回报差',
         '老客和新客的占比情况如何，是否合理',
@@ -25,9 +25,9 @@
 
     function getExamples() {
         try {
-            var raw = localStorage.getItem(EXAMPLE_LS_KEY);
+            const raw = localStorage.getItem(EXAMPLE_LS_KEY);
             if (raw) {
-                var parsed = JSON.parse(raw);
+                const parsed = JSON.parse(raw);
                 if (Array.isArray(parsed) && parsed.length > 0) return parsed;
             }
         } catch (e) {
@@ -131,7 +131,7 @@
     }
 
     function setStatus(message, type) {
-        var el = document.getElementById('genbi-status');
+        const el = document.getElementById('genbi-status');
         if (!el) return;
         el.className = 'genbi-status' + (type ? ' ' + type : '');
         el.textContent = message;
@@ -166,16 +166,16 @@
     }
 
     function setSaveStatus(message, type) {
-        var el = document.getElementById('genbi-save-status');
+        const el = document.getElementById('genbi-save-status');
         if (!el) return;
         el.className = 'genbi-save-status' + (type ? ' ' + type : '');
         el.textContent = message;
     }
 
     function toggleSaveActions(payload) {
-        var saveButton = document.getElementById('genbi-save-btn');
-        var openButton = document.getElementById('genbi-open-insights-btn');
-        var canSave = Boolean(payload && payload.intent && payload.intent !== 'unsupported' && String(payload.answer || '').trim());
+        const saveButton = document.getElementById('genbi-save-btn');
+        const openButton = document.getElementById('genbi-open-insights-btn');
+        const canSave = Boolean(payload && payload.intent && payload.intent !== 'unsupported' && String(payload.answer || '').trim());
         if (saveButton) {
             saveButton.style.display = canSave ? 'inline-flex' : 'none';
             saveButton.disabled = false;
@@ -187,16 +187,16 @@
     }
 
     function renderResult(payload) {
-        var safePayload = payload && typeof payload === 'object' ? payload : {};
+        const safePayload = payload && typeof payload === 'object' ? payload : {};
         lastResultPayload = safePayload;
         lastSavedReportSlug = '';
-        var resultSection = document.getElementById('genbi-result-section');
+        const resultSection = document.getElementById('genbi-result-section');
         if (resultSection) {
             resultSection.style.display = 'block';
         }
         document.getElementById('genbi-result').style.display = 'block';
-        var isAiEnhanced = Boolean(safePayload.ai_enhanced);
-        var isAssortment = Boolean(safePayload.assortment_mode);
+        const isAiEnhanced = Boolean(safePayload.ai_enhanced);
+        const isAssortment = Boolean(safePayload.assortment_mode);
         document.getElementById('genbi-result-title').textContent = typeof safePayload.title === 'string' && safePayload.title.trim()
             ? safePayload.title
             : (isAssortment ? '🎯 货盘人群推荐' : '问数结果');
@@ -204,18 +204,18 @@
             ? `分析范围：${safePayload.range.start} 至 ${safePayload.range.end || safePayload.range.start}${isAiEnhanced ? ' · AI 增强分析' : ''}`
             : (isAssortment ? `分析 ${safePayload.product_count || 0} 个商品 · AI 增强分析` : '分析范围：未提供');
         // 思考过程（可折叠）
-        var thinkingEl = document.getElementById('genbi-result-thinking');
+        const thinkingEl = document.getElementById('genbi-result-thinking');
         if (thinkingEl) {
-            var thinkingText = typeof safePayload.thinking === 'string' && safePayload.thinking.trim()
+            const thinkingText = typeof safePayload.thinking === 'string' && safePayload.thinking.trim()
                 ? safePayload.thinking
                 : '';
             if (thinkingText) {
                 thinkingEl.style.display = 'block';
                 // 用 markdown 渲染思考过程
-                var render = window.AiArticleMarkdown && typeof window.AiArticleMarkdown.renderArticleMarkdown === 'function'
+                const render = window.AiArticleMarkdown && typeof window.AiArticleMarkdown.renderArticleMarkdown === 'function'
                     ? window.AiArticleMarkdown.renderArticleMarkdown
                     : null;
-                var thinkingContent = document.getElementById('genbi-thinking-content');
+                const thinkingContent = document.getElementById('genbi-thinking-content');
                 if (thinkingContent) {
                     thinkingContent.innerHTML = render ? render(thinkingText) : '<p>' + escapeHtml(thinkingText) + '</p>';
                 }
@@ -225,9 +225,9 @@
         }
 
         renderAnswerContent(typeof safePayload.answer === 'string' ? safePayload.answer : '');
-        var highlights = Array.isArray(safePayload.highlights) ? safePayload.highlights.filter(function(item) { return typeof item === 'string' && item.trim(); }) : [];
-        var notes = Array.isArray(safePayload.notes) ? safePayload.notes.map(function(item) { return typeof item === 'string' ? item : JSON.stringify(item); }).filter(Boolean) : [];
-        var tables = Array.isArray(safePayload.tables) ? safePayload.tables : [];
+        const highlights = Array.isArray(safePayload.highlights) ? safePayload.highlights.filter(function(item) { return typeof item === 'string' && item.trim(); }) : [];
+        const notes = Array.isArray(safePayload.notes) ? safePayload.notes.map(function(item) { return typeof item === 'string' ? item : JSON.stringify(item); }).filter(Boolean) : [];
+        const tables = Array.isArray(safePayload.tables) ? safePayload.tables : [];
         document.getElementById('genbi-highlight-tags').innerHTML = highlights.map(function(item) { return '<span class="tag">' + escapeHtml(item) + '</span>'; }).join('');
         document.getElementById('genbi-result-tables').innerHTML = tables.map(renderTable).join('');
         document.getElementById('genbi-result-references').innerHTML = renderReferences(safePayload.references || []);
@@ -239,7 +239,7 @@
     }
 
     function openSavedInsight() {
-        var target = lastSavedReportSlug
+        const target = lastSavedReportSlug
             ? 'insights.html?slug=' + encodeURIComponent(lastSavedReportSlug)
             : 'insights.html';
         window.location.href = target;
@@ -251,18 +251,18 @@
             return;
         }
 
-        var question = document.getElementById('genbi-question')?.value?.trim() || '';
+        const question = document.getElementById('genbi-question')?.value?.trim() || '';
         if (!question) {
             setSaveStatus('缺少原始问题，无法保存。', 'error');
             return;
         }
 
-        var confirmed = window.confirm('保存后会在洞察中心生成一条正式报告，团队成员可查看。是否继续？');
+        const confirmed = window.confirm('保存后会在洞察中心生成一条正式报告，团队成员可查看。是否继续？');
         if (!confirmed) {
             return;
         }
 
-        var button = document.getElementById('genbi-save-btn');
+        const button = document.getElementById('genbi-save-btn');
         if (button) {
             button.disabled = true;
             button.textContent = '保存中...';
@@ -270,7 +270,7 @@
         setSaveStatus('正在写入洞察中心...', '');
 
         try {
-            var result = await authHelpers.fetchFunctionJson('save-insight-report', {
+            const result = await authHelpers.fetchFunctionJson('save-insight-report', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -324,13 +324,13 @@
     // ============ CSV 解析 ============
 
     function parseCsv(csvText) {
-        var rows = [];
-        var row = [];
-        var cell = '';
-        var inQuotes = false;
-        for (var i = 0; i < csvText.length; i++) {
-            var ch = csvText[i];
-            var next = csvText[i + 1];
+        const rows = [];
+        let row = [];
+        let cell = '';
+        let inQuotes = false;
+        for (let i = 0; i < csvText.length; i++) {
+            const ch = csvText[i];
+            const next = csvText[i + 1];
             if (ch === '"' && inQuotes && next === '"') { cell += '"'; i++; }
             else if (ch === '"') { inQuotes = !inQuotes; }
             else if (ch === ',' && !inQuotes) { row.push(cell); cell = ''; }
@@ -346,10 +346,10 @@
         row.push(cell);
         if (row.some(function(v) { return v.trim() !== ''; })) rows.push(row);
         if (rows.length < 2) throw new Error('CSV 至少需要表头和一行数据');
-        var headers = rows[0].map(function(h) { return h.replace(/^\uFEFF/, '').trim(); });
+        const headers = rows[0].map(function(h) { return h.replace(/^\uFEFF/, '').trim(); });
         if (headers.length > MAX_CSV_COLUMNS) throw new Error('CSV 列数过多，请保留必要字段后再上传');
         if (rows.length - 1 > MAX_CSV_ROWS) throw new Error('CSV 商品行数过多，最多支持 ' + MAX_CSV_ROWS + ' 行');
-        var seenHeaders = new Set();
+        const seenHeaders = new Set();
         headers.forEach(function(header, index) {
             if (!header) throw new Error('CSV 第 ' + (index + 1) + ' 列表头为空');
             if (seenHeaders.has(header)) throw new Error('CSV 存在重复表头：' + header);
@@ -361,7 +361,7 @@
                 if (values.length > headers.length) {
                     throw new Error('CSV 第 ' + (rowIndex + 2) + ' 行列数超过表头，请检查逗号或引号');
                 }
-                var item = {};
+                const item = {};
                 headers.forEach(function(header, index) { item[header] = (values[index] || '').trim(); });
                 return item;
             }).filter(function(item) { return Object.values(item).some(function(v) { return v !== ''; }); }),
@@ -369,21 +369,21 @@
     }
 
     async function readCsvFile() {
-        var fileInput = document.getElementById('genbi-csv-file');
+        const fileInput = document.getElementById('genbi-csv-file');
         if (!fileInput || !fileInput.files || !fileInput.files[0]) return null;
         if (fileInput.files[0].size > MAX_CSV_BYTES) {
             throw new Error('CSV 文件过大，最多支持 512KB');
         }
-        var csvText = await fileInput.files[0].text();
+        const csvText = await fileInput.files[0].text();
         if (!csvText || !csvText.trim()) return null;
-        var parsed = parseCsv(csvText);
+        const parsed = parseCsv(csvText);
         if (!parsed.items.length) throw new Error('CSV 没有可分析的商品行');
         return parsed;
     }
 
     function updateAttachUI(fileName) {
-        var btn = document.getElementById('genbi-attach-btn');
-        var clearBtn = document.getElementById('genbi-attach-clear');
+        const btn = document.getElementById('genbi-attach-btn');
+        const clearBtn = document.getElementById('genbi-attach-clear');
         if (fileName) {
             if (btn) { btn.textContent = '📄 ' + (fileName.length > 18 ? fileName.slice(0, 18) + '...' : fileName); btn.classList.add('has-file'); }
             if (clearBtn) clearBtn.style.display = 'inline';
@@ -394,7 +394,7 @@
     }
 
     function clearAttach() {
-        var fileInput = document.getElementById('genbi-csv-file');
+        const fileInput = document.getElementById('genbi-csv-file');
         if (fileInput) fileInput.value = '';
         updateAttachUI(null);
     }
@@ -402,16 +402,16 @@
     // ============ 提交 ============
 
     async function submitQuestion() {
-        var textarea = document.getElementById('genbi-question');
-        var button = document.getElementById('genbi-submit');
+        const textarea = document.getElementById('genbi-question');
+        const button = document.getElementById('genbi-submit');
         if (isSubmitting) return;
         isSubmitting = true;
         if (button) {
             button.disabled = true;
             button.textContent = '分析中...';
         }
-        var question = textarea?.value?.trim() || '';
-        var csvResult = null;
+        let question = textarea?.value?.trim() || '';
+        let csvResult = null;
         try {
             csvResult = await readCsvFile();
         } catch (e) {
@@ -423,7 +423,7 @@
             }
             return;
         }
-        var productItems = csvResult ? csvResult.items : null;
+        const productItems = csvResult ? csvResult.items : null;
 
         if (!question && !productItems) {
             setStatus('请输入问题或上传货盘 CSV 文件。', 'error');
@@ -441,17 +441,17 @@
             if (textarea) textarea.value = question;
         }
 
-        var statusMsg = productItems
+        const statusMsg = productItems
             ? '正在调用 MiniMax 2.7 分析 ' + productItems.length + ' 个商品并推荐人群，预计 20-40 秒...'
             : '正在调用 AI 分析真实数据，预计需要 10-30 秒...';
         setStatus(statusMsg, '');
 
         try {
-            var body = productItems
+            const body = productItems
                 ? { question: question, product_items: productItems }
                 : { question: question };
 
-            var response = await authHelpers.fetchFunctionJson('genbi-query', {
+            const response = await authHelpers.fetchFunctionJson('genbi-query', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: body,
@@ -495,12 +495,12 @@
     // ============ 事件绑定 ============
 
     function renderExampleList() {
-        var container = document.getElementById('genbi-example-list');
+        const container = document.getElementById('genbi-example-list');
         if (!container) return;
-        var examples = getExamples();
-        var html = '';
+        const examples = getExamples();
+        let html = '';
         examples.forEach(function(text, index) {
-            var escaped = escapeHtml ? escapeHtml(text) : text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const escaped = escapeHtml ? escapeHtml(text) : text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             html += '<div class="example-btn-row">'
                 + '<button class="example-btn" type="button" data-index="' + index + '">' + escaped + '</button>'
                 + '<button class="example-btn-del" type="button" data-index="' + index + '" title="删除此示例">×</button>'
@@ -512,16 +512,16 @@
     function bindExamples() {
         renderExampleList();
 
-        var listEl = document.getElementById('genbi-example-list');
+        const listEl = document.getElementById('genbi-example-list');
         if (listEl) {
             listEl.addEventListener('click', function(e) {
-                var target = e.target;
+                const target = e.target;
                 // 点击删除按钮
                 if (target.classList.contains('example-btn-del')) {
                     e.stopPropagation();
-                    var idx = parseInt(target.getAttribute('data-index'), 10);
+                    const idx = parseInt(target.getAttribute('data-index'), 10);
                     if (isNaN(idx)) return;
-                    var examples = getExamples();
+                    const examples = getExamples();
                     if (idx >= 0 && idx < examples.length) {
                         examples.splice(idx, 1);
                         saveExamples(examples);
@@ -530,9 +530,9 @@
                     return;
                 }
                 // 点击问题按钮
-                var btn = target.closest('.example-btn');
+                const btn = target.closest('.example-btn');
                 if (btn) {
-                    var textarea = document.getElementById('genbi-question');
+                    const textarea = document.getElementById('genbi-question');
                     if (textarea) {
                         textarea.value = btn.textContent || '';
                         textarea.focus();
@@ -542,12 +542,12 @@
         }
 
         // 添加按钮
-        var addBtn = document.getElementById('genbi-add-example');
+        const addBtn = document.getElementById('genbi-add-example');
         if (addBtn) {
             addBtn.addEventListener('click', function() {
-                var newText = window.prompt('请输入新的示例问题：');
+                const newText = window.prompt('请输入新的示例问题：');
                 if (!newText || !newText.trim()) return;
-                var examples = getExamples();
+                const examples = getExamples();
                 examples.push(newText.trim());
                 saveExamples(examples);
                 renderExampleList();
@@ -556,9 +556,9 @@
     }
 
     function bindFileUpload() {
-        var attachBtn = document.getElementById('genbi-attach-btn');
-        var fileInput = document.getElementById('genbi-csv-file');
-        var clearBtn = document.getElementById('genbi-attach-clear');
+        const attachBtn = document.getElementById('genbi-attach-btn');
+        const fileInput = document.getElementById('genbi-csv-file');
+        const clearBtn = document.getElementById('genbi-attach-clear');
 
         if (attachBtn && fileInput) {
             attachBtn.addEventListener('click', function() { fileInput.click(); });

@@ -1,11 +1,16 @@
 #!/usr/bin/env node
+/* eslint-env node */
 /**
  * 测试 genbi-query 函数调用
  * 验证 MiniMax 2.7 模型是否正常调用并返回 thinking 字段
  */
 
-const SUPABASE_URL = 'https://your-project.supabase.co'; // 需要替换为实际 URL
-const SESSION_TOKEN = 'your-session-token'; // 需要替换为实际 token
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SESSION_TOKEN = process.env.SESSION_TOKEN;
+if (!SUPABASE_URL || !SESSION_TOKEN) {
+    console.error('Error: SUPABASE_URL and SESSION_TOKEN environment variables are required');
+    process.exit(1);
+}
 
 const testData = {
   question: "哪些具体人群效果好需要增加预算，哪些人群差需要降低预算"

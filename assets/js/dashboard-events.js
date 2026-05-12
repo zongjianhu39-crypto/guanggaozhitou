@@ -1,25 +1,24 @@
 (function attachDashboardEvents(window) {
     function bindDashboardInteractions() {
-        const app = window.DashboardApp;
         document.querySelectorAll('[data-action="logout"]').forEach((link) => {
             link.addEventListener('click', (event) => {
                 event.preventDefault();
-                app.logout();
+                window.DashboardApp?.logout();
             });
         });
 
         const bindings = [
-            ['ai-analysis-btn', app.openAIAnalysis],
-            ['download-full-report-btn', app.downloadFullReportCSV],
-            ['load-ads-btn', () => app.loadAds({ forceRefresh: true })],
-            ['download-ads-csv-btn', app.downloadAdsCSV],
-            ['load-single-btn', () => app.loadSingle({ forceRefresh: true })],
-            ['download-single-csv-btn', app.downloadSingleCSV],
-            ['load-crowd-btn', () => app.loadCrowd({ forceRefresh: true })],
-            ['close-ai-analysis-btn', app.closeAIAnalysis],
-            ['ai-report-link-btn', app.openReportCenter],
-            ['refresh-ai-analysis-btn', app.refreshAIAnalysis],
-            ['close-ai-analysis-footer-btn', app.closeAIAnalysis],
+            ['ai-analysis-btn', () => window.DashboardApp?.openAIAnalysis()],
+            ['download-full-report-btn', () => window.DashboardApp?.downloadFullReportCSV()],
+            ['load-ads-btn', () => window.DashboardApp?.loadAds({ forceRefresh: true })],
+            ['download-ads-csv-btn', () => window.DashboardApp?.downloadAdsCSV()],
+            ['load-single-btn', () => window.DashboardApp?.loadSingle({ forceRefresh: true })],
+            ['download-single-csv-btn', () => window.DashboardApp?.downloadSingleCSV()],
+            ['load-crowd-btn', () => window.DashboardApp?.loadCrowd({ forceRefresh: true })],
+            ['close-ai-analysis-btn', () => window.DashboardApp?.closeAIAnalysis()],
+            ['ai-report-link-btn', () => window.DashboardApp?.openReportCenter()],
+            ['refresh-ai-analysis-btn', () => window.DashboardApp?.refreshAIAnalysis()],
+            ['close-ai-analysis-footer-btn', () => window.DashboardApp?.closeAIAnalysis()],
         ];
 
         bindings.forEach(([id, handler]) => {
@@ -31,7 +30,7 @@
 
         document.querySelectorAll('.date-preset-btn[data-range-target][data-range-preset]').forEach((button) => {
             button.addEventListener('click', () => {
-                app.applyPresetDateRange(button.dataset.rangeTarget, button.dataset.rangePreset);
+                window.DashboardApp?.applyPresetDateRange(button.dataset.rangeTarget, button.dataset.rangePreset);
             });
         });
 
@@ -40,21 +39,21 @@
             crowdTableBody.addEventListener('click', (event) => {
                 const row = event.target.closest('[data-crowd-row="toggle"]');
                 if (!row) return;
-                app.toggleCrowdRow(row);
+                window.DashboardApp?.toggleCrowdRow(row);
             });
             crowdTableBody.addEventListener('keydown', (event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return;
                 const row = event.target.closest('[data-crowd-row="toggle"]');
                 if (!row) return;
                 event.preventDefault();
-                app.toggleCrowdRow(row);
+                window.DashboardApp?.toggleCrowdRow(row);
             });
         }
 
         const singleProductSearch = document.getElementById('single-product-search');
         if (singleProductSearch) {
             singleProductSearch.addEventListener('input', () => {
-                app.renderCurrentSingleTable();
+                window.DashboardApp?.renderCurrentSingleTable();
             });
         }
 
@@ -63,14 +62,14 @@
                 document.querySelectorAll('.crowd-plan-filter-btn[data-crowd-plan-type]').forEach((item) => {
                     item.classList.toggle('active', item === button);
                 });
-                app.renderCurrentCrowdTable();
+                window.DashboardApp?.renderCurrentCrowdTable();
             });
         });
 
         const crowdPlanSelect = document.getElementById('crowd-plan-select');
         if (crowdPlanSelect) {
             crowdPlanSelect.addEventListener('change', () => {
-                app.renderCurrentCrowdTable();
+                window.DashboardApp?.renderCurrentCrowdTable();
             });
         }
 
@@ -78,13 +77,13 @@
             const input = document.getElementById(id);
             if (input) {
                 input.addEventListener('change', () => {
-                    app.persistDashboardViewState();
-                    app.syncRangeActionButtons();
+                    window.DashboardApp?.persistDashboardViewState();
+                    window.DashboardApp?.syncRangeActionButtons();
                 });
             }
         });
 
-        app.syncRangeActionButtons();
+        window.DashboardApp?.syncRangeActionButtons();
     }
 
     window.DashboardEvents = {

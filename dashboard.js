@@ -18,8 +18,6 @@ function logout() {
 if (typeof CONFIG === 'undefined' || !CONFIG || !CONFIG.SB_URL) {
     console.error('Missing CONFIG (assets/js/config.js). Please provide CONFIG.SB_URL and CONFIG.SUPABASE_ANON_KEY');
 }
-const SB_URL = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SB_URL) ? CONFIG.SB_URL : '';
-const SB_KEY = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.SUPABASE_ANON_KEY) ? CONFIG.SUPABASE_ANON_KEY : '';
 
 // 模块依赖校验：确保核心模块已加载
 const REQUIRED_DASHBOARD_MODULES = ['DashboardState', 'DashboardRender', 'DashboardApi', 'DashboardLoader', 'DashboardEvents'];
@@ -38,12 +36,12 @@ const DASHBOARD_FEATURE_SCRIPTS = {
     export: {
         namespace: 'DashboardExport',
         label: '导出',
-        url: 'assets/js/dashboard-export.js?v=202605050540',
+        url: 'assets/js/dashboard-export.js?v=202605122054',
     },
     ai: {
         namespace: 'DashboardAi',
         label: 'AI 分析',
-        url: 'assets/js/dashboard-ai.js?v=202605050540',
+        url: 'assets/js/dashboard-ai.js?v=202605122054',
     },
 };
 const dashboardFeatureScriptPromises = new Map();
@@ -323,11 +321,13 @@ function setActiveTab(tabName, options = {}) {
         return;
     }
 
-    tabs.forEach(item => {
+    const allTabs = document.querySelectorAll('.tab');
+    const allTabContents = document.querySelectorAll('.tab-content');
+    allTabs.forEach(item => {
         item.classList.remove('active');
         item.setAttribute('aria-selected', 'false');
     });
-    tabContents.forEach(item => item.classList.remove('active'));
+    allTabContents.forEach(item => item.classList.remove('active'));
     targetTab.classList.add('active');
     targetTab.setAttribute('aria-selected', 'true');
     targetPanel.classList.add('active');
@@ -348,6 +348,11 @@ function redirectToPromptAdminLogin(message) {
     const loading = document.getElementById('ai-analysis-loading');
     const body = document.getElementById('ai-analysis-body');
     const text = document.getElementById('ai-analysis-text');
+
+    if (!modal || !loading || !body || !text) {
+        window.location.href = 'auth/index.html?force=1';
+        return;
+    }
 
     loading.style.display = 'none';
     body.style.display = 'block';

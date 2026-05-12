@@ -8,7 +8,7 @@
     <meta name="description" content="投放数据聚合看板，监控花费、ROI、转化率与人群表现">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="assets/css/dashboard.css?v=202605062146">
+    <link rel="stylesheet" href="assets/css/dashboard.css?v=202605122054">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         /* 仅保留 dashboard.css 无法覆盖的页面级补丁 */
@@ -20,11 +20,39 @@
             flex-direction: column; gap: 16px;
             pointer-events: none; opacity: 0;
         }
+        .ai-prompt-summary {
+            cursor: pointer; font-size: var(--text-sm); color: var(--gray-400);
+            user-select: none; padding: 8px 0;
+        }
+        .ai-prompt-wrapper { margin-top: 8px; }
+        .ai-prompt-label {
+            font-size: var(--text-xs); font-weight: var(--font-semibold);
+            color: var(--gray-500); margin-bottom: 4px;
+        }
+        .ai-prompt-pre {
+            background: var(--gray-50); border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md); padding: 12px;
+            font-size: var(--text-xs); line-height: 1.6;
+            white-space: pre-wrap; word-break: break-all;
+            overflow-y: auto; color: var(--gray-700); margin: 0;
+        }
+        .ai-prompt-pre--system { max-height: 300px; margin-bottom: 12px; }
+        .ai-prompt-pre--user { max-height: 400px; }
+        .ai-footer-btn {
+            border: none; border-radius: var(--radius-md);
+            padding: var(--space-2) var(--space-4); cursor: pointer;
+            font-size: var(--text-sm); font-family: var(--font-sans);
+        }
+        .ai-footer-btn--primary { background: var(--indigo-400); color: #fff; }
+        .ai-footer-btn--secondary {
+            background: var(--surface-base); color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
     </style>
 </head>
 <body>
-    <script src="assets/js/auth-helpers.js?v=202605050540"></script>
-    <script src="auth.js?v=202605050540"></script>
+    <script src="assets/js/auth-helpers.js?v=202605122054"></script>
+    <script src="auth.js?v=202605122054"></script>
 
     <nav class="navbar">
         <div class="nav-container">
@@ -232,34 +260,34 @@
             <div id="ai-analysis-body" class="ai-analysis-body" style="display:none">
                 <div id="ai-analysis-text" class="ai-analysis-text"></div>
                 <details id="ai-prompt-viewer" class="ai-prompt-viewer" style="display:none;margin-top:16px;">
-                    <summary style="cursor:pointer;font-size:var(--text-sm);color:var(--gray-400);user-select:none;padding:8px 0;">
+                    <summary class="ai-prompt-summary">
                         📋 查看实际发送给 AI 的提示词
                     </summary>
-                    <div style="margin-top:8px;">
-                        <div style="font-size:var(--text-xs);font-weight:var(--font-semibold);color:var(--gray-500);margin-bottom:4px;">System Prompt（身份/约束/背景）</div>
-                        <pre id="ai-prompt-system" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:12px;font-size:var(--text-xs);line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;color:var(--gray-700);margin:0 0 12px;"></pre>
-                        <div style="font-size:var(--text-xs);font-weight:var(--font-semibold);color:var(--gray-500);margin-bottom:4px;">User Prompt（数据+指令）</div>
-                        <pre id="ai-prompt-rendered" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:12px;font-size:var(--text-xs);line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;color:var(--gray-700);margin:0;"></pre>
+                    <div class="ai-prompt-wrapper">
+                        <div class="ai-prompt-label">System Prompt（身份/约束/背景）</div>
+                        <pre id="ai-prompt-system" class="ai-prompt-pre ai-prompt-pre--system"></pre>
+                        <div class="ai-prompt-label">User Prompt（数据+指令）</div>
+                        <pre id="ai-prompt-rendered" class="ai-prompt-pre ai-prompt-pre--user"></pre>
                     </div>
                 </details>
             </div>
             <div class="ai-analysis-footer">
-                <button id="ai-report-link-btn" type="button" style="display:none;background:var(--indigo-400);color:#fff;border:none;border-radius:var(--radius-md);padding:var(--space-2) var(--space-4);cursor:pointer;font-size:var(--text-sm);font-family:var(--font-sans)">查看洞察中心</button>
-                <button id="refresh-ai-analysis-btn" type="button" style="background:var(--indigo-400);color:#fff;border:none;border-radius:var(--radius-md);padding:var(--space-2) var(--space-4);cursor:pointer;font-size:var(--text-sm);font-family:var(--font-sans)">重新分析</button>
-                <button id="close-ai-analysis-footer-btn" type="button" style="background:var(--surface-base);color:var(--gray-700);border:1px solid var(--gray-300);border-radius:var(--radius-md);padding:var(--space-2) var(--space-4);cursor:pointer;font-size:var(--text-sm);font-family:var(--font-sans)">关闭</button>
+                <button id="ai-report-link-btn" type="button" class="ai-footer-btn ai-footer-btn--primary" style="display:none">查看洞察中心</button>
+                <button id="refresh-ai-analysis-btn" type="button" class="ai-footer-btn ai-footer-btn--primary">重新分析</button>
+                <button id="close-ai-analysis-footer-btn" type="button" class="ai-footer-btn ai-footer-btn--secondary">关闭</button>
             </div>
         </div>
     </div>
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/shared-utils.js"></script>
-    <script src="assets/js/ai-article-markdown.js?v=202605050540"></script>
-    <script src="script.js?v=202605050540"></script>
-    <script src="assets/js/dashboard-state.js?v=202605062146"></script>
-    <script src="assets/js/dashboard-render.js?v=202605062146"></script>
-    <script src="assets/js/dashboard-api.js?v=202605062146"></script>
-    <script src="assets/js/dashboard-loader.js?v=202605062146"></script>
-    <script src="assets/js/dashboard-events.js?v=202605062146"></script>
-    <script src="dashboard.js?v=202605082345"></script>
+    <script src="assets/js/ai-article-markdown.js?v=202605122054"></script>
+    <script src="script.js?v=202605122054"></script>
+    <script src="assets/js/dashboard-state.js?v=202605122054"></script>
+    <script src="assets/js/dashboard-render.js?v=202605122054"></script>
+    <script src="assets/js/dashboard-api.js?v=202605122054"></script>
+    <script src="assets/js/dashboard-loader.js?v=202605122054"></script>
+    <script src="assets/js/dashboard-events.js?v=202605122054"></script>
+    <script src="dashboard.js?v=202605122054"></script>
 </body>
 </html>

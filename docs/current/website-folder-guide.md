@@ -137,7 +137,7 @@ scripts/ 目录主要放部署、核验和问题排查脚本。
 
 | 文件 | 作用 |
 |------|------|
-| scripts/deploy_lftp.sh | 当前主用的静态站 FTP 部署脚本 |
+| scripts/deploy_ftp.py | 当前主用的静态站 FTP 部署脚本（Python 版，零依赖） |
 | tools/debug/dashboard_regression_check.mjs | 看板回归检查脚本 |
 | tools/debug/supabase_dashboard_query.mjs | 看板接口查询调试脚本 |
 | tools/checks/check-no-keys.sh | 密钥扫描脚本，防止敏感信息误提交 |
@@ -282,7 +282,7 @@ supabase/ 目录是网站后端能力所在，包含数据文件、Edge Function
 | 功能 | 主要文件 |
 |------|------|
 | 手动部署说明 | docs/current/DEPLOY.md |
-| 静态文件 FTP 部署 | scripts/deploy_lftp.sh |
+| 静态文件 FTP 部署 | scripts/deploy_ftp.py |
 | 上线前检查 | npm run check:release |
 
 ---
@@ -303,7 +303,7 @@ supabase/ 目录是网站后端能力所在，包含数据文件、Edge Function
 | prompt-admin.js | Prompt 管理台前端逻辑 |
 | supabase/functions/ai-analysis/index.ts | AI 分析主函数 |
 | docs/current/DEPLOY.md | 部署总说明 |
-| scripts/deploy_lftp.sh | 当前静态站主用部署脚本 |
+| scripts/deploy_ftp.py | 当前静态站主用部署脚本（Python 版，零依赖） |
 
 ---
 

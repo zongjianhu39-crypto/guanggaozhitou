@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>618大促日报 · 交个朋友广告智投工作台</title>
     <meta name="description" content="618大促广告投放日报：每日核心KPI、经营结论、优先动作与AI洞察，一键导出PDF分享">
-    <link rel="stylesheet" href="style.css?v=202605121400">
+    <link rel="stylesheet" href="style.css?v=202605122054">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 </head>
 <body class="home-page">
-    <script src="assets/js/auth-helpers.js?v=202605121400"></script>
-    <script src="auth.js?v=202605121400"></script>
+    <script src="assets/js/auth-helpers.js?v=202605122054"></script>
+    <script src="auth.js?v=202605122054"></script>
 
     <!-- 导航栏（PDF 导出时隐藏） -->
     <nav class="navbar no-print">
@@ -22,7 +22,7 @@
                 <span>广告智投工作台</span>
             </a>
             <ul class="nav-menu">
-                <li><a href="index.html" class="nav-link active">日报</a></li>
+                <li><a href="index.html" class="nav-link active">首页</a></li>
                 <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
                 <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
                 <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
@@ -57,8 +57,8 @@
                     </div>
                 </div>
                 <div class="report-actions no-print">
-                    <button onclick="location.reload()" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)">🔄 刷新数据</button>
-                    <button onclick="window.print()" class="btn btn-sm btn-export">📄 导出 PDF</button>
+                    <button id="btn-refresh" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)">🔄 刷新数据</button>
+                    <button id="btn-export-pdf" class="btn btn-sm btn-export">📄 导出 PDF</button>
                 </div>
             </div>
         </div>
@@ -235,7 +235,7 @@
     </footer>
 
     <script src="assets/js/config.js"></script>
-    <script src="script.js?v=202605121400"></script>
+    <script src="script.js?v=202605122054"></script>
     <script>
         const authHelpers = window.authHelpers || {};
 
@@ -251,14 +251,14 @@
            工具函数
            ══════════════════════════════════ */
         function esc(v) {
-            return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
         }
 
         function fmtCurrency(v) {
             if (v == null || isNaN(v)) return '--';
             return v >= 10000 ? '¥' + (v / 10000).toFixed(1) + '万' : '¥' + Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
         }
-        function fmtRoi(v) { return (v == null || isNaN(v)) ? '--' : Number(v).toFixed(2); }
+        function fmtRoi(v) { return (v == null || isNaN(v) || Number(v) < 0) ? '--' : Number(v).toFixed(2); }
         function fmtInt(v) { return (v == null || isNaN(v)) ? '--' : Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 0 }); }
         function fmtPct(v) { return (v == null || isNaN(v)) ? '--' : (Number(v) * 100).toFixed(1) + '%'; }
         function fmtCost(v) { return (v == null || isNaN(v) || v <= 0) ? '--' : '¥' + Number(v).toFixed(2); }
@@ -280,8 +280,13 @@
 
         function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
-        function shanghaiToday() { return new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10); }
-        function nDaysAgo(n) { return new Date(Date.now() + 8 * 3600000 - n * 86400000).toISOString().slice(0, 10); }
+        function shanghaiToday() {
+            return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai' }).format(new Date());
+        }
+        function nDaysAgo(n) {
+            const d = new Date(Date.now() - n * 86400000);
+            return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai' }).format(d);
+        }
 
         function formatDateLabel(dateStr) {
             if (!dateStr) return '';
@@ -628,7 +633,13 @@
                 crowds.slice(0, 3).forEach(c => {
                     const name = typeof c === 'string' ? c : (c.crowd || c.name || c.audience || '');
                     const detail = c.summary || c.detail || '';
-                    const text = detail ? `${name}（${typeof detail === 'string' ? detail : JSON.stringify(detail)}）` : name;
+                    let detailText = '';
+                    if (typeof detail === 'string') {
+                        detailText = detail;
+                    } else if (detail && typeof detail === 'object') {
+                        detailText = detail.description || detail.desc || detail.text || detail.label || '';
+                    }
+                    const text = detailText ? `${name}（${detailText}）` : name;
                     if (text) html += `<li>${esc(text)}</li>`;
                 });
                 html += '</ul></div>';
@@ -865,9 +876,10 @@
 
         /* ── 初始化 ── */
         document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date(Date.now() + 8 * 3600000);
-            const genTime = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,'0')}-${String(now.getUTCDate()).padStart(2,'0')} ${String(now.getUTCHours()).padStart(2,'0')}:${String(now.getUTCMinutes()).padStart(2,'0')}`;
+            const genTime = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()).replace(',', '');
             setText('report-gen-time', genTime);
+            document.getElementById('btn-refresh')?.addEventListener('click', () => location.reload());
+            document.getElementById('btn-export-pdf')?.addEventListener('click', () => window.print());
             loadHomeData();
         });
     </script>
