@@ -46,5 +46,4 @@ jobs:
             **/*.map
             tsconfig.json
             package*.json
-          connection-timeout: 60
-          keep-alive: true
+          timeout: 60
