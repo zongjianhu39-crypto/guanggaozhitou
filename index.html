@@ -390,12 +390,23 @@
             }
 
             // 3. 人群/单品关键信息
-            const topCrowd = (payload?.crowd || [])[0];
-            if (topCrowd) {
-                const cs = topCrowd.summary || {};
-                items.push({ icon: '👥', text: `人群高消耗：「${topCrowd.crowd || '未标注'}」花费 ${fmtCurrency(cs.cost || 0)}，ROI ${fmtRoi(cs.roi || 0)}。` });
+            // crowd 可能是数组或 {summary:[...]}，统一提取为数组
+            let crowdArr = [];
+            if (Array.isArray(payload?.crowd)) {
+                crowdArr = payload.crowd;
+            } else if (payload?.crowd && Array.isArray(payload.crowd.summary)) {
+                crowdArr = payload.crowd.summary;
             }
-            const topProduct = (payload?.single?.items || [])[0];
+            const topCrowd = crowdArr
+                .filter(c => c && typeof c === 'object')
+                .sort((a, b) => ((b.summary?.cost || b.cost || 0) - (a.summary?.cost || a.cost || 0)))[0];
+            if (topCrowd) {
+                const cs = topCrowd.summary || topCrowd;
+                const crowdName = topCrowd.label || topCrowd.crowd || topCrowd.name || '未标注';
+                items.push({ icon: '👥', text: `人群高消耗：「${crowdName}」花费 ${fmtCurrency(cs.cost || 0)}，ROI ${fmtRoi(cs.roi || 0)}。` });
+            }
+            const topProduct = [...(payload?.single?.items || [])]
+                .sort((a, b) => (Number(b['花费'] || b.cost || 0)) - (Number(a['花费'] || a.cost || 0)))[0];
             if (topProduct) {
                 items.push({ icon: '📦', text: `重点单品：「${topProduct.商品名称 || topProduct.product_name || '未知'}」花费 ${fmtCurrency(topProduct['花费'] || 0)}。` });
             }
@@ -463,12 +474,26 @@
             const countEl = document.getElementById('crowd-count');
             if (!tbody) return;
 
-            const crowds = payload?.crowd || [];
-            // crowd 结构: [{crowd, plan_type, summary: {cost, amount, orders, roi, ...}, audiences: [...]}]
-            // 取 summary 存在且有 cost 的
+            // crowd 可能是数组 [{crowd, summary:{cost,...}}] 或对象 {summary:[...]}
+            let rawCrowd = payload?.crowd;
+            let crowds = [];
+            if (Array.isArray(rawCrowd)) {
+                crowds = rawCrowd;
+            } else if (rawCrowd && Array.isArray(rawCrowd.summary)) {
+                crowds = rawCrowd.summary;
+            } else if (rawCrowd && typeof rawCrowd === 'object') {
+                // 尝试从对象中提取任何数组
+                const vals = Object.values(rawCrowd).find(v => Array.isArray(v));
+                if (vals) crowds = vals;
+            }
+
             const sorted = crowds
-                .filter(c => c.summary && c.summary.cost > 0)
-                .sort((a, b) => (b.summary.cost || 0) - (a.summary.cost || 0));
+                .filter(c => c && typeof c === 'object' && ((c.summary && c.summary.cost > 0) || c.cost > 0))
+                .sort((a, b) => {
+                    const costA = a.summary?.cost || a.cost || 0;
+                    const costB = b.summary?.cost || b.cost || 0;
+                    return costB - costA;
+                });
 
             if (countEl) countEl.textContent = sorted.length > 5 ? `（共 ${sorted.length} 个人群，展示前 5）` : '';
 
@@ -478,9 +503,10 @@
             }
 
             tbody.innerHTML = sorted.slice(0, 5).map(c => {
-                const s = c.summary;
+                const s = c.summary || c; // summary 可能嵌套也可能直接在 c 上
+                const name = c.label || c.crowd || c.name || c.audience || c.plan_name || '未标注定向';
                 return `<tr>
-                    <td class="col-label td-name">${esc(c.crowd || '未标注定向')}</td>
+                    <td class="col-label td-name">${esc(name)}</td>
                     <td class="col-num">${fmtCurrency(s.cost)}</td>
                     <td class="col-num">${fmtRoi(s.roi)}</td>
                     <td class="col-num">${fmtCurrency(s.amount)}</td>
@@ -723,7 +749,7 @@
             const latest = daily[0] || null;
             const prev = daily[1] || null;
             const report = homeReportItem;
-            const alerts = homeAlertItems;
+            const alerts = homeAlertItems || [];
             const alertCount = alerts.length;
 
             // 报头
@@ -732,135 +758,93 @@
             setText('daily-date-label', isToday ? `${formatDateLabel(latestDate)} · 今日日报` : `${formatDateLabel(latestDate)} · 日报`);
             setText('daily-freshness', latest ? `数据更新至 ${latestDate}` : '暂无可用数据');
 
-            // 各区域渲染
-            renderExecutiveBanner(latest, prev, alertCount, report);
-            renderKpiTable(daily, latest, prev);
-            renderFindings(latest, prev, payload, report);
-            renderRisks(alerts, report);
-            renderCrowdTable(payload);
-            renderProductTable(payload);
-            renderHistoryTable(daily);
-            renderHomeChart(homeCurrentPeriod);
-            renderAiAnalysis(report);
-            renderActionItems(latest, prev, report, alerts);
+            // 各区域独立渲染，一个出错不影响其他
+            const sections = [
+                ['executive',  () => renderExecutiveBanner(latest, prev, alertCount, report)],
+                ['kpi-table',  () => renderKpiTable(daily, latest, prev)],
+                ['findings',   () => renderFindings(latest, prev, payload, report)],
+                ['risks',      () => renderRisks(alerts, report)],
+                ['crowd',      () => renderCrowdTable(payload)],
+                ['product',    () => renderProductTable(payload)],
+                ['history',    () => renderHistoryTable(daily)],
+                ['chart',      () => renderHomeChart(homeCurrentPeriod)],
+                ['ai-analysis',() => renderAiAnalysis(report)],
+                ['actions',    () => renderActionItems(latest, prev, report, alerts)],
+            ];
+            sections.forEach(([name, fn]) => {
+                try { fn(); } catch (err) { console.error(`[home] render ${name} failed:`, err); }
+            });
         }
 
         /* ══════════════════════════════════
-           模拟数据（API 全部失败时自动启用，线上有真实数据时不会触发）
+           数据加载失败时显示错误提示
            ══════════════════════════════════ */
-        function buildMockData() {
-            const today = shanghaiToday();
-            const mkDay = (offset, cost, amount, orders, roi, directRoi, returnRoi, viewCost, orderCost, returnRate) => ({
-                label: nDaysAgo(offset), cost, amount, orders, roi, directRoi,
-                returnRoi, viewCost, orderCost, taobaoReturnRate: returnRate,
-                cart: Math.round(orders * 2.3), shows: Math.round(cost * 18),
+        function showDataLoadError(errors) {
+            const banner = document.getElementById('executive-text');
+            if (banner) banner.textContent = '数据加载失败，请检查网络或登录状态后刷新页面。';
+
+            // 在各区域显示具体的错误提示
+            const errorHtml = '<div style="color:#dc3545;padding:16px;text-align:center;font-size:13px;">⚠️ 数据加载失败，请刷新页面重试</div>';
+            ['daily-findings', 'daily-risks', 'ai-analysis-content', 'daily-action-list'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = errorHtml;
             });
-            const daily = [
-                mkDay(0, 453200, 612800, 1874, 1.35, 1.12, 1.18, 0.42, 241.8, 0.128),
-                mkDay(1, 421500, 548700, 1723, 1.30, 1.08, 1.12, 0.45, 244.6, 0.139),
-                mkDay(2, 468900, 645200, 1956, 1.38, 1.14, 1.21, 0.40, 239.7, 0.122),
-                mkDay(3, 389600, 487300, 1587, 1.25, 1.02, 1.08, 0.48, 245.5, 0.136),
-                mkDay(4, 412300, 523400, 1698, 1.27, 1.05, 1.10, 0.46, 242.8, 0.134),
-                mkDay(5, 445100, 589600, 1812, 1.32, 1.10, 1.15, 0.43, 245.6, 0.130),
-                mkDay(6, 398700, 502100, 1645, 1.26, 1.03, 1.09, 0.47, 242.3, 0.135),
-            ];
-            return {
-                payload: {
-                    ads: { daily, weekly: [], monthly: [], kpi: {} },
-                    crowd: [
-                        { crowd: '新客-兴趣人群', summary: { cost: 128400, amount: 185600, orders: 562, roi: 1.45 } },
-                        { crowd: '老客-高价值复购', summary: { cost: 96800, amount: 152300, orders: 478, roi: 1.57 } },
-                        { crowd: '竞品-相似店铺', summary: { cost: 87200, amount: 98500, orders: 312, roi: 1.13 } },
-                        { crowd: '拉新-泛兴趣探索', summary: { cost: 72600, amount: 78400, orders: 245, roi: 1.08 } },
-                        { crowd: '大促-618预热回流', summary: { cost: 68200, amount: 97800, orders: 277, roi: 1.43 } },
-                    ],
-                    single: {
-                        kpi: { productCount: 23 },
-                        items: [
-                            { 商品名称: '交个朋友严选 无线蓝牙耳机 Pro', 花费: 45600, 直接成交金额: 68200, 该商品加购数: 892 },
-                            { 商品名称: '极米投影仪 H6 Pro 4K超高清', 花费: 38900, 直接成交金额: 95800, 该商品加购数: 234 },
-                            { 商品名称: '追觅扫地机器人 S30 Pro Ultra', 花费: 32400, 直接成交金额: 72100, 该商品加购数: 187 },
-                            { 商品名称: '徕芬吹风机 SE 高速负离子', 花费: 28700, 直接成交金额: 41300, 该商品加购数: 656 },
-                            { 商品名称: '素士电动牙刷 X5 Pro 声波', 花费: 21200, 直接成交金额: 29800, 该商品加购数: 423 },
-                        ],
-                    },
-                },
-                report: {
-                    title: '618大促日报 · 广告投放分析',
-                    report_date: today,
-                    risk_level: 'medium',
-                    summary: '今日整体消耗 ¥45.3万，ROI 1.35，较昨日小幅回升。新客兴趣人群持续贡献主力消耗，竞品人群 ROI 偏低需关注。退货率 12.8% 处于合理区间。',
-                    executive_summary: { headline: '今日大盘稳中有升：花费 ¥45.3万，ROI 1.35（+3.8%），成交 ¥61.3万，1,874 笔订单，退货率 12.8%。' },
-                    overview_metrics: { roi: '1.35', returnRoi: '1.18', cost: '¥45.3万', amount: '¥61.3万' },
-                    highlights: [
-                        { title: 'ROI 连续两日回升，从 1.25 上升至 1.35，主要受新客转化率提升带动。' },
-                        { title: '竞品相似店铺人群 ROI 仅 1.13，花费占比 19%，建议降低出价或缩窄定向。' },
-                        { title: '蓝牙耳机 Pro 加购数 892 但成交转化偏低，可能存在价格犹豫，建议追加优惠券。' },
-                    ],
-                    actions: [
-                        { title: '提升新客人群预算', description: '新客兴趣人群 ROI 1.45 表现最优，建议预算上调 15%。' },
-                        { title: '收紧竞品人群出价', description: '竞品人群 ROI 1.13 低于盈亏线，建议降低出价 20% 或暂停低效计划。' },
-                        { title: '蓝牙耳机追加促销', description: '加购高但转化低，建议投放专属优惠券提高转化率。' },
-                        { title: '关注退货率趋势', description: '近7日退货率在 12-14% 波动，去退 ROI 1.18，整体可控但需持续监测。' },
-                    ],
-                    high_spend_crowds: [
-                        { crowd: '新客-兴趣人群', detail: '花费 ¥12.8万，ROI 1.45' },
-                        { crowd: '老客-高价值复购', detail: '花费 ¥9.7万，ROI 1.57' },
-                    ],
-                },
-                alerts: [
-                    { title: '竞品人群 ROI 低于盈亏线', summary: '竞品-相似店铺人群连续3天 ROI 低于 1.2，当前 1.13，建议降预算。', risk_level: 'high' },
-                ],
-            };
+            ['kpi-table-body', 'crowd-table-body', 'product-table-body', 'history-table-body'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<tr><td colspan="5" class="table-loading table-error">数据加载失败，请刷新重试</td></tr>';
+            });
+
+            // 在控制台输出详细错误便于排查
+            errors.forEach(e => console.error('[home] API error:', e));
         }
 
         async function loadHomeData() {
-            let apiSuccess = false;
+            const today = shanghaiToday();
+            const start = nDaysAgo(14);
+            const errors = [];
 
-            try {
-                const today = shanghaiToday();
-                const start = nDaysAgo(14);
-
-                const result = await authHelpers.fetchFunctionJson('dashboard-data', {
+            // 三个独立 API 并行请求，互不阻塞
+            const [dashResult, alertResult, reportResult] = await Promise.allSettled([
+                authHelpers.fetchFunctionJson('dashboard-data', {
                     query: { sections: 'all', start_date: start, end_date: today },
                     parseErrorMessage: '看板数据读取失败',
                     onUnauthorized: () => {}, // 不自动跳转，先渲染空状态
-                });
+                }),
+                authHelpers.fetchFunctionJson('ai-reports', { query: { risk_level: 'high', limit: 10 } }),
+                authHelpers.fetchFunctionJson('ai-reports', { query: { report_type: 'daily', limit: 1 } }),
+            ]);
 
-                const data = result.data || result;
+            // 处理 dashboard-data
+            if (dashResult.status === 'fulfilled') {
+                const data = dashResult.value.data || dashResult.value;
                 homeFullPayload = data;
                 homeDashboardData = data.ads || null;
-                apiSuccess = true;
-
-            } catch (err) {
-                console.error('[home] dashboard-data failed:', err);
+            } else {
+                errors.push(dashResult.reason);
+                console.error('[home] dashboard-data failed:', dashResult.reason);
             }
 
-            // 加载高风险告警
-            try {
-                const alertRes = await authHelpers.fetchFunctionJson('ai-reports', { query: { risk_level: 'high', limit: 10 } });
-                homeAlertItems = (alertRes.data || alertRes).items || [];
-            } catch {
+            // 处理高风险告警
+            if (alertResult.status === 'fulfilled') {
+                homeAlertItems = (alertResult.value.data || alertResult.value).items || [];
+            } else {
                 homeAlertItems = [];
+                errors.push(alertResult.reason);
             }
 
-            // 加载最新 AI 日报
-            try {
-                const reportRes = await authHelpers.fetchFunctionJson('ai-reports', { query: { report_type: 'daily', limit: 1 } });
-                const items = (reportRes.data || reportRes).items || [];
+            // 处理最新 AI 日报
+            if (reportResult.status === 'fulfilled') {
+                const items = (reportResult.value.data || reportResult.value).items || [];
                 homeReportItem = items[0] || null;
-            } catch {
+            } else {
                 homeReportItem = null;
+                errors.push(reportResult.reason);
             }
 
-            // 如果所有 API 都失败（无真实数据），启用模拟数据以便预览
-            if (!homeFullPayload && !homeReportItem) {
-                console.info('[home] API 不可用，启用模拟数据预览');
-                const mock = buildMockData();
-                homeFullPayload = mock.payload;
-                homeDashboardData = mock.payload.ads;
-                homeReportItem = mock.report;
-                homeAlertItems = mock.alerts;
+            // 如果核心数据（dashboard-data）加载失败，显示错误提示
+            if (!homeFullPayload) {
+                showDataLoadError(errors);
+                return;
             }
 
             // 统一渲染
