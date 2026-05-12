@@ -23,6 +23,36 @@ jobs:
           [[ -n "$FTP_USER" ]] || { echo "Missing repository variable: FTP_USER"; exit 1; }
           [[ -n "$FTP_PASS" ]] || { echo "Missing repository secret: FTP_PASS"; exit 1; }
 
+      - name: 预解析 FTP 域名（规避 GitHub Actions DNS 解析失败）
+        shell: bash
+        env:
+          FTP_HOST: ${{ vars.FTP_HOST }}
+        run: |
+          # 用 Python + Google DNS 解析，避免依赖 dig/nslookup
+          IP=$(python3 -c "
+          import socket, struct, urllib.request, json
+          host = '${FTP_HOST}'
+          # 方法1: 系统解析
+          try:
+              ip = socket.gethostbyname(host)
+              print(ip); exit()
+          except: pass
+          # 方法2: Google DoH
+          try:
+              url = f'https://dns.google/resolve?name={host}&type=A'
+              data = json.loads(urllib.request.urlopen(url, timeout=10).read())
+              for ans in data.get('Answer', []):
+                  if ans.get('type') == 1:
+                      print(ans['data']); exit()
+          except: pass
+          " 2>/dev/null)
+          if [[ -n "$IP" ]]; then
+            echo "Resolved $FTP_HOST -> $IP"
+            echo "$IP $FTP_HOST" | sudo tee -a /etc/hosts
+          else
+            echo "WARNING: Could not resolve $FTP_HOST, proceeding without hosts entry"
+          fi
+
       - name: 部署到 FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
