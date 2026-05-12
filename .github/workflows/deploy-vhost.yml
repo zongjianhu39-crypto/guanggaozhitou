@@ -53,27 +53,31 @@ jobs:
             echo "WARNING: Could not resolve $FTP_HOST, proceeding without hosts entry"
           fi
 
-      - name: 部署到 FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ vars.FTP_HOST }}
-          username: ${{ vars.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          local-dir: ./
-          server-dir: /wwwroot/
-          dangerous-clean-slate: false
-          exclude: |
-            .git/**
-            .github/**
-            node_modules/**
-            supabase/**
-            scripts/**
-            docs/**
-            README*
-            .env
-            .env.*
-            **/*.ts
-            **/*.map
-            tsconfig.json
-            package*.json
-          timeout: 60
+      - name: 部署到 FTP（带重试）
+        shell: bash
+        env:
+          FTP_HOST: ${{ vars.FTP_HOST }}
+          FTP_USER: ${{ vars.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp > /dev/null 2>&1
+
+          MAX_RETRIES=3
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "=== FTP deploy attempt $i/$MAX_RETRIES ==="
+            if lftp -c "
+              set net:timeout 30
+              set net:max-retries 3
+              set ftp:ssl-allow no
+              open ftp://${FTP_USER}:${FTP_PASS}@${FTP_HOST}
+              mirror --reverse --verbose --exclude-glob .git/ --exclude-glob .github/ --exclude-glob node_modules/ --exclude-glob supabase/ --exclude-glob scripts/ --exclude-glob docs/ --exclude-glob '*.ts' --exclude-glob '*.map' --exclude-glob tsconfig.json --exclude-glob 'package*.json' ./ /wwwroot/
+              bye
+            "; then
+              echo "=== FTP deploy succeeded on attempt $i ==="
+              exit 0
+            fi
+            echo "=== Attempt $i failed, waiting 10s before retry ==="
+            sleep 10
+          done
+          echo "=== FTP deploy failed after $MAX_RETRIES attempts ==="
+          exit 1
