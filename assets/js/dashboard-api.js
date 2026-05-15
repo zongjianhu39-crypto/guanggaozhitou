@@ -1,6 +1,6 @@
 (function attachDashboardApi(window) {
     const DASHBOARD_SPEC_URL = 'assets/data/dashboard-spec.json?v=20260412a';
-    const IN_FLIGHT_TIMEOUT_MS = 30000; // 30 秒超时清理挂起的请求
+    const IN_FLIGHT_TIMEOUT_MS = 5000; // 5 秒超时清理挂起的请求
     let dashboardSpecPromise = null;
 
     async function loadDashboardSpec() {

@@ -6,13 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>618大促日报 · 交个朋友广告智投工作台</title>
     <meta name="description" content="618大促广告投放日报：每日核心KPI、经营结论、优先动作与AI洞察，一键导出PDF分享">
-    <link rel="stylesheet" href="style.css?v=202605122054">
+    <link rel="stylesheet" href="style.css?v=202605122230">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 </head>
 <body class="home-page">
-    <script src="assets/js/auth-helpers.js?v=202605122054"></script>
-    <script src="auth.js?v=202605122054"></script>
+    <script src="assets/js/auth-helpers.js?v=202605122230"></script>
+    <script src="auth.js?v=202605122230"></script>
 
     <!-- 导航栏（PDF 导出时隐藏） -->
     <nav class="navbar no-print">
@@ -27,14 +26,6 @@
                 <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
                 <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
                 <li><a href="insights.html" class="nav-link">洞察中心</a></li>
-                <li class="nav-item-dropdown">
-                    <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
-                    <div class="nav-dropdown" role="menu">
-                        <a href="genbi.html">GenBI</a>
-                        <a href="genbi-rule-admin.html">GenBI 规则管理</a>
-                        <a href="prompt-admin.html">Prompt 管理</a>
-                    </div>
-                </li>
                 <li><a href="auth/index.html" data-action="logout" class="nav-link">退出登录</a></li>
             </ul>
             <button class="mobile-menu-btn">
@@ -75,135 +66,137 @@
                 </div>
             </section>
 
-            <!-- ====== 核心KPI对比表 ====== -->
+            <!-- ====== 同比去年 ====== -->
+            <section class="report-section">
+                <h3 class="report-section-title"><span class="yoy-badge">同比去年</span></h3>
+                <div class="report-card report-card--flush">
+                    <div class="table-scroll-wrapper">
+                        <table class="report-table kpi-stage-table" id="yoy-table">
+                            <thead>
+                                <tr class="kpi-group-header">
+                                    <th colspan="2" class="group-fixed"></th>
+                                    <th colspan="1" class="group-total">汇总</th>
+                                    <th colspan="1" class="group-live">直播有客</th>
+                                    <th colspan="9" class="group-ad">广告-万相台</th>
+                                </tr>
+                                <tr>
+                                    <th class="col-label">开始时间</th>
+                                    <th class="col-label">结束时间</th>
+                                    <th class="col-num">总花费</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">观看次数</th>
+                                    <th class="col-num">成交笔数</th>
+                                    <th class="col-num">总购物车</th>
+                                    <th class="col-num">观看成本</th>
+                                    <th class="col-num">观看转化率</th>
+                                    <th class="col-num">订单成交成本</th>
+                                    <th class="col-num">预售订单量</th>
+                                    <th class="col-num">预售订单成本</th>
+                                </tr>
+                            </thead>
+                            <tbody id="yoy-table-body">
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ====== 核心KPI阶段表 ====== -->
             <section class="report-section">
                 <h3 class="report-section-title">📊 核心指标</h3>
+                <!-- 一句话总结区域 -->
+                <div class="kpi-summary" id="kpi-summary-text"></div>
                 <div class="report-card report-card--flush">
-                    <table class="report-table" id="kpi-table">
-                        <thead>
-                            <tr>
-                                <th class="col-label">指标</th>
-                                <th class="col-num" id="kpi-col-today">今日</th>
-                                <th class="col-num" id="kpi-col-yesterday">昨日</th>
-                                <th class="col-num">较前日</th>
-                                <th class="col-num">近7日均值</th>
-                            </tr>
-                        </thead>
-                        <tbody id="kpi-table-body">
-                            <tr><td colspan="5" class="table-loading">正在加载数据...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- ====== 今日关键发现 + 风险提示 ====== -->
-            <section class="report-section">
-                <div class="report-columns report-columns--findings">
-                    <div class="report-card">
-                        <div class="report-card-title">🔍 今日关键发现</div>
-                        <div id="daily-findings" class="report-findings-list">
-                            <div class="finding-loading">正在分析今日数据变化...</div>
-                        </div>
-                    </div>
-                    <div class="report-card">
-                        <div class="report-card-title">⚠️ 风险 &amp; 异常</div>
-                        <div id="daily-risks" class="report-risk-list">
-                            <div class="finding-loading">正在检查异常告警...</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ====== 人群 & 单品速览 ====== -->
-            <section class="report-section">
-                <div class="report-columns report-columns--data">
-                    <div class="report-card">
-                        <div class="report-card-title">👥 人群花费 TOP<span class="title-extra" id="crowd-count"></span></div>
-                        <table class="report-table report-table--compact" id="crowd-table">
+                    <div class="table-scroll-wrapper">
+                        <table class="report-table kpi-stage-table" id="kpi-table">
                             <thead>
+                                <!-- 第一行：分组表头 -->
+                                <tr class="kpi-group-header">
+                                    <th colspan="3" class="group-fixed"></th>
+                                    <th colspan="1" class="group-total">汇总</th>
+                                    <th colspan="1" class="group-live">直播有客</th>
+                                    <th colspan="9" class="group-ad">广告-万相台</th>
+                                </tr>
+                                <!-- 第二行：具体列名 -->
                                 <tr>
-                                    <th class="col-label">人群定向</th>
+                                    <th class="col-label">开始时间</th>
+                                    <th class="col-label">结束时间</th>
+                                    <th class="col-label">阶段</th>
+                                    <th class="col-num">总花费</th>
                                     <th class="col-num">花费</th>
-                                    <th class="col-num">ROI</th>
-                                    <th class="col-num">成交金额</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">观看次数</th>
+                                    <th class="col-num">成交笔数</th>
+                                    <th class="col-num">总购物车</th>
+                                    <th class="col-num">观看成本</th>
+                                    <th class="col-num">观看转化率</th>
+                                    <th class="col-num">订单成交成本</th>
+                                    <th class="col-num">预售订单量</th>
+                                    <th class="col-num">预售订单成本</th>
                                 </tr>
                             </thead>
-                            <tbody id="crowd-table-body">
-                                <tr><td colspan="4" class="table-loading">等待数据同步...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="report-card">
-                        <div class="report-card-title">📦 单品花费 TOP<span class="title-extra" id="product-count"></span></div>
-                        <table class="report-table report-table--compact" id="product-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-label">商品名称</th>
-                                    <th class="col-num">花费</th>
-                                    <th class="col-num">直接成交</th>
-                                    <th class="col-num">加购数</th>
-                                </tr>
-                            </thead>
-                            <tbody id="product-table-body">
-                                <tr><td colspan="4" class="table-loading">等待数据同步...</td></tr>
+                            <tbody id="kpi-table-body">
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- ====== 花费趋势 + 7天明细 ====== -->
+            <!-- ====== 近7天每日明细 ====== -->
             <section class="report-section">
-                <div class="report-columns report-columns--trend">
-                    <div class="report-card">
-                        <div class="report-card-title">
-                            📈 花费 &amp; ROI 趋势
-                            <div class="report-chart-toolbar no-print">
-                                <span class="metric-period active" data-period="daily">日</span>
-                                <span class="metric-period" data-period="weekly">周</span>
-                            </div>
-                        </div>
-                        <div class="report-chart-area" id="home-chart">
-                            <canvas id="home-chart-canvas"></canvas>
-                        </div>
-                    </div>
-                    <div class="report-card">
-                        <div class="report-card-title">📅 近7天明细</div>
-                        <table class="report-table report-table--compact" id="history-table">
+                <h3 class="report-section-title">📅 近7天每日明细</h3>
+                <div class="report-card report-card--flush">
+                    <div class="table-scroll-wrapper">
+                        <table class="report-table kpi-stage-table" id="daily-detail-table">
                             <thead>
+                                <!-- 第一行：分组表头 -->
+                                <tr class="kpi-group-header">
+                                    <th colspan="3" class="group-fixed"></th>
+                                    <th colspan="1" class="group-total">汇总</th>
+                                    <th colspan="1" class="group-live">直播有客</th>
+                                    <th colspan="9" class="group-ad">广告-万相台</th>
+                                </tr>
+                                <!-- 第二行：具体列名 -->
                                 <tr>
                                     <th class="col-label">日期</th>
+                                    <th class="col-label">星期</th>
+                                    <th class="col-label">阶段</th>
+                                    <th class="col-num">总花费</th>
                                     <th class="col-num">花费</th>
-                                    <th class="col-num">ROI</th>
-                                    <th class="col-num">去退ROI</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">观看次数</th>
                                     <th class="col-num">成交笔数</th>
+                                    <th class="col-num">总购物车</th>
+                                    <th class="col-num">观看成本</th>
+                                    <th class="col-num">观看转化率</th>
+                                    <th class="col-num">订单成交成本</th>
+                                    <th class="col-num">预售订单量</th>
+                                    <th class="col-num">预售订单成本</th>
                                 </tr>
                             </thead>
-                            <tbody id="history-table-body">
-                                <tr><td colspan="5" class="table-loading">加载中...</td></tr>
+                            <tbody id="daily-detail-table-body">
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- ====== AI 分析摘要（内联展示） ====== -->
-            <section class="report-section">
-                <h3 class="report-section-title">🤖 AI 分析摘要</h3>
-                <div class="report-card" id="ai-analysis-card">
-                    <div id="ai-analysis-content" class="ai-analysis-content">
-                        <div class="finding-loading">正在加载 AI 报告...</div>
-                    </div>
-                </div>
-            </section>
 
-            <!-- ====== 执行建议 ====== -->
-            <section class="report-section">
-                <h3 class="report-section-title">⚡ 执行建议</h3>
-                <div class="report-action-list" id="daily-action-list">
-                    <div class="report-action-item is-loading">正在生成执行建议...</div>
-                </div>
-            </section>
 
         </div>
     </main>
@@ -235,17 +228,23 @@
     </footer>
 
     <script src="assets/js/config.js"></script>
-    <script src="script.js?v=202605122054"></script>
+    <script src="script.js?v=202605122230"></script>
     <script>
         const authHelpers = window.authHelpers || {};
 
+        // ===== 同比配置 =====
+        const YOY_MONTH = '05'; // 同比对比月份（如618大促=05）
+
         let homeInsightsAuthRedirectScheduled = false;
-        let homeChartInstance = null;
         let homeDashboardData = null;
         let homeFullPayload = null;
         let homeReportItem = null;   // 最新一篇 AI 报告（完整对象）
         let homeAlertItems = [];
-        let homeCurrentPeriod = 'daily';
+        let homePlanData = null;     // 计划目标数据
+        let homeYoyCurrent = null;   // 当年5月累计
+        let homeYoyReference = null; // 去年5月累计
+        let homeDataCache = null;    // stale-while-revalidate 缓存
+        let homeDataCacheTime = 0;
 
         /* ══════════════════════════════════
            工具函数
@@ -258,24 +257,12 @@
             if (v == null || isNaN(v)) return '--';
             return v >= 10000 ? '¥' + (v / 10000).toFixed(1) + '万' : '¥' + Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 0 });
         }
-        function fmtRoi(v) { return (v == null || isNaN(v) || Number(v) < 0) ? '--' : Number(v).toFixed(2); }
         function fmtInt(v) { return (v == null || isNaN(v)) ? '--' : Number(v).toLocaleString('zh-CN', { maximumFractionDigits: 0 }); }
-        function fmtPct(v) { return (v == null || isNaN(v)) ? '--' : (Number(v) * 100).toFixed(1) + '%'; }
-        function fmtCost(v) { return (v == null || isNaN(v) || v <= 0) ? '--' : '¥' + Number(v).toFixed(2); }
 
         function changePct(cur, prev) {
             if (prev == null || prev === 0 || cur == null) return { text: '--', cls: 'neutral' };
             const pct = ((cur - prev) / Math.abs(prev)) * 100;
             return { text: (pct > 0 ? '+' : '') + pct.toFixed(1) + '%', cls: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral' };
-        }
-
-        function avg7(daily, field) {
-            const vals = (daily || []).slice(0, 7).map(r => r[field]).filter(v => v != null && !isNaN(v));
-            return vals.length >= 1 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-        }
-
-        function riskLabel(level) {
-            return { low: '低风险', medium: '中风险', high: '高风险', critical: '严重' }[level] || '未评级';
         }
 
         function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
@@ -315,421 +302,493 @@
             if (!latest) { el.textContent = '今日数据暂未同步，建议稍后刷新。'; return; }
             const parts = [];
             parts.push(`花费 ${fmtCurrency(latest.cost)}`);
-            parts.push(`ROI ${fmtRoi(latest.roi)}`);
-            parts.push(`成交 ${fmtCurrency(latest.amount)}`);
+            parts.push(`加购 ${fmtInt(latest.cart)}`);
+            parts.push(`成交 ${fmtInt(latest.orders)} 笔`);
             if (prev) {
-                const roiDelta = changePct(latest.roi, prev.roi);
-                parts.push(`ROI 较前日 ${roiDelta.text}`);
+                const costDelta = changePct(latest.cost, prev.cost);
+                parts.push(`花费较前日 ${costDelta.text}`);
             }
             if (alertCount > 0) parts.push(`${alertCount} 条风险告警需处理`);
             el.textContent = '今日大盘：' + parts.join('，') + '。';
         }
 
-        /* ══════════════════════════════════
-           渲染：核心KPI对比表
+       /* ══════════════════════════════════
+           渲染：核心KPI阶段表（按周分组）
            ══════════════════════════════════ */
+
+        /** 格式化为"万"单位 */
+        function fmtWan(v) {
+            if (v == null || isNaN(v)) return '--';
+            const n = Number(v);
+            if (n === 0) return '0.0万';
+            if (Math.abs(n) >= 10000) return (n / 10000).toFixed(1) + '万';
+            if (Math.abs(n) >= 1000) return (n / 10000).toFixed(2) + '万';
+            return n.toFixed(1);
+        }
+
+        /** 获取 ISO 周一日期 */
+        function getMonday(d) {
+            const dt = new Date(d);
+            const day = dt.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            dt.setDate(dt.getDate() + diff);
+            return dt;
+        }
+
+        /** 格式化日期为 yyyy/M/d */
+        function fmtDate(d) {
+            const dt = typeof d === 'string' ? new Date(d + 'T00:00:00+08:00') : d;
+            return `${dt.getFullYear()}/${dt.getMonth() + 1}/${dt.getDate()}`;
+        }
+
+        /** 生成阶段名（如 '4月最后一周'、'5月第1周'） */
+        function phaseName(startDate) {
+            const dt = typeof startDate === 'string' ? new Date(startDate + 'T00:00:00+08:00') : new Date(startDate);
+            const month = dt.getMonth() + 1;
+            const dayOfMonth = dt.getDate();
+            // 计算是当月第几周
+            const firstOfMonth = new Date(dt.getFullYear(), dt.getMonth(), 1);
+            const firstMonday = getMonday(firstOfMonth);
+            if (firstMonday.getMonth() < dt.getMonth()) firstMonday.setDate(firstMonday.getDate() + 7);
+            const weekIdx = Math.floor((dayOfMonth - 1) / 7) + 1;
+            // 判断是否是最后一周（下周一已到下月）
+            const nextMonday = new Date(dt);
+            nextMonday.setDate(nextMonday.getDate() + 7);
+            if (nextMonday.getMonth() + 1 !== month) {
+                return `${month}月最后一周`;
+            }
+            return `${month}月第${weekIdx}周`;
+        }
+
+        /** 将 daily 数据按自然周（周一~周日）分组 */
+        function groupByWeek(daily, agentPlanMap) {
+            if (!daily || !daily.length) return [];
+            const weekMap = new Map();
+            // daily 按日期降序排列（最新在前），遍历全部
+            daily.forEach(row => {
+                if (!row.label) return;
+                const monday = getMonday(new Date(row.label + 'T00:00:00+08:00'));
+                const key = monday.toISOString().slice(0, 10);
+                if (!weekMap.has(key)) {
+                    weekMap.set(key, { startDate: key, rows: [] });
+                }
+                weekMap.get(key).rows.push(row);
+            });
+
+            // 将 Map 转为数组并排序（旧的在前）
+            const weeks = Array.from(weekMap.values()).sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+            return weeks.map(w => {
+                const rows = w.rows;
+                const cost = rows.reduce((s, r) => s + (Number(r.cost) || 0), 0);
+                const views = rows.reduce((s, r) => s + (Number(r.views) || 0), 0);
+                const orders = rows.reduce((s, r) => s + (Number(r.orders) || 0), 0);
+                const cart = rows.reduce((s, r) => s + (Number(r.cart) || 0), 0);
+                const preOrders = rows.reduce((s, r) => s + (Number(r.preOrders) || 0), 0);
+                // 有客代投花费：按日期从 agentPlanMap 取值累加
+                const liveCost = agentPlanMap ? rows.reduce((s, r) => {
+                    return s + (agentPlanMap.get(r.label) || 0);
+                }, 0) : 0;
+                const viewCost = views > 0 ? cost / views : 0;
+                const viewConvertRate = views > 0 ? orders / views : 0;
+                const orderCost = orders > 0 ? cost / orders : 0;
+                const preOrderCost = preOrders > 0 ? cost / preOrders : 0;
+
+                // 计算周的结束日期（周日）
+                const start = new Date(w.startDate + 'T00:00:00+08:00');
+                const end = new Date(start);
+                end.setDate(end.getDate() + 6);
+
+                return {
+                    startDate: fmtDate(start),
+                    endDate: fmtDate(end),
+                    phase: phaseName(w.startDate),
+                    cost, liveCost, views, orders, cart, preOrders,
+                    viewCost, viewConvertRate, orderCost, preOrderCost
+                };
+            });
+        }
+
         function renderKpiTable(daily, latest, prev) {
             const tbody = document.getElementById('kpi-table-body');
             if (!tbody) return;
 
-            const latestDate = latest?.label || '';
-            const isToday = latestDate === shanghaiToday();
-            const colLabel = isToday ? '今日' : (latestDate.slice(5) || '最新');
-            setText('kpi-col-today', colLabel);
-            setText('kpi-col-yesterday', prev ? prev.label?.slice(5) || '前日' : '前日');
+            // 构建有客代投花费的日期映射
+            const agentPlanMap = homePlanData?.agentPlanByDate || null;
+            const weeks = groupByWeek(daily, agentPlanMap);
 
-            const rows = [
-                { label: '花费',     cur: latest?.cost,      prev: prev?.cost,      avg: avg7(daily, 'cost'),      fmt: fmtCurrency },
-                { label: '成交金额', cur: latest?.amount,    prev: prev?.amount,    avg: avg7(daily, 'amount'),    fmt: fmtCurrency },
-                { label: '成交笔数', cur: latest?.orders,    prev: prev?.orders,    avg: avg7(daily, 'orders'),    fmt: fmtInt },
-                { label: 'ROI',      cur: latest?.roi,       prev: prev?.roi,       avg: avg7(daily, 'roi'),       fmt: fmtRoi },
-                { label: '直接ROI',  cur: latest?.directRoi, prev: prev?.directRoi, avg: avg7(daily, 'directRoi'), fmt: fmtRoi },
-                { label: '去退ROI',  cur: latest?.returnRoi, prev: prev?.returnRoi, avg: avg7(daily, 'returnRoi'), fmt: fmtRoi },
-                { label: '观看成本', cur: latest?.viewCost,  prev: prev?.viewCost,  avg: avg7(daily, 'viewCost'),  fmt: fmtCost },
-                { label: '订单成本', cur: latest?.orderCost, prev: prev?.orderCost, avg: avg7(daily, 'orderCost'), fmt: fmtCost },
-                { label: '退货率',   cur: latest?.taobaoReturnRate, prev: prev?.taobaoReturnRate, avg: avg7(daily, 'taobaoReturnRate'), fmt: fmtPct },
-            ];
+            if (!weeks.length) {
+                tbody.innerHTML = '<tr><td colspan="14" class="table-loading">暂无阶段数据</td></tr>';
+                renderKpiSummary([], null);
+                return;
+            }
 
-            tbody.innerHTML = rows.map(r => {
-                const chg = changePct(r.cur, r.prev);
-                return `<tr>
-                    <td class="col-label">${esc(r.label)}</td>
-                    <td class="col-num col-primary">${esc(r.fmt(r.cur))}</td>
-                    <td class="col-num">${esc(r.fmt(r.prev))}</td>
-                    <td class="col-num chg-${chg.cls}">${esc(chg.text)}</td>
-                    <td class="col-num">${esc(r.fmt(r.avg))}</td>
+            // 累计汇总
+            let totalCost = 0, totalViews = 0, totalOrders = 0, totalCart = 0, totalPreOrders = 0, totalLiveCost = 0;
+
+            let html = '';
+            weeks.forEach(week => {
+                const adCost = week.cost;
+                const liveCost = week.liveCost || 0;
+                const allCost = adCost + liveCost;
+                totalCost += adCost;
+                totalLiveCost += liveCost;
+                totalViews += week.views;
+                totalOrders += week.orders;
+                totalCart += week.cart;
+                totalPreOrders += week.preOrders;
+
+                html += `<tr>
+                    <td class="col-label">${esc(week.startDate)}</td>
+                    <td class="col-label">${esc(week.endDate)}</td>
+                    <td class="col-label">${esc(week.phase)}</td>
+                    <td class="col-num">${fmtWan(allCost)}</td>
+                    <td class="col-num">${fmtWan(liveCost)}</td>
+                    <td class="col-num">${fmtWan(adCost)}</td>
+                    <td class="col-num">${fmtWan(week.views)}</td>
+                    <td class="col-num">${fmtWan(week.orders)}</td>
+                    <td class="col-num">${fmtWan(week.cart)}</td>
+                    <td class="col-num">${week.viewCost > 0 ? week.viewCost.toFixed(2) : '--'}</td>
+                    <td class="col-num">${week.viewConvertRate > 0 ? (week.viewConvertRate * 100).toFixed(1) + '%' : '--'}</td>
+                    <td class="col-num">${week.orderCost > 0 ? week.orderCost.toFixed(1) : '--'}</td>
+                    <td class="col-num">${fmtWan(week.preOrders)}</td>
+                    <td class="col-num">${week.preOrderCost > 0 ? fmtWan(week.preOrderCost) : '--'}</td>
                 </tr>`;
-            }).join('');
+            });
+
+            // 汇总行
+            const totalAllCost = totalCost + totalLiveCost;
+            const totalViewCost = totalViews > 0 ? totalAllCost / totalViews : 0;
+            const totalViewRate = totalViews > 0 ? totalOrders / totalViews : 0;
+            const totalOrderCost = totalOrders > 0 ? totalAllCost / totalOrders : 0;
+            const totalPreOrderCost = totalPreOrders > 0 ? totalAllCost / totalPreOrders : 0;
+
+            html += `<tr class="kpi-summary-row">
+                <td class="col-label" colspan="3">汇总</td>
+                <td class="col-num">${fmtWan(totalAllCost)}</td>
+                <td class="col-num">${fmtWan(totalLiveCost)}</td>
+                <td class="col-num">${fmtWan(totalCost)}</td>
+                <td class="col-num">${fmtWan(totalViews)}</td>
+                <td class="col-num">${fmtWan(totalOrders)}</td>
+                <td class="col-num">${fmtWan(totalCart)}</td>
+                <td class="col-num">${totalViewCost > 0 ? totalViewCost.toFixed(2) : '--'}</td>
+                <td class="col-num">${totalViewRate > 0 ? (totalViewRate * 100).toFixed(1) + '%' : '--'}</td>
+                <td class="col-num">${totalOrderCost > 0 ? totalOrderCost.toFixed(1) : '--'}</td>
+                <td class="col-num">${fmtWan(totalPreOrders)}</td>
+                <td class="col-num">${totalPreOrderCost > 0 ? fmtWan(totalPreOrderCost) : '--'}</td>
+            </tr>`;
+
+            tbody.innerHTML = html;
+
+            // 渲染一句话总结
+            renderKpiSummary(weeks, { cost: totalCost, views: totalViews, orders: totalOrders, cart: totalCart, preOrders: totalPreOrders });
+        }
+
+        /** 一句话总结 */
+        function renderKpiSummary(weeks, total) {
+            const el = document.getElementById('kpi-summary-text');
+            if (!el) return;
+            if (!weeks.length) { el.innerHTML = ''; return; }
+
+            const lastWeek = weeks[weeks.length - 1];
+            const parts = [];
+
+            parts.push(`自投本周花 <strong>${fmtWan(lastWeek.cost)}</strong>`);
+            if (lastWeek.viewConvertRate > 0) {
+                parts.push(`观看转化率 <strong>${(lastWeek.viewConvertRate * 100).toFixed(1)}%</strong>`);
+            }
+            if (lastWeek.orderCost > 0) {
+                parts.push(`订单成本 <strong>${lastWeek.orderCost.toFixed(1)}</strong> 元`);
+            }
+
+            if (total) {
+                const today = new Date();
+                const monthDay = today.getDate();
+                parts.push(`${today.getMonth() + 1}月累计（截至 ${today.getMonth() + 1}/${monthDay}）：花 <strong>${fmtWan(total.cost)}</strong>，成交 <strong>${fmtWan(total.orders)}</strong> 笔`);
+            }
+
+            el.innerHTML = parts.join('，') + '。';
         }
 
         function renderKpiError() {
             const tbody = document.getElementById('kpi-table-body');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="table-loading table-error">数据加载失败</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="14" class="table-loading table-error">数据加载失败</td></tr>';
         }
 
         /* ══════════════════════════════════
-           渲染：今日关键发现
+           渲染：近7天每日明细
            ══════════════════════════════════ */
-        function renderFindings(latest, prev, payload, aiReport) {
-            const el = document.getElementById('daily-findings');
-            if (!el) return;
-
-            const items = [];
-
-            // 1. 从 AI 报告提取 highlights
-            const highlights = aiReport?.highlights || aiReport?.raw_payload?.issues || [];
-            highlights.forEach(h => {
-                const text = typeof h === 'string' ? h : (h.title || h.description || h.text || '');
-                if (text) items.push({ icon: '💡', text });
-            });
-
-            // 2. 从数据计算关键变化
-            if (latest && prev) {
-                const roiChg = changePct(latest.roi, prev.roi);
-                const costChg = changePct(latest.cost, prev.cost);
-                if (roiChg.cls === 'down') items.push({ icon: '📉', text: `ROI 从 ${fmtRoi(prev.roi)} 降至 ${fmtRoi(latest.roi)}（${roiChg.text}），需关注转化效率。` });
-                else if (roiChg.cls === 'up') items.push({ icon: '📈', text: `ROI 从 ${fmtRoi(prev.roi)} 升至 ${fmtRoi(latest.roi)}（${roiChg.text}），投放效率改善。` });
-                if (costChg.cls === 'up' && Math.abs(parseFloat(costChg.text)) > 15) items.push({ icon: '💰', text: `花费较前日 ${costChg.text}，上升至 ${fmtCurrency(latest.cost)}，关注预算消耗节奏。` });
-                if (costChg.cls === 'down' && Math.abs(parseFloat(costChg.text)) > 15) items.push({ icon: '💰', text: `花费较前日 ${costChg.text}，回落至 ${fmtCurrency(latest.cost)}，检查是否因限额或竞争导致。` });
-                if (latest.taobaoReturnRate > 0.15) items.push({ icon: '🔄', text: `退货率 ${fmtPct(latest.taobaoReturnRate)}，去退 ROI ${fmtRoi(latest.returnRoi)}，注意真实盈亏。` });
-            }
-
-            // 3. 人群/单品关键信息
-            // crowd 可能是数组或 {summary:[...]}，统一提取为数组
-            let crowdArr = [];
-            if (Array.isArray(payload?.crowd)) {
-                crowdArr = payload.crowd;
-            } else if (payload?.crowd && Array.isArray(payload.crowd.summary)) {
-                crowdArr = payload.crowd.summary;
-            }
-            const topCrowd = crowdArr
-                .filter(c => c && typeof c === 'object')
-                .sort((a, b) => ((b.summary?.cost || b.cost || 0) - (a.summary?.cost || a.cost || 0)))[0];
-            if (topCrowd) {
-                const cs = topCrowd.summary || topCrowd;
-                const crowdName = topCrowd.label || topCrowd.crowd || topCrowd.name || '未标注';
-                items.push({ icon: '👥', text: `人群高消耗：「${crowdName}」花费 ${fmtCurrency(cs.cost || 0)}，ROI ${fmtRoi(cs.roi || 0)}。` });
-            }
-            const topProduct = [...(payload?.single?.items || [])]
-                .sort((a, b) => (Number(b['花费'] || b.cost || 0)) - (Number(a['花费'] || a.cost || 0)))[0];
-            if (topProduct) {
-                items.push({ icon: '📦', text: `重点单品：「${topProduct.商品名称 || topProduct.product_name || '未知'}」花费 ${fmtCurrency(topProduct['花费'] || 0)}。` });
-            }
-
-            if (!items.length) {
-                el.innerHTML = '<div class="finding-empty">暂无足够数据生成关键发现，请确认数据已同步。</div>';
-                return;
-            }
-            el.innerHTML = items.slice(0, 8).map(i => `<div class="finding-item"><span class="finding-icon">${i.icon}</span><span>${esc(i.text)}</span></div>`).join('');
-        }
-
-        /* ══════════════════════════════════
-           渲染：风险 & 异常
-           ══════════════════════════════════ */
-        function renderRisks(alertItems, aiReport) {
-            const el = document.getElementById('daily-risks');
-            if (!el) return;
-
-            const items = [];
-
-            // 从高风险 AI 报告提取
-            if (Array.isArray(alertItems)) {
-                alertItems.forEach(a => {
-                    items.push({
-                        level: a.risk_level || 'high',
-                        title: a.title || '风险告警',
-                        desc: a.summary || ''
-                    });
-                });
-            }
-
-            // 从当前 AI 报告的 highlights 中提取风险项
-            const issues = aiReport?.highlights || aiReport?.raw_payload?.issues || [];
-            issues.forEach(issue => {
-                const severity = issue.severity || issue.level || '';
-                if (severity === 'high' || severity === 'critical') {
-                    const text = typeof issue === 'string' ? issue : (issue.title || issue.description || '');
-                    if (text && !items.some(i => i.title === text)) {
-                        items.push({ level: severity, title: text, desc: issue.description || issue.detail || '' });
-                    }
-                }
-            });
-
-            if (!items.length) {
-                el.innerHTML = '<div class="risk-ok">✅ 当前无高风险告警，大盘运行平稳。</div>';
-                return;
-            }
-
-            el.innerHTML = items.slice(0, 5).map(i => `
-                <div class="risk-item risk-${esc(i.level)}">
-                    <span class="risk-badge">${esc(riskLabel(i.level))}</span>
-                    <div class="risk-content">
-                        <strong>${esc(i.title)}</strong>
-                        ${i.desc ? '<p>' + esc(i.desc) + '</p>' : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        /* ══════════════════════════════════
-           渲染：人群 TOP
-           ══════════════════════════════════ */
-        function renderCrowdTable(payload) {
-            const tbody = document.getElementById('crowd-table-body');
-            const countEl = document.getElementById('crowd-count');
+        function renderDailyDetailTable(daily) {
+            const tbody = document.getElementById('daily-detail-table-body');
             if (!tbody) return;
 
-            // crowd 可能是数组 [{crowd, summary:{cost,...}}] 或对象 {summary:[...]}
-            let rawCrowd = payload?.crowd;
-            let crowds = [];
-            if (Array.isArray(rawCrowd)) {
-                crowds = rawCrowd;
-            } else if (rawCrowd && Array.isArray(rawCrowd.summary)) {
-                crowds = rawCrowd.summary;
-            } else if (rawCrowd && typeof rawCrowd === 'object') {
-                // 尝试从对象中提取任何数组
-                const vals = Object.values(rawCrowd).find(v => Array.isArray(v));
-                if (vals) crowds = vals;
-            }
+            // 取近7天数据（daily 按日期降序，取前7条，再翻转为升序）
+            const last7 = (daily || []).slice(0, 7).reverse();
 
-            const sorted = crowds
-                .filter(c => c && typeof c === 'object' && ((c.summary && c.summary.cost > 0) || c.cost > 0))
-                .sort((a, b) => {
-                    const costA = a.summary?.cost || a.cost || 0;
-                    const costB = b.summary?.cost || b.cost || 0;
-                    return costB - costA;
-                });
-
-            if (countEl) countEl.textContent = sorted.length > 5 ? `（共 ${sorted.length} 个人群，展示前 5）` : '';
-
-            if (!sorted.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="table-loading">暂无人群数据</td></tr>';
+            if (!last7.length) {
+                tbody.innerHTML = '<tr><td colspan="14" class="table-loading">暂无每日数据</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = sorted.slice(0, 5).map(c => {
-                const s = c.summary || c; // summary 可能嵌套也可能直接在 c 上
-                const name = c.label || c.crowd || c.name || c.audience || c.plan_name || '未标注定向';
-                return `<tr>
-                    <td class="col-label td-name">${esc(name)}</td>
-                    <td class="col-num">${fmtCurrency(s.cost)}</td>
-                    <td class="col-num">${fmtRoi(s.roi)}</td>
-                    <td class="col-num">${fmtCurrency(s.amount)}</td>
-                </tr>`;
-            }).join('');
-        }
+            const agentPlanMap = homePlanData?.agentPlanByDate || null;
+            const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
-        /* ══════════════════════════════════
-           渲染：单品 TOP
-           ══════════════════════════════════ */
-        function renderProductTable(payload) {
-            const tbody = document.getElementById('product-table-body');
-            const countEl = document.getElementById('product-count');
-            if (!tbody) return;
-
-            const items = payload?.single?.items || [];
-            const sorted = items
-                .filter(p => p && (p['花费'] > 0 || p.cost > 0))
-                .sort((a, b) => (Number(b['花费'] || b.cost || 0)) - (Number(a['花费'] || a.cost || 0)));
-
-            if (countEl) countEl.textContent = sorted.length > 5 ? `（共 ${sorted.length} 个商品，展示前 5）` : '';
-
-            if (!sorted.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="table-loading">暂无单品数据</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = sorted.slice(0, 5).map(p => {
-                const name = p.商品名称 || p.product_name || p.name || '未知商品';
-                const cost = Number(p['花费'] || p.cost || 0);
-                const directAmt = Number(p['直接成交金额'] || p.directAmount || 0);
-                const cart = Number(p['该商品加购数'] || p.cartCount || 0);
-                return `<tr>
-                    <td class="col-label td-name">${esc(name.length > 20 ? name.slice(0, 20) + '…' : name)}</td>
-                    <td class="col-num">${fmtCurrency(cost)}</td>
-                    <td class="col-num">${fmtCurrency(directAmt)}</td>
-                    <td class="col-num">${fmtInt(cart)}</td>
-                </tr>`;
-            }).join('');
-        }
-
-        /* ══════════════════════════════════
-           渲染：7天明细表
-           ══════════════════════════════════ */
-        function renderHistoryTable(daily) {
-            const tbody = document.getElementById('history-table-body');
-            if (!tbody) return;
-            const rows = (daily || []).slice(0, 7);
-            if (!rows.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="table-loading">暂无历史数据</td></tr>';
-                return;
-            }
-            tbody.innerHTML = rows.map(r => `<tr>
-                <td class="col-label">${esc(r.label || '--')}</td>
-                <td class="col-num">${fmtCurrency(r.cost)}</td>
-                <td class="col-num">${fmtRoi(r.roi)}</td>
-                <td class="col-num">${fmtRoi(r.returnRoi)}</td>
-                <td class="col-num">${fmtInt(r.orders)}</td>
-            </tr>`).join('');
-        }
-
-        /* ══════════════════════════════════
-           渲染：AI 分析摘要（内联）
-           ══════════════════════════════════ */
-        function renderAiAnalysis(report) {
-            const el = document.getElementById('ai-analysis-content');
-            if (!el) return;
-
-            if (!report) {
-                el.innerHTML = '<div class="finding-empty">洞察中心尚未生成今日报告，稍后自动刷新。</div>';
-                return;
-            }
-
-            const payload = report.raw_payload || {};
-            const metrics = report.overview_metrics || payload.overviewMetrics || {};
-            const summary = report.summary || '';
-            const execSummary = report.executive_summary?.headline || report.executive_summary || '';
-            const highlights = report.highlights || payload.issues || [];
-            const actions = report.actions || payload.actions || [];
-            const crowds = report.high_spend_crowds || payload.highSpendCrowds || [];
+            let totalCost = 0, totalLiveCost = 0, totalViews = 0, totalOrders = 0, totalCart = 0, totalPreOrders = 0;
 
             let html = '';
+            last7.forEach(row => {
+                const date = row.label || '';
+                const dt = new Date(date + 'T00:00:00+08:00');
+                const weekDay = weekDays[dt.getDay()];
 
-            // 报告 meta
-            html += `<div class="ai-report-meta">
-                <span class="ai-report-title">${esc(report.title || '今日分析报告')}</span>
-                <span class="risk-badge risk-badge--inline risk-${esc(report.risk_level || '')}">${esc(riskLabel(report.risk_level))}</span>
-                <span class="ai-report-date">${esc(report.report_date || '')}</span>
-            </div>`;
+                const adCost = Number(row.cost || 0);
+                const liveCost = agentPlanMap instanceof Map ? (agentPlanMap.get(date) || 0) : (agentPlanMap?.[date] || 0);
+                const allCost = adCost + liveCost;
+                const views = Number(row.views || 0);
+                const orders = Number(row.orders || 0);
+                const cart = Number(row.cart || 0);
+                const preOrders = Number(row.preOrders || 0);
+                const viewCost = views > 0 ? adCost / views : 0;
+                const viewConvertRate = views > 0 ? orders / views : 0;
+                const orderCost = orders > 0 ? adCost / orders : 0;
+                const preOrderCost = preOrders > 0 ? adCost / preOrders : 0;
 
-            // 摘要
-            if (summary) {
-                html += `<div class="ai-report-summary">${esc(summary)}</div>`;
-            }
+                totalCost += adCost;
+                totalLiveCost += liveCost;
+                totalViews += views;
+                totalOrders += orders;
+                totalCart += cart;
+                totalPreOrders += preOrders;
 
-            // KPI 速览
-            if (metrics.roi || metrics.returnRoi || metrics.cost) {
-                html += '<div class="ai-report-metrics">';
-                if (metrics.roi) html += `<span class="ai-metric">ROI <strong>${esc(metrics.roi)}</strong></span>`;
-                if (metrics.returnRoi) html += `<span class="ai-metric">去退ROI <strong>${esc(metrics.returnRoi)}</strong></span>`;
-                if (metrics.cost) html += `<span class="ai-metric">花费 <strong>${esc(metrics.cost)}</strong></span>`;
-                if (metrics.amount) html += `<span class="ai-metric">成交 <strong>${esc(metrics.amount)}</strong></span>`;
-                html += '</div>';
-            }
-
-            // 关键发现
-            if (highlights.length) {
-                html += '<div class="ai-report-section"><h4>关键发现</h4><ul>';
-                highlights.slice(0, 5).forEach(h => {
-                    const text = typeof h === 'string' ? h : (h.title || h.description || h.text || '');
-                    if (text) html += `<li>${esc(text)}</li>`;
-                });
-                html += '</ul></div>';
-            }
-
-            // 高消耗人群
-            if (crowds.length) {
-                html += '<div class="ai-report-section"><h4>高消耗人群</h4><ul>';
-                crowds.slice(0, 3).forEach(c => {
-                    const name = typeof c === 'string' ? c : (c.crowd || c.name || c.audience || '');
-                    const detail = c.summary || c.detail || '';
-                    let detailText = '';
-                    if (typeof detail === 'string') {
-                        detailText = detail;
-                    } else if (detail && typeof detail === 'object') {
-                        detailText = detail.description || detail.desc || detail.text || detail.label || '';
-                    }
-                    const text = detailText ? `${name}（${detailText}）` : name;
-                    if (text) html += `<li>${esc(text)}</li>`;
-                });
-                html += '</ul></div>';
-            }
-
-            el.innerHTML = html;
-        }
-
-        /* ══════════════════════════════════
-           渲染：执行建议
-           ══════════════════════════════════ */
-        function renderActionItems(latest, prev, aiReport, alertItems) {
-            const el = document.getElementById('daily-action-list');
-            if (!el) return;
-
-            const actions = [];
-
-            // 1. 从 AI 报告提取 actions
-            const aiActions = aiReport?.actions || aiReport?.raw_payload?.actions || [];
-            aiActions.forEach(a => {
-                const text = typeof a === 'string' ? a : (a.title || a.action || a.description || '');
-                const detail = typeof a === 'object' ? (a.description || a.detail || a.reason || '') : '';
-                if (text) actions.push({ title: text, desc: detail });
+                html += `<tr>
+                    <td class="col-label">${esc(fmtDate(date))}</td>
+                    <td class="col-label">${esc(weekDay)}</td>
+                    <td class="col-label">--</td>
+                    <td class="col-num">${fmtWan(allCost)}</td>
+                    <td class="col-num">${fmtWan(liveCost)}</td>
+                    <td class="col-num">${fmtWan(adCost)}</td>
+                    <td class="col-num">${fmtWan(views)}</td>
+                    <td class="col-num">${fmtWan(orders)}</td>
+                    <td class="col-num">${fmtWan(cart)}</td>
+                    <td class="col-num">${viewCost > 0 ? viewCost.toFixed(2) : '--'}</td>
+                    <td class="col-num">${viewConvertRate > 0 ? (viewConvertRate * 100).toFixed(1) + '%' : '--'}</td>
+                    <td class="col-num">${orderCost > 0 ? orderCost.toFixed(1) : '--'}</td>
+                    <td class="col-num">${fmtWan(preOrders)}</td>
+                    <td class="col-num">${preOrderCost > 0 ? preOrderCost.toFixed(1) : '--'}</td>
+                </tr>`;
             });
 
-            // 2. 数据驱动的建议
-            if (Array.isArray(alertItems) && alertItems.length > 0 && !actions.some(a => a.title.includes('风险'))) {
-                actions.push({ title: '处理高风险洞察', desc: `当前有 ${alertItems.length} 条高风险报告，优先确认是否需要暂停或降预算。` });
-            }
-            if (latest && prev && latest.roi < prev.roi && !actions.some(a => a.title.includes('ROI'))) {
-                actions.push({ title: '复盘 ROI 下滑来源', desc: `ROI 较前日 ${changePct(latest.roi, prev.roi).text}，按计划、人群、单品逐层拆解。` });
-            }
-            if (latest && latest.returnRoi && latest.roi && latest.returnRoi < latest.roi * 0.85 && !actions.some(a => a.title.includes('退款'))) {
-                actions.push({ title: '关注退款后真实效率', desc: `去退 ROI ${fmtRoi(latest.returnRoi)}，与表观 ROI ${fmtRoi(latest.roi)} 有差距，需分析退货集中品。` });
-            }
+            // 汇总行
+            const totalAllCost = totalCost + totalLiveCost;
+            const avgViewCost = totalViews > 0 ? totalCost / totalViews : 0;
+            const avgViewRate = totalViews > 0 ? totalOrders / totalViews : 0;
+            const avgOrderCost = totalOrders > 0 ? totalCost / totalOrders : 0;
+            const avgPreOrderCost = totalPreOrders > 0 ? totalCost / totalPreOrders : 0;
 
-            if (!actions.length) {
-                actions.push({ title: '保持当前投放节奏', desc: '大盘表现平稳，维持现有策略即可。' });
-            }
+            html += `<tr class="kpi-summary-row">
+                <td class="col-label" colspan="3">7日汇总</td>
+                <td class="col-num">${fmtWan(totalAllCost)}</td>
+                <td class="col-num">${fmtWan(totalLiveCost)}</td>
+                <td class="col-num">${fmtWan(totalCost)}</td>
+                <td class="col-num">${fmtWan(totalViews)}</td>
+                <td class="col-num">${fmtWan(totalOrders)}</td>
+                <td class="col-num">${fmtWan(totalCart)}</td>
+                <td class="col-num">${avgViewCost > 0 ? avgViewCost.toFixed(2) : '--'}</td>
+                <td class="col-num">${avgViewRate > 0 ? (avgViewRate * 100).toFixed(1) + '%' : '--'}</td>
+                <td class="col-num">${avgOrderCost > 0 ? avgOrderCost.toFixed(1) : '--'}</td>
+                <td class="col-num">${fmtWan(totalPreOrders)}</td>
+                <td class="col-num">${avgPreOrderCost > 0 ? avgPreOrderCost.toFixed(1) : '--'}</td>
+            </tr>`;
 
-            el.innerHTML = actions.slice(0, 6).map((item, i) => `
-                <div class="report-action-item">
-                    <span class="report-action-num">${i + 1}</span>
-                    <div class="report-action-content">
-                        <strong>${esc(item.title)}</strong>
-                        ${item.desc ? '<span>' + esc(item.desc) + '</span>' : ''}
-                    </div>
-                </div>
-            `).join('');
+            tbody.innerHTML = html;
         }
 
-        /* ══════════════════════════════════
-           Chart.js
-           ══════════════════════════════════ */
-        function renderHomeChart(period) {
-            homeCurrentPeriod = period;
-            if (!homeDashboardData) return;
-            const canvas = document.getElementById('home-chart-canvas');
-            if (!canvas) return;
-            if (homeChartInstance) { homeChartInstance.destroy(); homeChartInstance = null; }
+        /* [已删除] renderFindings / renderRisks / renderCrowdTable / renderProductTable / renderHistoryTable / renderAiAnalysis / renderActionItems / renderHomeChart */
 
-            const ctx = canvas.getContext('2d');
-            const rows = period === 'weekly'
-                ? (homeDashboardData.weekly || []).slice(0, 8).reverse()
-                : (homeDashboardData.daily || []).slice(0, 14).reverse();
-            if (!rows.length) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
+        /* ════════════════════════════════
+           渲染：同比去年对比表
+           ════════════════════════════════ */
+        function renderYoyTable() {
+            const tbody = document.getElementById('yoy-table-body');
+            if (!tbody) return;
 
-            homeChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: rows.map(r => (period === 'weekly' ? r.label : (r.label || '').slice(5)) || ''),
-                    datasets: [
-                        { label: '花费', data: rows.map(r => r.cost || 0), backgroundColor: 'rgba(99,102,241,0.15)', borderColor: 'rgba(99,102,241,0.85)', borderWidth: 1.5, borderRadius: 4, yAxisID: 'y', order: 2 },
-                        { label: 'ROI', data: rows.map(r => r.roi || 0), type: 'line', borderColor: 'rgba(139,92,246,1)', backgroundColor: 'rgba(139,92,246,0.1)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: 'rgba(139,92,246,1)', tension: 0.3, yAxisID: 'y1', order: 1 },
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, padding: 16, font: { size: 11 }, usePointStyle: true } },
-                        tooltip: { callbacks: { label: ctx => ctx.dataset.label === '花费' ? `花费: ¥${ctx.parsed.y.toLocaleString('zh-CN', { maximumFractionDigits: 0 })}` : `ROI: ${ctx.parsed.y.toFixed(2)}` } }
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#9ca3af' } },
-                        y: { position: 'left', grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 }, color: '#6366f1', callback: v => v >= 10000 ? (v / 10000).toFixed(0) + '万' : v } },
-                        y1: { position: 'right', grid: { display: false }, ticks: { font: { size: 10 }, color: '#8b5cf6', callback: v => v.toFixed(1) } }
+            const curData = homeYoyCurrent;
+            const refData = homeYoyReference;
+
+            if (!curData && !refData) {
+                tbody.innerHTML = '<tr><td colspan="13" class="table-loading">暂无同比数据</td></tr>';
+                return;
+            }
+
+            const today = shanghaiToday();
+            const curYear = today.slice(0, 4);
+            const refYear = String(Number(curYear) - 1);
+            const dayStr = today.slice(8, 10);
+
+            // 从 daily 数组中取实际最后数据日期
+            function getLastDataDate(dailyArr) {
+                if (!dailyArr || dailyArr.length === 0) return null;
+                const dates = dailyArr.map(r => r.label).filter(Boolean).sort();
+                return dates[dates.length - 1] || null;
+            }
+            // 格式化为 "YYYY/M/D" 显示格式
+            function fmtDateLabel(dateStr) {
+                if (!dateStr) return '--';
+                const parts = dateStr.split('-');
+                return `${parts[0]}/${Number(parts[1])}/${Number(parts[2])}`;
+            }
+
+            // 聚合当年数据
+            const curDaily = curData?.daily || [];
+            const curAdCost = curDaily.reduce((s, r) => s + (Number(r.cost) || 0), 0);
+            const curViews = curDaily.reduce((s, r) => s + (Number(r.views) || 0), 0);
+            const curOrders = curDaily.reduce((s, r) => s + (Number(r.orders) || 0), 0);
+            const curCart = curDaily.reduce((s, r) => s + (Number(r.cart) || 0), 0);
+            const curPreOrders = curDaily.reduce((s, r) => s + (Number(r.preOrders) || 0), 0);
+
+            // 有客代投 - 当年
+            const agentMap = homePlanData?.agentPlanByDate;
+            let curAgentCost = 0;
+            if (agentMap) {
+                curDaily.forEach(r => {
+                    if (r.label) {
+                        const v = agentMap instanceof Map ? agentMap.get(r.label) : (agentMap[r.label] || 0);
+                        curAgentCost += Number(v || 0);
                     }
-                }
-            });
+                });
+            }
+            const curTotalCost = curAdCost + curAgentCost; // 总花费 = 广告 + 有客
+            const curViewCost = curViews > 0 ? curAdCost / curViews : 0;
+            const curViewRate = curViews > 0 ? curOrders / curViews : 0;
+            const curOrderCost = curOrders > 0 ? curAdCost / curOrders : 0;
+            const curPreOrderCost = curPreOrders > 0 ? curAdCost / curPreOrders : 0;
+
+            // 今年最后数据日期
+            const curLastDate = getLastDataDate(curDaily);
+            // 提取日部分，构造去年截止日期（确保同比时间范围对齐）
+            const curLastDay = curLastDate ? curLastDate.split('-')[2] : dayStr;
+            const refCutoffDate = `${refYear}-${YOY_MONTH}-${curLastDay}`;
+
+            // 聚合去年数据（只累加到截止日期）
+            const refDaily = refData?.daily || [];
+            const refDailyFiltered = refDaily.filter(r => r.label && r.label <= refCutoffDate);
+            const refAdCost = refDailyFiltered.reduce((s, r) => s + (Number(r.cost) || 0), 0);
+            const refViews = refDailyFiltered.reduce((s, r) => s + (Number(r.views) || 0), 0);
+            const refOrders = refDailyFiltered.reduce((s, r) => s + (Number(r.orders) || 0), 0);
+            const refCart = refDailyFiltered.reduce((s, r) => s + (Number(r.cart) || 0), 0);
+            const refPreOrders = refDailyFiltered.reduce((s, r) => s + (Number(r.preOrders) || 0), 0);
+
+            // 有客代投 - 去年
+            let refAgentCost = 0;
+            const refAgentMap = homePlanData?.refAgentByDate;
+            if (refAgentMap) {
+                refDailyFiltered.forEach(r => {
+                    if (r.label) {
+                        const v = refAgentMap instanceof Map ? refAgentMap.get(r.label) : (refAgentMap[r.label] || 0);
+                        refAgentCost += Number(v || 0);
+                    }
+                });
+            }
+            const refTotalCost = refAdCost + refAgentCost;
+            const refViewCost = refViews > 0 ? refAdCost / refViews : 0;
+            const refViewRate = refViews > 0 ? refOrders / refViews : 0;
+            const refOrderCost = refOrders > 0 ? refAdCost / refOrders : 0;
+            const refPreOrderCost = refPreOrders > 0 ? refAdCost / refPreOrders : 0;
+
+            // 增涨行负数用括号
+            function fmtDelta(v) {
+                if (v == null || isNaN(v)) return '--';
+                const n = Number(v);
+                if (n < 0) return `(${fmtWan(Math.abs(n))})`;
+                return fmtWan(n);
+            }
+            function fmtDeltaFixed(v, digits) {
+                if (v == null || isNaN(v)) return '--';
+                const n = Number(v);
+                if (n < 0) return `(${Math.abs(n).toFixed(digits)})`;
+                return n.toFixed(digits);
+            }
+            function fmtDeltaPct(v) {
+                if (v == null || isNaN(v)) return '--';
+                const n = Number(v) * 100;
+                if (n < 0) return `(${Math.abs(n).toFixed(1)}%)`;
+                return n.toFixed(1) + '%';
+            }
+
+            // 同比百分比
+            function fmtYoyPct(cur, ref) {
+                if (ref === 0 || ref == null) return '<span class="yoy-neg">--</span>';
+                const pct = ((cur / ref) - 1) * 100;
+                const cls = pct < 0 ? 'yoy-neg' : 'yoy-pos';
+                return `<span class="${cls}">${pct.toFixed(0)}%</span>`;
+            }
+
+            function dataRow(label1, label2, total, live, ad, views, orders, cart, vc, vr, oc, po, poc) {
+                return `<tr>
+                    <td class="col-label">${esc(label1)}</td>
+                    <td class="col-label">${esc(label2)}</td>
+                    <td class="col-num">${fmtWan(total)}</td>
+                    <td class="col-num">${fmtWan(live)}</td>
+                    <td class="col-num">${fmtWan(ad)}</td>
+                    <td class="col-num">${fmtWan(views)}</td>
+                    <td class="col-num">${fmtWan(orders)}</td>
+                    <td class="col-num">${fmtWan(cart)}</td>
+                    <td class="col-num">${vc > 0 ? vc.toFixed(2) : '--'}</td>
+                    <td class="col-num">${vr > 0 ? (vr * 100).toFixed(1) + '%' : '--'}</td>
+                    <td class="col-num">${oc > 0 ? oc.toFixed(1) : '--'}</td>
+                    <td class="col-num">${fmtWan(po)}</td>
+                    <td class="col-num">${poc > 0 ? poc.toFixed(1) : '--'}</td>
+                </tr>`;
+            }
+
+            const curRow = dataRow(
+                `${curYear}/${Number(YOY_MONTH)}/1`, curLastDate ? fmtDateLabel(curLastDate) : `${curYear}/${Number(YOY_MONTH)}/${Number(dayStr)}`,
+                curTotalCost, curAgentCost, curAdCost,
+                curViews, curOrders, curCart,
+                curViewCost, curViewRate, curOrderCost,
+                curPreOrders, curPreOrderCost
+            );
+            const refRow = dataRow(
+                `${refYear}/${Number(YOY_MONTH)}/1`, curLastDate ? `${refYear}/${Number(curLastDate.split('-')[1])}/${Number(curLastDay)}` : `${refYear}/${Number(YOY_MONTH)}/${Number(dayStr)}`,
+                refTotalCost, refAgentCost, refAdCost,
+                refViews, refOrders, refCart,
+                refViewCost, refViewRate, refOrderCost,
+                refPreOrders, refPreOrderCost
+            );
+
+            // 增涨行
+            const deltaRow = `<tr class="yoy-delta-row">
+                <td class="col-label" colspan="2">增涨</td>
+                <td class="col-num">${fmtDelta(curTotalCost - refTotalCost)}</td>
+                <td class="col-num">${fmtDelta(curAgentCost - refAgentCost)}</td>
+                <td class="col-num">${fmtDelta(curAdCost - refAdCost)}</td>
+                <td class="col-num">${fmtDelta(curViews - refViews)}</td>
+                <td class="col-num">${fmtDelta(curOrders - refOrders)}</td>
+                <td class="col-num">${fmtDelta(curCart - refCart)}</td>
+                <td class="col-num">${fmtDeltaFixed(curViewCost - refViewCost, 2)}</td>
+                <td class="col-num">${fmtDeltaPct(curViewRate - refViewRate)}</td>
+                <td class="col-num">${fmtDeltaFixed(curOrderCost - refOrderCost, 1)}</td>
+                <td class="col-num">${fmtDelta(curPreOrders - refPreOrders)}</td>
+                <td class="col-num">${fmtDeltaFixed(curPreOrderCost - refPreOrderCost, 1)}</td>
+            </tr>`;
+
+            // 同比%行
+            const pctRow = `<tr class="yoy-pct-row">
+                <td class="col-label" colspan="2">同比%</td>
+                <td class="col-num">${fmtYoyPct(curTotalCost, refTotalCost)}</td>
+                <td class="col-num">${fmtYoyPct(curAgentCost, refAgentCost)}</td>
+                <td class="col-num">${fmtYoyPct(curAdCost, refAdCost)}</td>
+                <td class="col-num">${fmtYoyPct(curViews, refViews)}</td>
+                <td class="col-num">${fmtYoyPct(curOrders, refOrders)}</td>
+                <td class="col-num">${fmtYoyPct(curCart, refCart)}</td>
+                <td class="col-num">${fmtYoyPct(curViewCost, refViewCost)}</td>
+                <td class="col-num">${fmtYoyPct(curViewRate, refViewRate)}</td>
+                <td class="col-num">${fmtYoyPct(curOrderCost, refOrderCost)}</td>
+                <td class="col-num">${fmtYoyPct(curPreOrders, refPreOrders)}</td>
+                <td class="col-num">${fmtYoyPct(curPreOrderCost, refPreOrderCost)}</td>
+            </tr>`;
+
+            tbody.innerHTML = curRow + refRow + deltaRow + pctRow;
         }
 
         /* ══════════════════════════════════
@@ -754,14 +813,12 @@
 
         /* 主渲染：拿到所有数据后统一渲染 */
         function renderAll() {
-            const payload = homeFullPayload;
             const ads = homeDashboardData;
             const daily = ads?.daily || [];
             const latest = daily[0] || null;
             const prev = daily[1] || null;
             const report = homeReportItem;
-            const alerts = homeAlertItems || [];
-            const alertCount = alerts.length;
+            const alertCount = (homeAlertItems || []).length;
 
             // 报头
             const latestDate = latest?.label || shanghaiToday();
@@ -773,14 +830,8 @@
             const sections = [
                 ['executive',  () => renderExecutiveBanner(latest, prev, alertCount, report)],
                 ['kpi-table',  () => renderKpiTable(daily, latest, prev)],
-                ['findings',   () => renderFindings(latest, prev, payload, report)],
-                ['risks',      () => renderRisks(alerts, report)],
-                ['crowd',      () => renderCrowdTable(payload)],
-                ['product',    () => renderProductTable(payload)],
-                ['history',    () => renderHistoryTable(daily)],
-                ['chart',      () => renderHomeChart(homeCurrentPeriod)],
-                ['ai-analysis',() => renderAiAnalysis(report)],
-                ['actions',    () => renderActionItems(latest, prev, report, alerts)],
+                ['daily-detail', () => renderDailyDetailTable(daily)],
+                ['yoy', () => renderYoyTable()],
             ];
             sections.forEach(([name, fn]) => {
                 try { fn(); } catch (err) { console.error(`[home] render ${name} failed:`, err); }
@@ -795,84 +846,221 @@
             if (banner) banner.textContent = '数据加载失败，请检查网络或登录状态后刷新页面。';
 
             // 在各区域显示具体的错误提示
-            const errorHtml = '<div style="color:#dc3545;padding:16px;text-align:center;font-size:13px;">⚠️ 数据加载失败，请刷新页面重试</div>';
-            ['daily-findings', 'daily-risks', 'ai-analysis-content', 'daily-action-list'].forEach(id => {
+            ['kpi-table-body', 'daily-detail-table-body', 'yoy-table-body'].forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.innerHTML = errorHtml;
-            });
-            ['kpi-table-body', 'crowd-table-body', 'product-table-body', 'history-table-body'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = '<tr><td colspan="5" class="table-loading table-error">数据加载失败，请刷新重试</td></tr>';
+                if (el) {
+                    const cols = id === 'yoy-table-body' ? 13 : 14;
+                    el.innerHTML = `<tr><td colspan="${cols}" class="table-loading table-error">数据加载失败，请刷新重试</td></tr>`;
+                }
             });
 
             // 在控制台输出详细错误便于排查
             errors.forEach(e => console.error('[home] API error:', e));
         }
 
-        async function loadHomeData() {
+        /* 拉取全部首页数据（纯 IO，不操作 DOM） */
+        async function fetchFreshData() {
             const today = shanghaiToday();
             const start = nDaysAgo(14);
-            const errors = [];
+            const monthStart = today.slice(0, 8) + '01';
+            const monthEnd = today;
 
-            // 三个独立 API 并行请求，互不阻塞
-            const [dashResult, alertResult, reportResult] = await Promise.allSettled([
+            // 同比参数：当年5月全月 + 去年同期
+            const curYear = today.slice(0, 4);
+            const refYear = String(Number(curYear) - 1);
+            const dayStr = today.slice(8, 10); // '12'
+            const yoyCurStart = `${curYear}-${YOY_MONTH}-01`;
+            const yoyRefStart = `${refYear}-${YOY_MONTH}-01`;
+            const yoyRefEnd = `${refYear}-${YOY_MONTH}-${dayStr}`;
+
+            const [dashResult, alertResult, reportResult, planResult, yoyCurResult, yoyRefResult] = await Promise.allSettled([
                 authHelpers.fetchFunctionJson('dashboard-data', {
                     query: { sections: 'all', start_date: start, end_date: today },
                     parseErrorMessage: '看板数据读取失败',
-                    onUnauthorized: () => {}, // 不自动跳转，先渲染空状态
+                    onUnauthorized: () => {},
                 }),
                 authHelpers.fetchFunctionJson('ai-reports', { query: { risk_level: 'high', limit: 10 } }),
                 authHelpers.fetchFunctionJson('ai-reports', { query: { report_type: 'daily', limit: 1 } }),
+                authHelpers.fetchFunctionJson('plan-dashboard-summary', {
+                    query: { start: monthStart, end: monthEnd },
+                    includePromptAdminToken: true,
+                    useSessionToken: true,
+                }).catch(e => ({ error: e })),
+                // 同比：当年5月全月
+                authHelpers.fetchFunctionJson('dashboard-data', {
+                    query: { sections: 'ads', start_date: yoyCurStart, end_date: today },
+                }).catch(e => ({ error: e })),
+                // 同比：去年同期
+                authHelpers.fetchFunctionJson('dashboard-data', {
+                    query: { sections: 'ads', start_date: yoyRefStart, end_date: yoyRefEnd },
+                }).catch(e => ({ error: e })),
             ]);
 
-            // 处理 dashboard-data
+            const result = { payload: null, dashboardData: null, alertItems: [], reportItem: null, planData: null, yoyCurrent: null, yoyReference: null, errors: [] };
+
             if (dashResult.status === 'fulfilled') {
                 const data = dashResult.value.data || dashResult.value;
-                homeFullPayload = data;
-                homeDashboardData = data.ads || null;
+                result.payload = data;
+                result.dashboardData = data.ads || null;
             } else {
-                errors.push(dashResult.reason);
+                result.errors.push(dashResult.reason);
                 console.error('[home] dashboard-data failed:', dashResult.reason);
             }
 
-            // 处理高风险告警
             if (alertResult.status === 'fulfilled') {
-                homeAlertItems = (alertResult.value.data || alertResult.value).items || [];
+                result.alertItems = (alertResult.value.data || alertResult.value).items || [];
             } else {
-                homeAlertItems = [];
-                errors.push(alertResult.reason);
+                result.errors.push(alertResult.reason);
             }
 
-            // 处理最新 AI 日报
             if (reportResult.status === 'fulfilled') {
                 const items = (reportResult.value.data || reportResult.value).items || [];
-                homeReportItem = items[0] || null;
+                result.reportItem = items[0] || null;
             } else {
-                homeReportItem = null;
-                errors.push(reportResult.reason);
+                result.errors.push(reportResult.reason);
             }
 
-            // 如果核心数据（dashboard-data）加载失败，显示错误提示
-            if (!homeFullPayload) {
-                showDataLoadError(errors);
+            if (planResult.status === 'fulfilled' && planResult.value && !planResult.value.error) {
+                try {
+                    const planRaw = planResult.value.data || planResult.value;
+                    result.planData = parsePlanData(planRaw);
+                } catch (e) {
+                    console.warn('[home] plan data parse error:', e);
+                }
+            } else {
+                console.warn('[home] plan-dashboard-summary unavailable');
+            }
+
+            // 同比数据
+            if (yoyCurResult.status === 'fulfilled' && yoyCurResult.value && !yoyCurResult.value.error) {
+                const d = yoyCurResult.value.data || yoyCurResult.value;
+                result.yoyCurrent = d.ads || d;
+            }
+            if (yoyRefResult.status === 'fulfilled' && yoyRefResult.value && !yoyRefResult.value.error) {
+                const d = yoyRefResult.value.data || yoyRefResult.value;
+                result.yoyReference = d.ads || d;
+            }
+
+            return result;
+        }
+
+        /* 将拉取结果写入全局变量 */
+        function applyFreshData(fresh) {
+            homeFullPayload = fresh.payload;
+            homeDashboardData = fresh.dashboardData;
+            homeAlertItems = fresh.alertItems;
+            homeReportItem = fresh.reportItem;
+            homePlanData = fresh.planData;
+            homeYoyCurrent = fresh.yoyCurrent;
+            homeYoyReference = fresh.yoyReference;
+
+            // 确保所有 daily 数据按日期降序排列（最新日期在前）
+            if (homeDashboardData && homeDashboardData.daily) {
+                homeDashboardData.daily.sort((a, b) => (b.label || '').localeCompare(a.label || ''));
+            }
+            if (homeYoyCurrent && homeYoyCurrent.daily) {
+                homeYoyCurrent.daily.sort((a, b) => (b.label || '').localeCompare(a.label || ''));
+            }
+            if (homeYoyReference && homeYoyReference.daily) {
+                homeYoyReference.daily.sort((a, b) => (b.label || '').localeCompare(a.label || ''));
+            }
+        }
+
+        /* 主入口：stale-while-revalidate 策略 */
+        async function loadHomeData() {
+            const STALE_MS = 2 * 60 * 1000; // 2 分钟内视为新鲜
+            const now = Date.now();
+
+            // ── 有新鲜缓存：立即渲染 + 后台静默刷新 ──
+            if (homeDataCache && (now - homeDataCacheTime) < STALE_MS) {
+                applyFreshData(homeDataCache);
+                renderAll();
+                // 后台刷新，成功后用新数据重绘
+                fetchFreshData().then(fresh => {
+                    if (fresh.payload) {
+                        homeDataCache = fresh;
+                        homeDataCacheTime = Date.now();
+                        applyFreshData(fresh);
+                        renderAll();
+                    }
+                }).catch(() => {}); // 刷新失败不影响已展示数据
                 return;
             }
 
-            // 统一渲染
+            // ── 无缓存或已过期：正常加载（保持 loading 态） ──
+            const fresh = await fetchFreshData();
+
+            if (!fresh.payload) {
+                showDataLoadError(fresh.errors);
+                return;
+            }
+
+            homeDataCache = fresh;
+            homeDataCacheTime = Date.now();
+            applyFreshData(fresh);
             renderAll();
         }
 
-        /* ── 日/周 切换 ── */
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('metric-period')) {
-                const toolbar = e.target.closest('.report-chart-toolbar');
-                if (!toolbar) return;
-                toolbar.querySelectorAll('.metric-period').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                const period = e.target.dataset.period || 'daily';
-                if (homeDashboardData) renderHomeChart(period);
-            }
-        });
+        /**
+         * 解析计划数据，提取月度目标和本月累计实际值
+         * planRaw 是 plan-dashboard-summary 返回的原始数据
+         */
+        function parsePlanData(planRaw) {
+            if (!planRaw) return null;
+            const days = planRaw.days || planRaw.daily || [];
+            if (!days.length) return null;
+
+            // 累加本月实际值
+            const monthActual = { cost: 0, cart: 0, preOrders: 0, directOrders: 0, orders: 0 };
+            // 累加月计划目标
+            const monthTarget = { cost: 0, cart: 0, preOrders: 0, directOrders: 0, orders: 0 };
+
+            // 按日期保存有客代投花费（优先实际值 agent_cost，回退到计划值 agent_plan）
+            const agentPlanByDate = new Map();
+            // 25年有客代投花费按日期映射
+            const refAgentByDate = new Map();
+
+            days.forEach(d => {
+                // 实际值
+                const actual = d.actual || d;
+                monthActual.cost += Number(actual.cost || actual.wanxiang_cost || 0);
+                monthActual.cart += Number(actual.cart || 0);
+                monthActual.preOrders += Number(actual.preOrders || actual.pre_orders || 0);
+                monthActual.directOrders += Number(actual.directOrders || actual.direct_orders || 0);
+                monthActual.orders += Number(actual.orders || 0);
+
+                // 计划目标
+                const plan = d.plan || d;
+                monthTarget.cost += Number(plan.wanxiang_plan || plan.plan_cost || 0);
+                monthTarget.cart += Number(plan.plan_cart || 0);
+                monthTarget.preOrders += Number(plan.plan_preOrders || plan.plan_pre_orders || 0);
+                monthTarget.directOrders += Number(plan.plan_directOrders || plan.plan_direct_orders || 0);
+                monthTarget.orders += Number(plan.plan_orders || 0);
+
+                // 有客代投花费：优先 agent_cost（实际），回退 agent_plan（计划）
+                const dateKey = d.date || d.label || '';
+                if (dateKey) {
+                    const agentVal = Number(d.agent_cost || d.agent_actual || d.agent_plan || 0);
+                    if (agentVal > 0) agentPlanByDate.set(dateKey, agentVal);
+                }
+
+                // 25年有客代投花费（agent_amount 字段）
+                if (dateKey && d.agent_amount != null) {
+                    const refDate = dateKey.replace(/^\d{4}/, String(Number(dateKey.slice(0, 4)) - 1));
+                    refAgentByDate.set(refDate, Number(d.agent_amount || 0));
+                }
+            });
+
+            // 成本类指标不累加，计算均值或用总量比
+            monthActual.cartCost = monthActual.cart > 0 ? monthActual.cost / monthActual.cart : null;
+            monthActual.preOrderCost = monthActual.preOrders > 0 ? monthActual.cost / monthActual.preOrders : null;
+            monthTarget.cartCost = monthTarget.cart > 0 ? monthTarget.cost / monthTarget.cart : null;
+            monthTarget.preOrderCost = monthTarget.preOrders > 0 ? monthTarget.cost / monthTarget.preOrders : null;
+
+            // 如果没有任何计划目标数据，返回 null
+            const hasTarget = Object.values(monthTarget).some(v => v > 0);
+            return { monthActual, monthTarget: hasTarget ? monthTarget : null, agentPlanByDate, refAgentByDate };
+        }
 
         /* ── 初始化 ── */
         document.addEventListener('DOMContentLoaded', function() {

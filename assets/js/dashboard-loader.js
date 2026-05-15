@@ -337,6 +337,21 @@
         }
     }
 
+    async function loadSectionIfNeeded(section) {
+        const app = window.DashboardApp;
+        const config = getSectionConfig(section);
+        const { start, end } = getSectionRange(section);
+        const rangeKey = getSectionRangeKey(section);
+        const cacheEntry = app.readDashboardCacheEntryFromStorage(start, end, section, getSectionCacheVariant(section));
+        if (cacheEntry) {
+            config.setResponse(app, cacheEntry.data, { rangeKey, lastCacheSource: cacheEntry.source });
+            app.setSectionCacheSource(section, cacheEntry.source);
+            config.renderCached(app, cacheEntry.data);
+            return;
+        }
+        await app[config.loadMethod]({ mode: 'preload', forceRefresh: true, silent: true, preserveExistingView: true });
+    }
+
     async function loadAll() {
         const app = window.DashboardApp;
         const pendingAIAnalysis = app.getPendingAIAnalysisRequest();
@@ -366,6 +381,12 @@
             await loadInitialSection(initialTab);
             app.persistDashboardViewState();
             app.maybeResumePendingAIAnalysis(pendingAIAnalysis);
+
+            // 后台并发预加载其他 Tab（不阻塞 UI）
+            const otherTabs = ['ads', 'crowd', 'single'].filter(t => t !== initialTab);
+            Promise.allSettled(
+                otherTabs.map(tab => loadSectionIfNeeded(tab))
+            ).catch(() => {});
         } catch (error) {
             app.updateLoading(0, '加载失败', error.message);
             const stateMessage = app.buildStateMessage(error, '当前数据加载失败，请稍后重试。');

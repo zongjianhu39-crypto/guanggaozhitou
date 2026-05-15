@@ -7,13 +7,13 @@
     <title>计划拆解 - 交个朋友·广告智投工作台</title>
     <meta name="description" content="按日期拆解投放计划、活动节奏与实际执行数据">
     <meta name="robots" content="noindex, nofollow">
-    <link rel="stylesheet" href="style.css?v=202605122054">
-    <link rel="stylesheet" href="assets/css/plan-dashboard.css?v=202605122054">
+    <link rel="stylesheet" href="style.css?v=202605122230">
+    <link rel="stylesheet" href="assets/css/plan-dashboard.css?v=202605122230">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body class="plan-dashboard-page">
-    <script src="assets/js/auth-helpers.js?v=202605122054"></script>
-    <script src="auth.js?v=202605122054"></script>
+    <script src="assets/js/auth-helpers.js?v=202605122230"></script>
+    <script src="auth.js?v=202605122230"></script>
     <nav class="navbar">
         <div class="nav-container">
             <a href="index.html" class="nav-logo">
@@ -27,14 +27,6 @@
 
                 <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
                 <li><a href="insights.html" class="nav-link">洞察中心</a></li>
-                <li class="nav-item-dropdown">
-                    <button type="button" class="nav-link" aria-expanded="false" aria-haspopup="true">更多 <span class="nav-dropdown-arrow">▾</span></button>
-                    <div class="nav-dropdown" role="menu">
-                        <a href="genbi.html">GenBI</a>
-                        <a href="genbi-rule-admin.html">GenBI 规则管理</a>
-                        <a href="prompt-admin.html">Prompt 管理</a>
-                    </div>
-                </li>
                 <li><a href="auth/index.html" data-action="logout" class="nav-link">退出登录</a></li>
             </ul>
             <button class="mobile-menu-btn">
@@ -79,7 +71,14 @@
                 </div>
                 <button id="timeline-section-toggle" class="button button-secondary plan-section-toggle" type="button" data-action="toggle-plan-section" data-section="timeline" aria-expanded="true" aria-controls="timeline-container">收起时间轴</button>
             </div>
-            <div id="timeline-container"></div>
+            <div id="timeline-container">
+                <div class="skeleton-card" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+                    <div class="skeleton-line lg" style="width:40%"></div>
+                    <div class="skeleton-line" style="width:100%"></div>
+                    <div class="skeleton-line" style="width:85%"></div>
+                    <div class="skeleton-line sm" style="width:60%"></div>
+                </div>
+            </div>
         </section>
 
         <section class="plan-section hidden" id="six18-reference-section" aria-hidden="true">
@@ -123,7 +122,14 @@
                 </div>
                 <button id="rhythm-summary-section-toggle" class="button button-secondary plan-section-toggle" type="button" data-action="toggle-plan-section" data-section="rhythmSummary" aria-expanded="true" aria-controls="rhythm-summary-container">收起汇总</button>
             </div>
-            <div id="rhythm-summary-container"></div>
+            <div id="rhythm-summary-container">
+                <div class="skeleton-card" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+                    <div class="skeleton-line lg" style="width:30%"></div>
+                    <div class="skeleton-line" style="width:100%"></div>
+                    <div class="skeleton-line" style="width:90%"></div>
+                    <div class="skeleton-line sm" style="width:50%"></div>
+                </div>
+            </div>
         </section>
 
         <section class="plan-section">
@@ -133,7 +139,16 @@
                     <p>支持跨月查看，并补充 25 年参考字段；修改会先进入草稿，点击“保存所有修改”后统一提交。</p>
                 </div>
             </div>
-            <div id="table-container"></div>
+            <div id="table-container">
+                <div class="skeleton-card" style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+                    <div class="skeleton-line lg" style="width:100%"></div>
+                    <div class="skeleton-line" style="width:100%"></div>
+                    <div class="skeleton-line" style="width:100%"></div>
+                    <div class="skeleton-line" style="width:100%"></div>
+                    <div class="skeleton-line" style="width:100%"></div>
+                    <div class="skeleton-line sm" style="width:80%"></div>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -142,17 +157,17 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/shared-utils.js" defer></script>
-    <script src="script.js?v=202605122054"></script>
-    <script src="assets/js/plan-dashboard-reference-data.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-utils.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-state.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-api.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-render-shared.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-render-references.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-render-rhythm.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-render-table.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-render.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-events.js?v=202605122054" defer></script>
-    <script src="assets/js/plan-dashboard-page.js?v=202605122054" defer></script>
+    <script src="script.js?v=202605122230"></script>
+    <script src="assets/js/plan-dashboard-reference-data.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-utils.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-state.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-api.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-render-shared.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-render-references.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-render-rhythm.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-render-table.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-render.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-events.js?v=202605122230" defer></script>
+    <script src="assets/js/plan-dashboard-page.js?v=202605122230" defer></script>
 </body>
 </html>

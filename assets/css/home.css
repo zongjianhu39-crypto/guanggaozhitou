@@ -168,7 +168,7 @@
 }
 
 .report-columns--data {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
 }
 
 .report-columns--trend {
@@ -244,9 +244,27 @@
 
 .report-table--compact th,
 .report-table--compact td {
-    padding: 6px var(--space-3);
-    font-size: var(--text-xs);
+    padding: 6px 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
 }
+
+.report-table--compact .col-label {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 横向滚动容器 */
+.table-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 完成率颜色 */
+.rate-green { color: #16a34a; font-weight: var(--font-semibold); }
+.rate-yellow { color: #d97706; font-weight: var(--font-semibold); }
+.rate-red { color: #dc2626; font-weight: var(--font-semibold); }
 
 /* 表格占位 */
 .table-loading {
@@ -576,6 +594,90 @@
 }
 
 /* ================================
+   KPI 阶段表格
+   ================================ */
+.kpi-stage-table { border-collapse: collapse; width: 100%; }
+.kpi-stage-table th,
+.kpi-stage-table td {
+    border: 1px solid #ddd;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+.kpi-stage-table .col-num { text-align: right; }
+.kpi-stage-table .col-label { text-align: center; }
+
+/* 分组表头颜色 */
+.kpi-group-header th {
+    text-align: center;
+    font-weight: bold;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+.group-fixed { background: transparent; border-left: none; border-top: none; }
+.group-total { background: #fff3cd; color: #856404; } /* 黄色 - 汇总 */
+.group-live { background: #f8d7da; color: #721c24; }  /* 粉红色 - 直播有客 */
+.group-ad { background: #cce5ff; color: #004085; }    /* 蓝色 - 广告万相台 */
+
+/* 汇总行 */
+.kpi-summary-row { font-weight: bold; background: #f8f9fa; }
+.kpi-summary-row td { border-top: 2px solid #999; }
+
+/* 同比表格 */
+.yoy-badge {
+    background: #e74c3c;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+.yoy-delta-row { background: #f8f9fa; font-style: italic; }
+.yoy-pct-row { font-weight: bold; background: #f0f0f0; }
+.yoy-neg { color: #e74c3c; font-weight: bold; }
+.yoy-pos { color: #27ae60; font-weight: bold; }
+
+/* 一句话总结 */
+.kpi-summary {
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: #333;
+}
+.kpi-summary strong {
+    color: var(--indigo-600, #4f46e5);
+}
+
+/* KPI 表格打印色彩保留 */
+@media print {
+    .kpi-group-header th,
+    .kpi-summary-row {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* ================================
+   骨架屏加载动画
+   ================================ */
+.skeleton-row td {
+    padding: 10px 8px;
+}
+.skeleton-block {
+    display: inline-block;
+    height: 14px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ================================
    响应式
    ================================ */
 @media (max-width: 768px) {
@@ -680,7 +782,12 @@
     .report-action-num,
     .ai-report-summary,
     .ai-report-metrics,
-    .finding-item {
+    .finding-item,
+    .yoy-badge,
+    .yoy-delta-row,
+    .yoy-pct-row,
+    .yoy-neg,
+    .yoy-pos {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }

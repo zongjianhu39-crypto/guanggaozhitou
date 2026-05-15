@@ -604,9 +604,29 @@
         state.loading = true;
         setStatus('', '正在加载数据并计算评分...');
 
+        // 准备预算参数（不依赖评分数据）
+        const budgetDateInput = $('bs-budget-date');
+        const ratioInput = $('bs-budget-ratio');
+        const budgetDate = budgetDateInput && budgetDateInput.value ? budgetDateInput.value : (state.budgetDate || getBudgetDate());
+        const ratio = normalizeBudgetRatio(ratioInput && ratioInput.value);
+        state.budgetDate = budgetDate;
+        scoreConfig.budgetAllocationRatio = ratio;
+        saveConfig(scoreConfig);
+        setBudgetRatioInputs(ratio);
+
         try {
-            const data = await fetchScorecardData(startDate, endDate);
+            // 并发请求：评分数据 + 计划预算数据互不依赖
+            const [scorecardResult, planResult] = await Promise.allSettled([
+                fetchScorecardData(startDate, endDate),
+                fetchPlanBudgetData(budgetDate),
+            ]);
+
+            // 处理评分数据
+            const data = scorecardResult.status === 'fulfilled' ? scorecardResult.value : null;
             if (!data) {
+                if (scorecardResult.status === 'rejected') {
+                    setStatus('error', '数据加载失败：' + (scorecardResult.reason && scorecardResult.reason.message || '请稍后重试'));
+                }
                 hideContent();
                 return;
             }
@@ -637,7 +657,16 @@
 
             // 评分
             state.scoredCrowds = scoreItems(state.crowdItems, 'crowd');
-            await refreshPlanBudget({ silent: true });
+
+            // 处理计划预算数据
+            const planData = planResult.status === 'fulfilled' ? planResult.value : null;
+            const day = planData && Array.isArray(planData.days) ? planData.days[0] : null;
+            state.wanxiangPlan = day ? toNum(day.wanxiang_plan) : null;
+
+            if (planResult.status === 'rejected') {
+                console.warn('读取计划预算失败:', planResult.reason);
+            }
+
             updateBudgetAllocations();
 
             // 渲染
