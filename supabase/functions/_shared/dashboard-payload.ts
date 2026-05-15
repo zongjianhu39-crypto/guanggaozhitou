@@ -391,6 +391,18 @@ async function fetchRoutedTables(routedTables: RoutedTable[], selectColumns: str
   return results.flat();
 }
 
+async function fetchAudienceLayerMapping(): Promise<Map<string, string>> {
+  try {
+    const url = `${SB_URL}/rest/v1/audience_layer_mapping?select=audience_name,layer`;
+    const response = await fetch(url, { headers: getSupabaseHeaders() });
+    if (!response.ok) return new Map();
+    const rows: any[] = await response.json();
+    return new Map(rows.map((r) => [String(r.audience_name), String(r.layer)]));
+  } catch {
+    return new Map();
+  }
+}
+
 function filterByDateRange(data: any[], startDate: string, endDate: string): any[] {
   return data.filter((row) => {
     const date = parseDate(row?.[DATE_COLUMN]);
@@ -648,13 +660,16 @@ function buildPeriodRowsFromDailyRows(dailyRows: DisplayRow[], getKey: (date: st
   return Object.keys(groups).sort().reverse().map((key) => aggregateDisplayRows(key, groups[key]));
 }
 
-function buildCrowdRows(rows: any[], crowdLayerConfig: CrowdLayerConfig) {
+function buildCrowdRows(rows: any[], crowdLayerConfig: CrowdLayerConfig, layerMap: Map<string, string>) {
   const crowdMap: Record<string, AggregateBucket> = {};
   const crowdSubs: Record<string, Record<string, AggregateBucket>> = {};
   const crowdSubMeta: Record<string, Record<string, { label: string; planName: string }>> = {};
   rows.forEach((row) => {
     const audience = getCrowdAudienceName(row);
-    const crowd = audience.missing ? '未标注定向' : classifyDimensionValue(audience.label, crowdLayerConfig);
+    const manualLayer = layerMap.get(audience.label);
+    const crowd = audience.missing
+      ? '未标注定向'
+      : manualLayer || classifyDimensionValue(audience.label, crowdLayerConfig);
     const subName = audience.label;
     const planName = getCrowdPlanName(row);
     const subKey = `${planName}\u0001${subName}`;
@@ -686,6 +701,7 @@ function buildCrowdRows(rows: any[], crowdLayerConfig: CrowdLayerConfig) {
         .map((key) => ({
           label: crowdSubMeta[crowd][key]?.label ?? key,
           planName: crowdSubMeta[crowd][key]?.planName ?? '未标注计划',
+          layer: layerMap.get(crowdSubMeta[crowd][key]?.label ?? '') || crowd,
           ...calcGroup({
             '花费': crowdSubs[crowd][key].cost,
             '总成交金额': crowdSubs[crowd][key].amount,
@@ -701,7 +717,7 @@ function buildCrowdRows(rows: any[], crowdLayerConfig: CrowdLayerConfig) {
     }));
 }
 
-function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConfig) {
+function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConfig, layerMap: Map<string, string>) {
   const crowdMap: Record<string, AggregateBucket> = {};
   const crowdSubs: Record<string, Record<string, AggregateBucket>> = {};
   const crowdSubMeta: Record<string, Record<string, { label: string; planName: string }>> = {};
@@ -709,8 +725,9 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
   rows.forEach((row) => {
     const rawName = normalizeNameValue(row['人群名字']);
     const subName = rawName || '定向人群名称未回传';
+    const manualLayer = layerMap.get(subName);
     const crowd = rawName
-      ? (String(row['人群分类'] ?? '').trim() || classifyDimensionValue(rawName, crowdLayerConfig))
+      ? (String(row['人群分类'] ?? '').trim() || manualLayer || classifyDimensionValue(rawName, crowdLayerConfig))
       : '未标注定向';
     const planName = normalizeNameValue(row['计划名字']) || '未标注计划';
     const subKey = `${planName}\u0001${subName}`;
@@ -743,6 +760,7 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
         .map((key) => ({
           label: crowdSubMeta[crowd][key]?.label ?? key,
           planName: crowdSubMeta[crowd][key]?.planName ?? '未标注计划',
+          layer: layerMap.get(crowdSubMeta[crowd][key]?.label ?? '') || crowd,
           ...calcGroup({
             '花费': crowdSubs[crowd][key].cost,
             '总成交金额': crowdSubs[crowd][key].amount,
@@ -838,6 +856,8 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
   const crowdPlanNameIncludes = String(options.crowdPlanNameIncludes ?? '').trim();
   const forceRawCrowd = Boolean(options.forceRawCrowd || crowdPlanNameIncludes);
 
+  const audienceLayerMap = needCrowd ? await fetchAudienceLayerMapping() : new Map<string, string>();
+
   const [adsSummaryRaw, crowdSummaryRaw, singleSummaryRaw] = await Promise.all([
     needAds ? fetchSummaryTable('dashboard_ads_daily_summary', ADS_SUMMARY_COLUMNS, startDate, endDate) : Promise.resolve([]),
     needCrowd ? fetchSummaryTable('dashboard_crowd_daily_summary', CROWD_SUMMARY_COLUMNS, startDate, endDate) : Promise.resolve([]),
@@ -921,8 +941,8 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
   if (needCrowd) {
     payload.crowd = {
       summary: useCrowdSummary
-        ? buildCrowdRowsFromSummary(crowdSummaryData, dashboardSpec.dimensions.crowdLayer)
-        : buildCrowdRows(superLiveData, dashboardSpec.dimensions.crowdLayer),
+        ? buildCrowdRowsFromSummary(crowdSummaryData, dashboardSpec.dimensions.crowdLayer, audienceLayerMap)
+        : buildCrowdRows(superLiveData, dashboardSpec.dimensions.crowdLayer, audienceLayerMap),
     };
   }
 

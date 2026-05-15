@@ -415,6 +415,68 @@
     background: var(--indigo-100);
 }
 
+/* ── 人群分层编辑 ── */
+.layer-cell {
+    white-space: nowrap;
+}
+
+.layer-value {
+    font-size: var(--text-xs);
+    color: var(--gray-600);
+    vertical-align: middle;
+}
+
+.layer-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-left: var(--space-1);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--gray-300);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+    vertical-align: middle;
+    visibility: hidden;
+    opacity: 0;
+}
+
+tr:hover .layer-edit-btn {
+    visibility: visible;
+    opacity: 1;
+    color: var(--gray-400);
+}
+
+.layer-edit-btn:hover {
+    color: var(--indigo-500) !important;
+    background: var(--indigo-50);
+}
+
+.layer-select {
+    padding: 1px var(--space-1);
+    border: 1px solid var(--indigo-300);
+    border-radius: var(--radius-xs);
+    font-size: var(--text-xs);
+    font-family: var(--font-sans);
+    color: var(--gray-700);
+    background: var(--surface-base);
+    cursor: pointer;
+    outline: none;
+    min-width: 42px;
+    vertical-align: middle;
+    transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.layer-select:focus {
+    border-color: var(--indigo-400);
+    box-shadow: 0 0 0 2px rgba(110, 127, 245, 0.15);
+}
+
 /* ── 单品搜索框 ── */
 .single-product-search {
     min-width: 220px;

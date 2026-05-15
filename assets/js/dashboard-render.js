@@ -289,6 +289,7 @@
     function buildCrowdMainRow(label, row) {
         return `<tr class="crowd-row" data-crowd-row="toggle" tabindex="0" role="button" aria-expanded="false">
             <td><span class="expand-icon">▶</span> ${escapeHtml(label)}</td>
+            <td>${escapeHtml(label)}</td>
             <td>¥${formatMoney(row.cost)}</td>
             <td>¥${formatMoney(row.amount)}</td>
             <td>${formatNum(row.orders)}</td>
@@ -312,6 +313,7 @@
     function buildCrowdSubRows(rows) {
         return (rows || []).map(row => `<tr class="sub-row">
             <td>${escapeHtml(row.label)}${row.planName ? `<span class="sub-row-plan">${escapeHtml(row.planName)}</span>` : ''}</td>
+            <td class="layer-cell"><span class="layer-value">${escapeHtml(String(row.layer || '').trim() || '-')}</span><button class="layer-edit-btn" data-audience="${escapeHtml(row.label || '')}" title="编辑分层">✏️</button></td>
             <td>¥${formatMoney(row.cost)}</td>
             <td>¥${formatMoney(row.amount)}</td>
             <td>${formatNum(row.orders)}</td>
@@ -336,8 +338,10 @@
         const label = String(row.label || '').trim();
         const isMissingAudienceName = !label || label === '0' || label === '定向人群名称未回传';
         const audienceLabel = isMissingAudienceName ? '定向人群名称未回传' : label;
+        const layerLabel = String(row.layer || '').trim() || '-';
         return `<tr class="crowd-audience-row">
             <td>${escapeHtml(audienceLabel)}${row.planName ? `<span class="sub-row-plan">${escapeHtml(row.planName)}</span>` : ''}</td>
+            <td class="layer-cell"><span class="layer-value">${escapeHtml(layerLabel)}</span><button class="layer-edit-btn" data-audience="${escapeHtml(audienceLabel)}" title="编辑分层">✏️</button></td>
             <td>¥${formatMoney(row.cost)}</td>
             <td>¥${formatMoney(row.amount)}</td>
             <td>${formatNum(row.orders)}</td>
@@ -356,6 +360,85 @@
             <td>${formatNum(row.cart)}</td>
             <td>${formatNum(row.shows)}</td>
         </tr>`;
+    }
+
+    async function saveAudienceLayer(audienceName, layer) {
+        const authHelpers = window.authHelpers || {};
+        if (typeof authHelpers.fetchFunctionJson !== 'function') {
+            throw new Error('缺少 authHelpers.fetchFunctionJson');
+        }
+        const result = await authHelpers.fetchFunctionJson('update-audience-layer', {
+            method: 'POST',
+            body: JSON.stringify({ audience_name: audienceName, layer }),
+        });
+        if (result.error) throw new Error(result.error);
+        return result;
+    }
+
+    function showLayerEditor(button) {
+        const audienceName = button.dataset.audience || '';
+        if (!audienceName) return;
+
+        const td = button.closest('td.layer-cell');
+        if (!td) return;
+
+        const valueSpan = td.querySelector('.layer-value');
+        const currentLayer = (valueSpan?.textContent || '').trim();
+
+        // 移除按钮，放置下拉框
+        button.style.display = 'none';
+
+        const select = document.createElement('select');
+        select.className = 'layer-select';
+        const options = ['A', 'I', 'P', 'L'];
+        // 如果当前值不在默认选项中，追加
+        if (currentLayer && currentLayer !== '-' && !options.includes(currentLayer)) {
+            options.push(currentLayer);
+        }
+        options.forEach((opt) => {
+            const o = document.createElement('option');
+            o.value = opt;
+            o.textContent = opt;
+            if (opt === currentLayer) o.selected = true;
+            select.appendChild(o);
+        });
+
+        select.addEventListener('change', async () => {
+            const newLayer = select.value;
+            select.disabled = true;
+            select.style.opacity = '0.6';
+            try {
+                await saveAudienceLayer(audienceName, newLayer);
+                if (valueSpan) valueSpan.textContent = newLayer;
+            } catch (err) {
+                // 恢复原值
+                select.value = currentLayer;
+                alert('保存失败: ' + (err.message || '未知错误'));
+            } finally {
+                select.disabled = false;
+                select.style.opacity = '1';
+                // 还原为 span
+                const parent = select.parentNode;
+                if (parent) {
+                    parent.replaceChild(valueSpan || document.createTextNode(newLayer), select);
+                    button.style.display = '';
+                }
+            }
+        });
+
+        select.addEventListener('blur', () => {
+            // 失焦时取消编辑（如未选择）
+            setTimeout(() => {
+                if (select.parentNode) {
+                    const parent = select.parentNode;
+                    parent.replaceChild(valueSpan || document.createTextNode(currentLayer), select);
+                    button.style.display = '';
+                }
+            }, 150);
+        });
+
+        td.insertBefore(select, button);
+        select.focus();
     }
 
     function isLiveRoomPlanName(planName) {
@@ -509,6 +592,7 @@
 
         return '<tr class="crowd-summary-row">'
             + '<td><strong>汇总</strong></td>'
+            + '<td>-</td>'
             + '<td><strong>¥' + formatMoney(totalCost) + '</strong></td>'
             + '<td><strong>¥' + formatMoney(totalAmount) + '</strong></td>'
             + '<td><strong>' + formatNum(totalOrders) + '</strong></td>'
@@ -713,6 +797,8 @@
         toggleCrowdRow,
         renderAdsFromResponse,
         renderCrowdFromResponse,
+        saveAudienceLayer,
+        showLayerEditor,
         singleToNum,
         renderSingleLoadingState,
         renderSingleState,

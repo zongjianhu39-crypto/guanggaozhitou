@@ -37,6 +37,12 @@
         const crowdTableBody = document.querySelector('#crowd-summary-table tbody');
         if (crowdTableBody) {
             crowdTableBody.addEventListener('click', (event) => {
+                const editBtn = event.target.closest('.layer-edit-btn');
+                if (editBtn) {
+                    event.stopPropagation();
+                    window.DashboardApp?.showLayerEditor(editBtn);
+                    return;
+                }
                 const row = event.target.closest('[data-crowd-row="toggle"]');
                 if (!row) return;
                 window.DashboardApp?.toggleCrowdRow(row);
