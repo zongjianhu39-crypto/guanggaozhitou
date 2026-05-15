@@ -765,7 +765,7 @@
 
     .report-table,
     .kpi-stage-table {
-        font-size: 8px !important;
+        font-size: 7px !important;
         table-layout: auto !important;
     }
 
@@ -773,12 +773,12 @@
     .report-table td,
     .kpi-stage-table th,
     .kpi-stage-table td {
-        padding: 2px 4px !important;
+        padding: 1px 2px !important;
     }
 
     .report-table th {
         background: #f3f4f6 !important;
-        font-size: 7px !important;
+        font-size: 6.5px !important;
         white-space: normal !important;
         word-break: keep-all;
         -webkit-print-color-adjust: exact;
@@ -795,7 +795,7 @@
         print-color-adjust: exact;
     }
 
-    .report-table .td-name { max-width: 60px; }
+    .report-table .td-name { max-width: 50px; }
 
     .kpi-stage-table th.group-fixed,
     .kpi-stage-table th.group-total,
