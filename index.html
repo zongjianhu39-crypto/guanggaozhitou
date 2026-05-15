@@ -1060,7 +1060,7 @@
             // 累加月计划目标
             const monthTarget = { cost: 0, cart: 0, preOrders: 0, directOrders: 0, orders: 0 };
 
-            // 按日期保存计划花费（万相台计划预算）
+            // 按日期保存计划花费（总计划金额 = 万相台 + 有客代投）
             const planCostByDate = new Map();
             // 按日期保存有客代投花费（优先实际值 agent_cost，回退到计划值 agent_plan）
             const agentPlanByDate = new Map();
@@ -1087,7 +1087,7 @@
                 // 有客代投花费：优先 agent_cost（实际），回退 agent_plan（计划）
                 const dateKey = d.date || d.label || '';
                 if (dateKey) {
-                    const planCost = Number(plan.wanxiang_plan || plan.plan_cost || 0);
+                    const planCost = Number(plan.wanxiang_plan || plan.plan_cost || 0) + Number(plan.agent_plan || 0);
                     if (planCost > 0) planCostByDate.set(dateKey, planCost);
                     const agentVal = Number(d.agent_cost || d.agent_actual || d.agent_plan || 0);
                     if (agentVal > 0) agentPlanByDate.set(dateKey, agentVal);
