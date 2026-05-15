@@ -758,11 +758,35 @@
     .report-body { padding: 4mm 0 !important; }
     .report-section { margin-bottom: 4mm !important; }
 
-    /* 表格打印优化 */
+    /* 表格打印优化 —— 完整容纳宽表 */
+    .table-scroll-wrapper {
+        overflow: visible !important;
+    }
+
+    .report-table,
+    .kpi-stage-table {
+        font-size: 8px !important;
+        table-layout: auto !important;
+    }
+
+    .report-table th,
+    .report-table td,
+    .kpi-stage-table th,
+    .kpi-stage-table td {
+        padding: 2px 4px !important;
+    }
+
     .report-table th {
         background: #f3f4f6 !important;
+        font-size: 7px !important;
+        white-space: normal !important;
+        word-break: keep-all;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+    }
+
+    .report-table td {
+        white-space: nowrap !important;
     }
 
     .report-table .chg-up,
@@ -771,7 +795,14 @@
         print-color-adjust: exact;
     }
 
-    .report-table .td-name { max-width: 160px; }
+    .report-table .td-name { max-width: 60px; }
+
+    .kpi-stage-table th.group-fixed,
+    .kpi-stage-table th.group-total,
+    .kpi-stage-table th.group-live,
+    .kpi-stage-table th.group-ad {
+        font-size: 6.5px !important;
+    }
 
     /* 保留关键颜色 */
     .report-executive-banner,
