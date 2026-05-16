@@ -1,6 +1,5 @@
 /* Split stylesheet entrypoint. Keep this file linked by pages for compatibility. */
 @import url("assets/css/tokens.css");
 @import url("assets/css/global.css");
-@import url("assets/css/insights-preview.css");
 @import url("assets/css/legacy-pages.css");
-@import url("assets/css/home.css?v=202605090930");
+/* home.css and insights-preview.css moved to page-level <link> tags (index.html only) */
