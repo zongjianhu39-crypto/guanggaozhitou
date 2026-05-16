@@ -123,28 +123,9 @@ returns text
 language sql
 immutable
 as $$
-  with source as (select trim(coalesce(crowd_name, '')) as name)
-  select case
-    when name = '' then '未知'
-    when name = '智能推荐人群' or name like '智能竞争直播间:%' then '纯黑盒'
-    when name like '自定义竞争宝贝:%' then '灰盒_竞争宝贝'
-    when name like '自定义竞争店铺:%' then '灰盒_竞争店铺'
-    when name like '自定义竞争直播间:%' then '灰盒_竞争直播间'
-    when name like '%复购老客%' or name like '%未通知到人群%' or name like '%购买人群%' or name like '%活跃成交%' or name like '%活跃复购%' then '老客'
-    when name like '粉丝人群:%' or name like '喜欢我的直播:%' or name like '喜欢我的短视频:%' or name like '%加购人群%' or name like '%兴趣新客%' or name like '%访问新客%' or name like '%浏览%' then '兴趣新客'
-    when name like '%首购新客%' or name like '%差老客%' or name like '%付定人群%' or name like '%流失%' or name like '%竞店人群%' then '新客'
-    when name like '精选人群:%' or name like '达摩盘人群:%' then
-      case
-        when name like '%活跃复购%' or name like '%活跃成交%' or name like '%活跃下降%' or name like '%即将流失%' or name like '%差直播间老客%' or name like '%差老客%' or name like '%购买人群%' then '老客'
-        when name like '%加购人群%' or name like '%兴趣新客%' or name like '%访问新客%' or name like '%浏览%' then '兴趣新客'
-        when name like '%首购新客%' or name like '%未购%' or name like '%流失%' or name like '%竞店人群%' or name like '%付定人群%' then '新客'
-        when name like '%宠物清洁%' or name like '%直播低退%' or name like '%达人带货品牌%' then '灰盒_竞争宝贝'
-        else '灰盒'
-      end
-    when name like '%活跃%' then '新客'
-    else '未知'
-  end
-  from source;
+  -- 自动分类已废弃，仅保留 audience_layer_mapping 手动映射。
+  -- 刷新汇总表后，未手动映射的人群将归入「未分类」。
+  select null;
 $$;
 
 create or replace function public.refresh_dashboard_ads_summary(p_start_date date, p_end_date date)

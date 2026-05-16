@@ -1,4 +1,4 @@
-import { classifyDimensionValue, getDashboardSpec } from './dashboard-spec.ts';
+import { getDashboardSpec } from './dashboard-spec.ts';
 import { getSupabaseHeaders, SB_URL } from './supabase-client.ts';
 import { aggregateSingleByProduct, buildSingleKpiPayload, dedupeSingleProductRows } from './single-product.ts';
 import { debugLog } from './logger.ts';
@@ -669,7 +669,7 @@ function buildCrowdRows(rows: any[], crowdLayerConfig: CrowdLayerConfig, layerMa
     const manualLayer = layerMap.get(audience.label);
     const crowd = audience.missing
       ? '未标注定向'
-      : manualLayer || classifyDimensionValue(audience.label, crowdLayerConfig);
+      : manualLayer || '未分类';
     const subName = audience.label;
     const planName = getCrowdPlanName(row);
     const subKey = `${planName}\u0001${subName}`;
@@ -727,7 +727,7 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
     const subName = rawName || '定向人群名称未回传';
     const manualLayer = layerMap.get(subName);
     const crowd = rawName
-      ? (String(row['人群分类'] ?? '').trim() || manualLayer || classifyDimensionValue(rawName, crowdLayerConfig))
+      ? (String(row['人群分类'] ?? '').trim() || manualLayer || '未分类')
       : '未标注定向';
     const planName = normalizeNameValue(row['计划名字']) || '未标注计划';
     const subKey = `${planName}\u0001${subName}`;

@@ -375,6 +375,16 @@
         return result;
     }
 
+    function getCrowdLayerSuggestions() {
+        // 从页面已渲染的分层值中收集已有选项，去重排序
+        const layers = new Set(['A', 'I', 'P', 'L']);
+        document.querySelectorAll('.layer-value').forEach((span) => {
+            const text = (span.textContent || '').trim();
+            if (text && text !== '-') layers.add(text);
+        });
+        return [...layers].sort();
+    }
+
     function showLayerEditor(button) {
         const audienceName = button.dataset.audience || '';
         if (!audienceName) return;
@@ -385,60 +395,91 @@
         const valueSpan = td.querySelector('.layer-value');
         const currentLayer = (valueSpan?.textContent || '').trim();
 
-        // 移除按钮，放置下拉框
+        // 移除按钮，放置输入框 + 建议列表
         button.style.display = 'none';
 
-        const select = document.createElement('select');
-        select.className = 'layer-select';
-        const options = ['A', 'I', 'P', 'L'];
-        // 如果当前值不在默认选项中，追加
-        if (currentLayer && currentLayer !== '-' && !options.includes(currentLayer)) {
-            options.push(currentLayer);
-        }
-        options.forEach((opt) => {
+        const wrapper = document.createElement('span');
+        wrapper.className = 'layer-edit-wrapper';
+
+        const datalistId = 'layer-suggestions-' + Date.now();
+        const datalist = document.createElement('datalist');
+        datalist.id = datalistId;
+        const suggestions = getCrowdLayerSuggestions();
+        suggestions.forEach((opt) => {
             const o = document.createElement('option');
             o.value = opt;
-            o.textContent = opt;
-            if (opt === currentLayer) o.selected = true;
-            select.appendChild(o);
+            datalist.appendChild(o);
         });
 
-        select.addEventListener('change', async () => {
-            const newLayer = select.value;
-            select.disabled = true;
-            select.style.opacity = '0.6';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'layer-input';
+        input.value = currentLayer === '-' ? '' : currentLayer;
+        input.setAttribute('list', datalistId);
+        input.placeholder = '输入分层名称';
+
+        let saving = false;
+        const doSave = async () => {
+            if (saving) return;
+            const newLayer = input.value.trim();
+            if (!newLayer || newLayer === currentLayer) {
+                cancelEdit();
+                return;
+            }
+            saving = true;
+            input.disabled = true;
+            input.style.opacity = '0.6';
             try {
                 await saveAudienceLayer(audienceName, newLayer);
                 if (valueSpan) valueSpan.textContent = newLayer;
-            } catch (err) {
-                // 恢复原值
-                select.value = currentLayer;
-                alert('保存失败: ' + (err.message || '未知错误'));
-            } finally {
-                select.disabled = false;
-                select.style.opacity = '1';
                 // 还原为 span
-                const parent = select.parentNode;
+                const parent = wrapper.parentNode;
                 if (parent) {
-                    parent.replaceChild(valueSpan || document.createTextNode(newLayer), select);
+                    parent.replaceChild(valueSpan || document.createTextNode(newLayer), wrapper);
                     button.style.display = '';
                 }
+            } catch (err) {
+                input.value = currentLayer;
+                input.disabled = false;
+                input.style.opacity = '1';
+                input.focus();
+                saving = false;
+                alert('保存失败: ' + (err.message || '未知错误'));
+            }
+        };
+
+        const cancelEdit = () => {
+            if (saving) return;
+            const parent = wrapper.parentNode;
+            if (parent) {
+                parent.replaceChild(valueSpan || document.createTextNode(currentLayer), wrapper);
+                button.style.display = '';
+            }
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                doSave();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEdit();
             }
         });
 
-        select.addEventListener('blur', () => {
-            // 失焦时取消编辑（如未选择）
+        input.addEventListener('blur', () => {
             setTimeout(() => {
-                if (select.parentNode) {
-                    const parent = select.parentNode;
-                    parent.replaceChild(valueSpan || document.createTextNode(currentLayer), select);
-                    button.style.display = '';
+                if (wrapper.parentNode && !saving) {
+                    cancelEdit();
                 }
             }, 150);
         });
 
-        td.insertBefore(select, button);
-        select.focus();
+        wrapper.appendChild(input);
+        wrapper.appendChild(datalist);
+        td.insertBefore(wrapper, button);
+        input.focus();
+        input.select();
     }
 
     function isLiveRoomPlanName(planName) {

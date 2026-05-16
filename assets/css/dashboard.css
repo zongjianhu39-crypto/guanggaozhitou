@@ -457,7 +457,8 @@ tr:hover .layer-edit-btn {
     background: var(--indigo-50);
 }
 
-.layer-select {
+.layer-select,
+.layer-input {
     padding: 1px var(--space-1);
     border: 1px solid var(--indigo-300);
     border-radius: var(--radius-xs);
@@ -472,7 +473,19 @@ tr:hover .layer-edit-btn {
     transition: border-color var(--duration-fast) var(--ease-out);
 }
 
-.layer-select:focus {
+.layer-input {
+    cursor: text;
+    min-width: 80px;
+    max-width: 160px;
+}
+
+.layer-edit-wrapper {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.layer-select:focus,
+.layer-input:focus {
     border-color: var(--indigo-400);
     box-shadow: 0 0 0 2px rgba(110, 127, 245, 0.15);
 }
