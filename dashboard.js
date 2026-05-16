@@ -36,12 +36,12 @@ const DASHBOARD_FEATURE_SCRIPTS = {
     export: {
         namespace: 'DashboardExport',
         label: '导出',
-        url: 'assets/js/dashboard-export.js?v=202605160616',
+        url: 'assets/js/dashboard-export.js?v=202605161845',
     },
     ai: {
         namespace: 'DashboardAi',
         label: 'AI 分析',
-        url: 'assets/js/dashboard-ai.js?v=202605160616',
+        url: 'assets/js/dashboard-ai.js?v=202605161845',
     },
 };
 const dashboardFeatureScriptPromises = new Map();
@@ -93,6 +93,8 @@ const {
     renderSingleKpi,
     renderSingleTable,
     toggleCrowdRow,
+    showLayerEditor,
+    saveAudienceLayer,
 } = dashboardRender;
 const hydrateDashboardSpec = dashboardApi.hydrateDashboardSpec || function() { return Promise.resolve(null); };
 const requestDashboardSummary = dashboardApi.fetchDashboardSummary || function() { return Promise.reject(new Error('数据接口未就绪')); };
@@ -637,6 +639,8 @@ window.DashboardApp = {
     setCurrentSingleResponse,
     getCurrentSingleResponse,
     toggleCrowdRow,
+    showLayerEditor,
+    saveAudienceLayer,
     loadAds,
     loadCrowd,
     loadSingle: (options = {}) => loadSingleSection(options),
