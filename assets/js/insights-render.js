@@ -274,16 +274,23 @@
 
 
         function updateStats(items, total) {
+            const statTotal = document.getElementById('stat-total');
+            const statHighRisk = document.getElementById('stat-high-risk');
+            const statLowRisk = document.getElementById('stat-low-risk');
+            const statLatest = document.getElementById('stat-latest');
+
+            // 统计卡片已被移除时静默退出
+            if (!statTotal && !statHighRisk && !statLowRisk && !statLatest) return;
+
             const normalizedItems = Array.isArray(items) ? items : [];
             const latest = normalizedItems[0]?.report_date || normalizedItems[0]?.published_at || '--';
             const aiCount = normalizedItems.filter((item) => getContentKind(item, item.raw_payload || {}) !== 'doc').length;
             const docCount = normalizedItems.filter((item) => getContentKind(item, item.raw_payload || {}) === 'doc').length;
 
-            document.getElementById('stat-total').textContent = total ?? normalizedItems.length;
-            document.getElementById('stat-high-risk').textContent = aiCount;
-            const lowRiskEl = document.getElementById('stat-low-risk');
-            if (lowRiskEl) lowRiskEl.textContent = docCount;
-            document.getElementById('stat-latest').textContent = latest;
+            if (statTotal) statTotal.textContent = total ?? normalizedItems.length;
+            if (statHighRisk) statHighRisk.textContent = aiCount;
+            if (statLowRisk) statLowRisk.textContent = docCount;
+            if (statLatest) statLatest.textContent = latest;
         }
 
         function formatReportMetricsLine(metrics) {
