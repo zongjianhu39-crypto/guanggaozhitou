@@ -8,17 +8,12 @@
         });
 
         const bindings = [
-            ['ai-analysis-btn', () => window.DashboardApp?.openAIAnalysis()],
             ['download-full-report-btn', () => window.DashboardApp?.downloadFullReportCSV()],
             ['load-ads-btn', () => window.DashboardApp?.loadAds({ forceRefresh: true })],
             ['download-ads-csv-btn', () => window.DashboardApp?.downloadAdsCSV()],
             ['load-single-btn', () => window.DashboardApp?.loadSingle({ forceRefresh: true })],
             ['download-single-csv-btn', () => window.DashboardApp?.downloadSingleCSV()],
             ['load-crowd-btn', () => window.DashboardApp?.loadCrowd({ forceRefresh: true })],
-            ['close-ai-analysis-btn', () => window.DashboardApp?.closeAIAnalysis()],
-            ['ai-report-link-btn', () => window.DashboardApp?.openReportCenter()],
-            ['refresh-ai-analysis-btn', () => window.DashboardApp?.refreshAIAnalysis()],
-            ['close-ai-analysis-footer-btn', () => window.DashboardApp?.closeAIAnalysis()],
         ];
 
         bindings.forEach(([id, handler]) => {

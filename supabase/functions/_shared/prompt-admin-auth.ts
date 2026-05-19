@@ -91,7 +91,7 @@ export function isPromptAdminAllowed(user: PromptAdminUser): boolean {
   return false;
 }
 
-export async function issuePromptAdminSession(user: PromptAdminUser, expiresInSeconds = 8 * 60 * 60): Promise<PromptAdminSession & { is_admin: boolean }> {
+export async function issuePromptAdminSession(user: PromptAdminUser, expiresInSeconds = 30 * 24 * 60 * 60): Promise<PromptAdminSession & { is_admin: boolean }> {
   const secret = getPromptAdminSigningSecret();
   if (!secret) {
     return {

@@ -6,14 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>618大促日报 · 交个朋友广告智投工作台</title>
     <meta name="description" content="618大促广告投放日报：每日核心KPI、经营结论、优先动作与AI洞察，一键导出PDF分享">
-    <link rel="stylesheet" href="style.css?v=202605162201">
-    <link rel="stylesheet" href="assets/css/home.css?v=202605162201">
-    <link rel="stylesheet" href="assets/css/insights-preview.css?v=202605162201">
+    <link rel="stylesheet" href="style.css?v=202605191525">
+    <link rel="stylesheet" href="assets/css/home.css?v=202605191525">
+    <link rel="stylesheet" href="assets/css/insights-preview.css?v=202605191525">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body class="home-page">
-    <script src="assets/js/auth-helpers.js?v=202605162201"></script>
-    <script src="auth.js?v=202605162201"></script>
+    <script src="assets/js/auth-helpers.js?v=202605191525"></script>
+    <script src="auth.js?v=202605191525"></script>
 
     <!-- 导航栏（PDF 导出时隐藏） -->
     <nav class="navbar no-print">
@@ -53,6 +53,7 @@
                     <button id="btn-refresh" class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)">🔄 刷新数据</button>
                     <button id="btn-export-pdf" class="btn btn-sm btn-export">📄 导出 PDF</button>
                     <button id="btn-export-word" class="btn btn-sm btn-export" style="margin-left:8px">📝 导出 Word</button>
+                    <button id="btn-export-csv" class="btn btn-sm btn-export" style="margin-left:8px">📊 导出 CSV</button>
                 </div>
             </div>
         </div>
@@ -205,6 +206,39 @@
                 </div>
             </section>
 
+            <!-- ====== 人群分层（直播间计划·规则·本月） ====== -->
+            <section class="report-section">
+                <h3 class="report-section-title">🎯 人群分层<span class="plan-filter-badge">直播间计划·含"规则"·本月</span></h3>
+                <div class="report-card report-card--flush">
+                    <div class="table-scroll-wrapper">
+                        <table class="report-table kpi-stage-table" id="crowd-rule-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-label">人群分层 / 定向</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">观看次数</th>
+                                    <th class="col-num">成交笔数</th>
+                                    <th class="col-num">总购物车</th>
+                                    <th class="col-num">加购成本</th>
+                                    <th class="col-num">观看成本</th>
+                                    <th class="col-num">观看转化率</th>
+                                    <th class="col-num">订单成本</th>
+                                    <th class="col-num">预售订单量</th>
+                                    <th class="col-num">预售订单成本</th>
+                                    <th class="col-num">ROI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crowd-rule-table-body">
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
 
 
         </div>
@@ -237,7 +271,7 @@
     </footer>
 
     <script src="assets/js/config.js"></script>
-    <script src="script.js?v=202605162201"></script>
-    <script src="assets/js/home-page.js?v=202605162201"></script>
+    <script src="script.js?v=202605191525"></script>
+    <script src="assets/js/home-page.js?v=202605191525"></script>
 </body>
 </html>

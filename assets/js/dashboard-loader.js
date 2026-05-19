@@ -354,19 +354,13 @@
 
     async function loadAll() {
         const app = window.DashboardApp;
-        const pendingAIAnalysis = app.getPendingAIAnalysisRequest();
         const savedViewState = app.readDashboardViewState();
         app.hydrateDashboardSpec();
         try {
             app.hideGlobalDashboardError();
             app.initDateRanges();
             app.applyDashboardViewState(savedViewState);
-            if (pendingAIAnalysis) {
-                app.applyDashboardDateRange(pendingAIAnalysis.startDate, pendingAIAnalysis.endDate);
-            }
-            const initialTab = pendingAIAnalysis?.activeTab === 'crowd' || pendingAIAnalysis?.activeTab === 'single'
-                ? pendingAIAnalysis.activeTab
-                : (savedViewState?.activeTab === 'crowd' || savedViewState?.activeTab === 'single' ? savedViewState.activeTab : 'ads');
+            const initialTab = savedViewState?.activeTab === 'crowd' || savedViewState?.activeTab === 'single' ? savedViewState.activeTab : 'ads';
 
             document.getElementById('load-ads-btn')?.setAttribute('data-last-range', `${document.getElementById('ads-start')?.value}|${document.getElementById('ads-end')?.value}`);
             document.getElementById('load-crowd-btn')?.setAttribute('data-last-range', `${document.getElementById('crowd-start')?.value}|${document.getElementById('crowd-end')?.value}`);
@@ -380,7 +374,6 @@
             getSectionConfig(initialTab).renderSkeleton(app);
             await loadInitialSection(initialTab);
             app.persistDashboardViewState();
-            app.maybeResumePendingAIAnalysis(pendingAIAnalysis);
 
             // 后台并发预加载其他 Tab（不阻塞 UI）
             const otherTabs = ['ads', 'crowd', 'single'].filter(t => t !== initialTab);

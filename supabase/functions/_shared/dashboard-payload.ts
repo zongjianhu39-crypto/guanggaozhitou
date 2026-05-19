@@ -53,7 +53,6 @@ const ADS_SUMMARY_COLUMNS = [
 ];
 const CROWD_SUMMARY_COLUMNS = [
   '日期',
-  '人群分类',
   '人群名字',
   '计划名字',
   '花费',
@@ -727,7 +726,7 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
     const subName = rawName || '定向人群名称未回传';
     const manualLayer = layerMap.get(subName);
     const crowd = rawName
-      ? (String(row['人群分类'] ?? '').trim() || manualLayer || '未分类')
+      ? (manualLayer || '未分类')
       : '未标注定向';
     const planName = normalizeNameValue(row['计划名字']) || '未标注计划';
     const subKey = `${planName}\u0001${subName}`;

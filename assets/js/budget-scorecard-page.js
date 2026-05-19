@@ -57,8 +57,8 @@
         budgetAllocationRatio: 0.3, // 默认只分配万相台计划的 30%
     };
 
-    // 加载配置
-    function loadConfig() {
+    // 从 localStorage 加载配置（同步，作为 fallback）
+    function loadConfigFromLocal() {
         try {
             const saved = localStorage.getItem(CONFIG_KEY);
             if (saved) {
@@ -72,21 +72,73 @@
                 return merged;
             }
         } catch (e) {
-            console.warn('加载评分配置失败:', e);
+            console.warn('[bs] 从 localStorage 加载配置失败:', e);
         }
         return Object.assign({}, DEFAULT_CONFIG);
     }
 
-    // 保存配置
-    function saveConfig(config) {
+    // 从 Supabase 加载配置（异步，优先）
+    async function loadConfigFromSupabase() {
+        try {
+            const result = await authHelpers.fetchFunctionJson('user-config', {
+                query: { key: CONFIG_KEY },
+                useSessionToken: true,
+                includePromptAdminToken: true,
+            });
+            if (result && result.data && result.data.value) {
+                const parsed = result.data.value;
+                const merged = Object.assign({}, DEFAULT_CONFIG, parsed);
+                merged.targetCosts = Object.assign({}, DEFAULT_CONFIG.targetCosts, parsed.targetCosts || {});
+                if (parsed.orderCostTarget !== undefined && parsed.targetCosts === undefined) {
+                    merged.targetCosts.spot = parsed.orderCostTarget;
+                }
+                if (!STAGE_CONFIG[merged.analysisStage]) merged.analysisStage = DEFAULT_CONFIG.analysisStage;
+                console.log('[bs] 从 Supabase 加载配置成功, updated_at:', result.data.updated_at);
+                return merged;
+            }
+        } catch (e) {
+            console.warn('[bs] 从 Supabase 加载配置失败，fallback 到 localStorage:', e.message);
+        }
+        return null;
+    }
+
+    // 加载配置：Supabase 优先，localStorage 兜底
+    async function loadConfig() {
+        const remote = await loadConfigFromSupabase();
+        if (remote) return remote;
+        return loadConfigFromLocal();
+    }
+
+    // 保存配置到 localStorage（同步）
+    function saveConfigToLocal(config) {
         try {
             localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
         } catch (e) {
-            console.warn('保存评分配置失败:', e);
+            console.warn('[bs] 保存配置到 localStorage 失败:', e);
         }
     }
 
-    let scoreConfig = loadConfig();
+    // 保存配置到 Supabase（异步，静默）
+    function saveConfigToSupabase(config) {
+        authHelpers.fetchFunctionJson('user-config', {
+            method: 'POST',
+            body: JSON.stringify({ key: CONFIG_KEY, value: config }),
+            useSessionToken: true,
+            includePromptAdminToken: true,
+        }).then(function () {
+            console.log('[bs] 配置已同步到 Supabase');
+        }).catch(function (e) {
+            console.warn('[bs] 同步配置到 Supabase 失败:', e.message);
+        });
+    }
+
+    // 保存配置：localStorage + Supabase 双写
+    function saveConfig(config) {
+        saveConfigToLocal(config);
+        saveConfigToSupabase(config);
+    }
+
+    let scoreConfig = Object.assign({}, DEFAULT_CONFIG);
     let ACTIVE_STAGE = scoreConfig.analysisStage;
     let TARGET_COST = getTargetCost(ACTIVE_STAGE);
 
@@ -978,7 +1030,13 @@
 
     // ── 初始化 ──
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
+        // 先从 Supabase 加载配置
+        const loaded = await loadConfig();
+        scoreConfig = loaded;
+        ACTIVE_STAGE = loaded.analysisStage;
+        TARGET_COST = getTargetCost(ACTIVE_STAGE);
+
         initConfigPanel();
         initDatePresets();
         initBudgetControls();

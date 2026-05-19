@@ -13,6 +13,7 @@ const authHelpers = window.authHelpers || {};
         let homeYoyReference = null; // 去年5月累计
         let homeDataCache = null;    // stale-while-revalidate 缓存
         let homeDataCacheTime = 0;
+        let homeCrowdRuleData = null;  // 人群分层（直播间计划·规则）本月数据
 
         /* ══════════════════════════════════
            工具函数
@@ -297,6 +298,106 @@ const authHelpers = window.authHelpers || {};
         function renderKpiError() {
             const tbody = document.getElementById('kpi-table-body');
             if (tbody) tbody.innerHTML = '<tr><td colspan="16" class="table-loading table-error">数据加载失败</td></tr>';
+        }
+
+        /* ══════════════════════════════════
+           渲染：人群分层（直播间计划·规则）
+           ══════════════════════════════════ */
+        function renderCrowdRuleSection(crowdResult) {
+            const tbody = document.getElementById('crowd-rule-table-body');
+            if (!tbody) return;
+
+            const rows = crowdResult?.summary || [];
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="12" class="table-loading">本月暂无人群数据（含"规则"的计划）</td></tr>';
+                return;
+            }
+
+            let totalCost = 0, totalOrders = 0, totalCart = 0, totalViews = 0, totalPreOrders = 0;
+            let html = '';
+
+            function crowdCells(s) {
+                const viewCost      = s.viewCost      > 0 ? s.viewCost.toFixed(2)         : '--';
+                const cartCost      = s.cartCost      > 0 ? s.cartCost.toFixed(1)         : '--';
+                const viewRate      = s.viewConvertRate > 0 ? s.viewConvertRate.toFixed(1) + '%' : '--';
+                const orderCost     = s.orderCost     > 0 ? s.orderCost.toFixed(1)        : '--';
+                const preOrderCost  = s.preOrderCost  > 0 ? s.preOrderCost.toFixed(1)     : '--';
+                return `<td class="col-num">${fmtWan(s.cost)}</td>
+                    <td class="col-num">${fmtWan(s.views)}</td>
+                    <td class="col-num">${fmtWan(s.orders)}</td>
+                    <td class="col-num">${fmtWan(s.cart)}</td>
+                    <td class="col-num">${cartCost}</td>
+                    <td class="col-num">${viewCost}</td>
+                    <td class="col-num">${viewRate}</td>
+                    <td class="col-num">${orderCost}</td>
+                    <td class="col-num">${fmtWan(s.preOrders)}</td>
+                    <td class="col-num">${preOrderCost}</td>
+                    <td class="col-num">${s.roi > 0 ? s.roi.toFixed(2) : '--'}</td>`;
+            }
+
+            rows.forEach((layerRow, idx) => {
+                const s = layerRow.summary;
+                totalCost       += s.cost       || 0;
+                totalOrders     += s.orders     || 0;
+                totalCart       += s.cart       || 0;
+                totalViews      += s.views      || 0;
+                totalPreOrders  += s.preOrders  || 0;
+
+                const layerId  = `cr-layer-${idx}`;
+                const subCount = layerRow.subRows?.length || 0;
+
+                html += `<tr class="crowd-rule-layer-row" data-layer-id="${layerId}">
+                    <td class="col-label">
+                        <span class="crowd-rule-expand-icon">▶</span>${esc(layerRow.crowd)}<span class="crowd-rule-count">${subCount}个定向</span>
+                    </td>
+                    ${crowdCells(s)}
+                </tr>`;
+
+                (layerRow.subRows || []).forEach(sub => {
+                    html += `<tr class="crowd-rule-sub-row" data-parent-layer="${layerId}">
+                        <td class="col-label crowd-rule-sub-label">
+                            ${esc(sub.label)}<span class="crowd-rule-plan-name">${esc(sub.planName)}</span>
+                        </td>
+                        ${crowdCells(sub)}
+                    </tr>`;
+                });
+            });
+
+            // 汇总行
+            const totViewCost      = totalViews      > 0 ? (totalCost / totalViews).toFixed(2)      : '--';
+            const totCartCost      = totalCart       > 0 ? (totalCost / totalCart).toFixed(1)       : '--';
+            const totViewRate      = totalViews      > 0 ? ((totalOrders / totalViews) * 100).toFixed(1) + '%' : '--';
+            const totOrderCost     = totalOrders     > 0 ? (totalCost / totalOrders).toFixed(1)     : '--';
+            const totPreOrderCost  = totalPreOrders  > 0 ? (totalCost / totalPreOrders).toFixed(1)  : '--';
+            html += `<tr class="kpi-summary-row">
+                <td class="col-label">汇总</td>
+                <td class="col-num">${fmtWan(totalCost)}</td>
+                <td class="col-num">${fmtWan(totalViews)}</td>
+                <td class="col-num">${fmtWan(totalOrders)}</td>
+                <td class="col-num">${fmtWan(totalCart)}</td>
+                <td class="col-num">${totCartCost}</td>
+                <td class="col-num">${totViewCost}</td>
+                <td class="col-num">${totViewRate}</td>
+                <td class="col-num">${totOrderCost}</td>
+                <td class="col-num">${fmtWan(totalPreOrders)}</td>
+                <td class="col-num">${totPreOrderCost}</td>
+                <td class="col-num">--</td>
+            </tr>`;
+
+            tbody.innerHTML = html;
+
+            // 绑定展开/收起
+            tbody.querySelectorAll('.crowd-rule-layer-row').forEach(row => {
+                row.addEventListener('click', () => {
+                    const lid = row.dataset.layerId;
+                    const isExpanded = row.classList.toggle('crowd-rule-expanded');
+                    tbody.querySelectorAll(`[data-parent-layer="${lid}"]`).forEach(sub => {
+                        sub.classList.toggle('crowd-rule-sub-visible', isExpanded);
+                    });
+                    const icon = row.querySelector('.crowd-rule-expand-icon');
+                    if (icon) icon.textContent = isExpanded ? '▼' : '▶';
+                });
+            });
         }
 
         /* ══════════════════════════════════
@@ -639,6 +740,7 @@ const authHelpers = window.authHelpers || {};
                 ['kpi-table',  () => renderKpiTable(daily, latest, prev)],
                 ['daily-detail', () => renderDailyDetailTable(daily)],
                 ['yoy', () => renderYoyTable()],
+                ['crowd-rule', () => renderCrowdRuleSection(homeCrowdRuleData)],
             ];
             sections.forEach(([name, fn]) => {
                 try { fn(); } catch (err) { console.error(`[home] render ${name} failed:`, err); }
@@ -653,7 +755,7 @@ const authHelpers = window.authHelpers || {};
             if (banner) banner.textContent = '数据加载失败，请检查网络或登录状态后刷新页面。';
 
             // 在各区域显示具体的错误提示
-            ['kpi-table-body', 'daily-detail-table-body', 'yoy-table-body'].forEach(id => {
+            ['kpi-table-body', 'daily-detail-table-body', 'yoy-table-body', 'crowd-rule-table-body'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     const cols = id === 'yoy-table-body' ? 15 : 16;
@@ -680,14 +782,12 @@ const authHelpers = window.authHelpers || {};
             const yoyRefStart = `${refYear}-${YOY_MONTH}-01`;
             const yoyRefEnd = `${refYear}-${YOY_MONTH}-${dayStr}`;
 
-            const [dashResult, alertResult, reportResult, planResult, yoyCurResult, yoyRefResult] = await Promise.allSettled([
+            const [dashResult, planResult, yoyCurResult, yoyRefResult, crowdRuleResult] = await Promise.allSettled([
                 authHelpers.fetchFunctionJson('dashboard-data', {
                     query: { sections: 'all', start_date: start, end_date: today },
                     parseErrorMessage: '看板数据读取失败',
                     onUnauthorized: () => { /* noop */ },
                 }),
-                authHelpers.fetchFunctionJson('ai-reports', { query: { risk_level: 'high', limit: 10 } }),
-                authHelpers.fetchFunctionJson('ai-reports', { query: { report_type: 'daily', limit: 1 } }),
                 authHelpers.fetchFunctionJson('plan-dashboard-summary', {
                     query: { start: monthStart, end: monthEnd },
                     includePromptAdminToken: true,
@@ -701,9 +801,13 @@ const authHelpers = window.authHelpers || {};
                 authHelpers.fetchFunctionJson('dashboard-data', {
                     query: { sections: 'ads', start_date: yoyRefStart, end_date: yoyRefEnd },
                 }).catch(e => ({ error: e })),
+                // 人群分层：本月，含"规则"的直播间计划
+                authHelpers.fetchFunctionJson('dashboard-data', {
+                    query: { sections: 'crowd', start_date: monthStart, end_date: monthEnd, crowd_plan_name_includes: '规则' },
+                }).catch(e => ({ error: e })),
             ]);
 
-            const result = { payload: null, dashboardData: null, alertItems: [], reportItem: null, planData: null, yoyCurrent: null, yoyReference: null, errors: [] };
+            const result = { payload: null, dashboardData: null, alertItems: [], reportItem: null, planData: null, yoyCurrent: null, yoyReference: null, crowdRule: null, errors: [] };
 
             if (dashResult.status === 'fulfilled') {
                 const data = dashResult.value.data || dashResult.value;
@@ -714,20 +818,7 @@ const authHelpers = window.authHelpers || {};
                 console.error('[home] dashboard-data failed:', dashResult.reason);
             }
 
-            if (alertResult.status === 'fulfilled') {
-                result.alertItems = (alertResult.value.data || alertResult.value).items || [];
-            } else {
-                result.errors.push(alertResult.reason);
-            }
-
-            if (reportResult.status === 'fulfilled') {
-                const items = (reportResult.value.data || reportResult.value).items || [];
-                result.reportItem = items[0] || null;
-            } else {
-                result.errors.push(reportResult.reason);
-            }
-
-            if (planResult.status === 'fulfilled' && planResult.value && !planResult.value.error) {
+if (planResult.status === 'fulfilled' && planResult.value && !planResult.value.error) {
                 try {
                     const planRaw = planResult.value.data || planResult.value;
                     result.planData = parsePlanData(planRaw);
@@ -747,6 +838,12 @@ const authHelpers = window.authHelpers || {};
                 const d = yoyRefResult.value.data || yoyRefResult.value;
                 result.yoyReference = d.ads || d;
             }
+            if (crowdRuleResult.status === 'fulfilled' && crowdRuleResult.value && !crowdRuleResult.value.error) {
+                const d = crowdRuleResult.value.data || crowdRuleResult.value;
+                result.crowdRule = d.crowd || null;
+            } else {
+                console.warn('[home] crowd rule data unavailable');
+            }
 
             return result;
         }
@@ -760,6 +857,7 @@ const authHelpers = window.authHelpers || {};
             homePlanData = fresh.planData;
             homeYoyCurrent = fresh.yoyCurrent;
             homeYoyReference = fresh.yoyReference;
+            homeCrowdRuleData = fresh.crowdRule || null;
 
             // 确保所有 daily 数据按日期降序排列（最新日期在前）
             if (homeDashboardData && homeDashboardData.daily) {
@@ -926,6 +1024,209 @@ ${bodyHTML}
             URL.revokeObjectURL(url);
         }
 
+        function exportCSV() {
+            const daily = homeDashboardData?.daily || [];
+            const agentPlanMap = homePlanData?.agentPlanByDate || null;
+            const planCostMap = homePlanData?.planCostByDate || null;
+            const refAgentMap = homePlanData?.refAgentByDate || null;
+            const yoyCur = homeYoyCurrent;
+            const yoyRef = homeYoyReference;
+            const crowdRule = homeCrowdRuleData;
+
+            if (!daily.length && !crowdRule?.summary?.length && !yoyCur && !yoyRef) {
+                alert('暂无数据，请等待数据加载完成后重试。');
+                return;
+            }
+
+            const today = shanghaiToday();
+            const genTime = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()).replace(',', '');
+            const title = document.querySelector('.report-title')?.textContent || '广告投放日报';
+
+            function csvEsc(v) { return String(v ?? '').replace(/"/g, '""'); }
+            function csvCell(v) { return '"' + csvEsc(v) + '"'; }
+            // fmtMoney: 使用页面一致的 fmtCurrency 显示格式
+            function fmtMoney(v) { return v > 0 ? fmtCurrency(v) : ''; }
+            function fmtCount(v) { return fmtInt(v); }
+            // fmtUnitCost: 单位成本（单价类），保留1位小数
+            function fmtUnitCost(v, prefix) { return v > 0 ? (prefix || '¥') + v.toFixed(1) : ''; }
+            // fmtPct: 百分比
+            function fmtPct(v) { return v > 0 ? (v * 100).toFixed(1) + '%' : ''; }
+            // fmtRate: 速率/比值
+            function fmtRate(v) { return v > 0 ? v.toFixed(2) : ''; }
+
+            let csv = '\ufeff';  // BOM for Excel UTF-8 compatibility
+
+            // ============ 1. 核心KPI阶段表（按周） ============
+            if (daily.length) {
+                csv += '"核心KPI阶段表（按周汇总）"\n';
+                csv += '开始日期,结束日期,阶段,总花费,计划花费,有客花费(直播),广告花费(万相台),观看次数,成交笔数,总购物车,加购成本,观看成本,观看转化率,订单成本,预售订单量,预售订单成本\n';
+
+                const weeks = groupByWeek(daily, agentPlanMap, planCostMap);
+                weeks.forEach(w => {
+                    csv += [
+                        w.startDate, w.endDate, w.phase,
+                        fmtMoney(w.cost + w.liveCost),
+                        fmtMoney(w.planCost),
+                        fmtMoney(w.liveCost),
+                        fmtMoney(w.cost),
+                        fmtCount(w.views), fmtCount(w.orders), fmtCount(w.cart),
+                        fmtUnitCost(w.cartCost),
+                        fmtUnitCost(w.viewCost),
+                        fmtPct(w.viewConvertRate),
+                        fmtUnitCost(w.orderCost),
+                        fmtCount(w.preOrders),
+                        fmtUnitCost(w.preOrderCost)
+                    ].map(csvCell).join(',') + '\n';
+                });
+                csv += '\n';
+            }
+
+            // ============ 2. 近7天每日明细 ============
+            if (daily.length) {
+                csv += '"近7天每日明细"\n';
+                csv += '日期,星期,总花费,计划花费,有客花费(直播),广告花费(万相台),观看次数,成交笔数,总购物车,加购成本,观看成本,观看转化率,订单成本,预售订单量,预售订单成本\n';
+                const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+                const recent7 = daily.slice(0, 7).reverse();
+                recent7.forEach(row => {
+                    const date = row.label || '';
+                    const dt = new Date(date + 'T00:00:00+08:00');
+                    const wd = weekDays[dt.getDay()];
+                    const adCost = Number(row.cost || 0);
+                    const liveCost = agentPlanMap instanceof Map ? (agentPlanMap.get(date) || 0) : (agentPlanMap?.[date] || 0);
+                    const planCost = planCostMap instanceof Map ? (planCostMap.get(date) || 0) : (planCostMap?.[date] || 0);
+                    const allCost = adCost + liveCost;
+                    const views = Number(row.views || 0);
+                    const orders = Number(row.orders || 0);
+                    const cart = Number(row.cart || 0);
+                    const preOrders = Number(row.preOrders || 0);
+                    csv += [
+                        date, wd,
+                        fmtMoney(allCost),
+                        fmtMoney(planCost),
+                        fmtMoney(liveCost),
+                        fmtMoney(adCost),
+                        fmtCount(views), fmtCount(orders), fmtCount(cart),
+                        fmtUnitCost(cart > 0 ? adCost / cart : 0),
+                        fmtUnitCost(views > 0 ? adCost / views : 0),
+                        fmtPct(views > 0 ? orders / views : 0),
+                        fmtUnitCost(orders > 0 ? adCost / orders : 0),
+                        fmtCount(preOrders),
+                        fmtUnitCost(preOrders > 0 ? adCost / preOrders : 0)
+                    ].map(csvCell).join(',') + '\n';
+                });
+                csv += '\n';
+            }
+
+            // ============ 3. 同比去年 ============
+            if (yoyCur || yoyRef) {
+                csv += '"同比去年对比"\n';
+                const curDaily = yoyCur?.daily || [];
+                const refDaily = yoyRef?.daily || [];
+                const curYear = today.slice(0, 4);
+                const refYear = String(Number(curYear) - 1);
+                const dayStr = today.slice(8, 10);
+
+                const getLastDataDate = (arr) => {
+                    const dates = arr.map(r => r.label).filter(Boolean).sort();
+                    return dates[dates.length - 1] || null;
+                };
+                const curLastDate = getLastDataDate(curDaily);
+                const curLastDay = curLastDate ? curLastDate.split('-')[2] : dayStr;
+                const refCutoff = `${refYear}-${YOY_MONTH}-${curLastDay}`;
+                const refFiltered = refDaily.filter(r => r.label && r.label <= refCutoff);
+
+                const sum = (arr, key) => arr.reduce((s, r) => s + (Number(r[key]) || 0), 0);
+                const curAdCost = sum(curDaily, 'cost');
+                const curViews = sum(curDaily, 'views');
+                const curOrders = sum(curDaily, 'orders');
+                const curCart = sum(curDaily, 'cart');
+                const curPreOrders = sum(curDaily, 'preOrders');
+                let curAgentCost = 0;
+                if (agentPlanMap) {
+                    curDaily.forEach(r => {
+                        if (r.label) curAgentCost += Number(agentPlanMap instanceof Map ? agentPlanMap.get(r.label) || 0 : agentPlanMap[r.label] || 0);
+                    });
+                }
+
+                const refAdCost = sum(refFiltered, 'cost');
+                const refViews = sum(refFiltered, 'views');
+                const refOrders = sum(refFiltered, 'orders');
+                const refCart = sum(refFiltered, 'cart');
+                const refPreOrders = sum(refFiltered, 'preOrders');
+                let refAgentCost = 0;
+                if (refAgentMap) {
+                    refFiltered.forEach(r => {
+                        if (r.label) refAgentCost += Number(refAgentMap instanceof Map ? refAgentMap.get(r.label) || 0 : refAgentMap[r.label] || 0);
+                    });
+                }
+
+                function yoyPct(cur, ref) {
+                    if (!ref || ref === 0) return '--';
+                    return ((cur / ref - 1) * 100).toFixed(0) + '%';
+                }
+
+                csv += '指标,今年同期,去年同比,增涨,同比%\n';
+                csv += `总花费(含直播),${fmtMoney(curAdCost + curAgentCost)},${fmtMoney(refAdCost + refAgentCost)},${fmtMoney(curAdCost + curAgentCost - refAdCost - refAgentCost)},${yoyPct(curAdCost + curAgentCost, refAdCost + refAgentCost)}\n`;
+                csv += `广告花费,${fmtMoney(curAdCost)},${fmtMoney(refAdCost)},${fmtMoney(curAdCost - refAdCost)},${yoyPct(curAdCost, refAdCost)}\n`;
+                csv += `直播花费,${fmtMoney(curAgentCost)},${fmtMoney(refAgentCost)},${fmtMoney(curAgentCost - refAgentCost)},${yoyPct(curAgentCost, refAgentCost)}\n`;
+                csv += `观看次数,${fmtCount(curViews)},${fmtCount(refViews)},${fmtCount(curViews - refViews)},${yoyPct(curViews, refViews)}\n`;
+                csv += `成交笔数,${fmtCount(curOrders)},${fmtCount(refOrders)},${fmtCount(curOrders - refOrders)},${yoyPct(curOrders, refOrders)}\n`;
+                csv += `总购物车,${fmtCount(curCart)},${fmtCount(refCart)},${fmtCount(curCart - refCart)},${yoyPct(curCart, refCart)}\n`;
+                csv += `预售订单量,${fmtCount(curPreOrders)},${fmtCount(refPreOrders)},${fmtCount(curPreOrders - refPreOrders)},${yoyPct(curPreOrders, refPreOrders)}\n`;
+                csv += '\n';
+            }
+
+            // ============ 4. 人群分层（直播间计划·规则） ============
+            const crowdRows = crowdRule?.summary;
+            if (crowdRows?.length) {
+                csv += '"人群分层（直播间计划·含规则·本月）"\n';
+                csv += '人群分层/定向,花费,观看次数,成交笔数,总购物车,加购成本,观看成本,观看转化率,订单成本,预售订单量,预售订单成本,ROI\n';
+
+                crowdRows.forEach(layer => {
+                    const s = layer.summary;
+                    csv += [
+                        layer.crowd,
+                        fmtMoney(s.cost), fmtCount(s.views), fmtCount(s.orders), fmtCount(s.cart),
+                        fmtUnitCost(s.cartCost),
+                        fmtUnitCost(s.viewCost),
+                        fmtPct(s.viewConvertRate),
+                        fmtUnitCost(s.orderCost),
+                        fmtCount(s.preOrders),
+                        fmtUnitCost(s.preOrderCost),
+                        fmtRate(s.roi)
+                    ].map(csvCell).join(',') + '\n';
+
+                    (layer.subRows || []).forEach(sub => {
+                        csv += [
+                            '  ' + sub.label + ' (' + sub.planName + ')',
+                            fmtMoney(sub.cost), fmtCount(sub.views), fmtCount(sub.orders), fmtCount(sub.cart),
+                            fmtUnitCost(sub.cartCost),
+                            fmtUnitCost(sub.viewCost),
+                            fmtPct(sub.viewConvertRate),
+                            fmtUnitCost(sub.orderCost),
+                            fmtCount(sub.preOrders),
+                            fmtUnitCost(sub.preOrderCost),
+                            fmtRate(sub.roi)
+                        ].map(csvCell).join(',') + '\n';
+                    });
+                });
+                csv += '\n';
+            }
+
+            csv += `"报告生成时间",${genTime}\n`;
+            csv += '"数据来源","交个朋友·广告智投工作台"\n';
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title}_数据表格_${genTime.replace(/[:\s]/g, '')}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         /* ── 初始化 ── */
         document.addEventListener('DOMContentLoaded', function() {
             const genTime = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()).replace(',', '');
@@ -933,5 +1234,6 @@ ${bodyHTML}
             document.getElementById('btn-refresh')?.addEventListener('click', () => location.reload());
             document.getElementById('btn-export-pdf')?.addEventListener('click', () => window.print());
             document.getElementById('btn-export-word')?.addEventListener('click', exportWord);
+            document.getElementById('btn-export-csv')?.addEventListener('click', exportCSV);
             loadHomeData();
         });

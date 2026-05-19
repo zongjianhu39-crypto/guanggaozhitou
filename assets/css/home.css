@@ -605,7 +605,7 @@
     white-space: nowrap;
 }
 .kpi-stage-table .col-num { text-align: right; }
-.kpi-stage-table .col-label { text-align: center; }
+.kpi-stage-table .col-label { text-align: left; }
 
 /* 分组表头颜色 */
 .kpi-group-header th {
@@ -850,4 +850,79 @@
         color: #999;
         border-top: 1px solid #ddd;
     }
+}
+
+/* ══════════════════════════════════════
+   人群分层（首页·直播间计划·规则）
+   ══════════════════════════════════════ */
+.plan-filter-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    background: #eef2ff;
+    color: #4f46e5;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.crowd-rule-layer-row {
+    cursor: pointer;
+}
+.crowd-rule-layer-row:hover td {
+    background: var(--surface-overlay, #f5f7fa);
+}
+.crowd-rule-layer-row td:first-child {
+    font-weight: 600;
+}
+.crowd-rule-layer-row.crowd-rule-expanded .crowd-rule-expand-icon {
+    transform: rotate(90deg);
+}
+.crowd-rule-expand-icon {
+    display: inline-block;
+    font-size: 10px;
+    color: #9ca3af;
+    margin-right: 6px;
+    transition: transform 0.15s ease;
+    user-select: none;
+}
+.crowd-rule-count {
+    font-size: 11px;
+    color: #9ca3af;
+    font-weight: 400;
+    margin-left: 6px;
+}
+.crowd-rule-sub-row {
+    display: none;
+    background: #fafbfc;
+}
+.crowd-rule-sub-row.crowd-rule-sub-visible {
+    display: table-row;
+}
+.crowd-rule-sub-row td {
+    font-size: 12px;
+    color: #4b5563;
+}
+.crowd-rule-sub-label {
+    padding-left: 32px !important;
+}
+.crowd-rule-plan-name {
+    display: block;
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+/* ══════════════════════════════════════
+   首页宽表紧凑模式：11px + 缩小 padding
+   保证 16 列在 1200px 容器内无需横滚
+   ══════════════════════════════════════ */
+.kpi-stage-table th {
+    font-size: 11px;
+    padding: 6px 8px;
+}
+.kpi-stage-table td {
+    font-size: 11px;
+    padding: 5px 8px;
 }

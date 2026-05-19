@@ -36,12 +36,7 @@ const DASHBOARD_FEATURE_SCRIPTS = {
     export: {
         namespace: 'DashboardExport',
         label: '导出',
-        url: 'assets/js/dashboard-export.js?v=202605162201',
-    },
-    ai: {
-        namespace: 'DashboardAi',
-        label: 'AI 分析',
-        url: 'assets/js/dashboard-ai.js?v=202605162201',
+        url: 'assets/js/dashboard-export.js?v=202605191525',
     },
 };
 const dashboardFeatureScriptPromises = new Map();
@@ -49,9 +44,6 @@ const {
     setButtonBusy,
     resetButtonState,
     getCurrentDateRangeValue,
-    savePendingAIAnalysisRequest,
-    getPendingAIAnalysisRequest,
-    clearPendingAIAnalysisRequest,
     readDashboardViewState,
     persistDashboardViewState,
     applyDashboardViewState,
@@ -181,56 +173,8 @@ function downloadSingleCSV() {
     return runDashboardExportAction('downloadSingleCSV');
 }
 
-async function openAIAnalysis() {
-    try {
-        setDashboardStatus('info', '正在加载 AI 分析模块...', 0);
-        const feature = await loadDashboardFeatureScript('ai');
-        return feature.openAIAnalysis();
-    } catch (error) {
-        console.warn('dashboard ai module error', error);
-        setDashboardStatus('error', error.message || 'AI 分析模块加载失败，请刷新页面后重试。', 4200);
-        throw error;
-    }
-}
 
-function closeAIAnalysis() {
-    if (window.DashboardAi?.closeAIAnalysis) {
-        window.DashboardAi.closeAIAnalysis();
-        return;
-    }
-    document.getElementById('ai-analysis-modal')?.classList.remove('show');
-}
 
-async function refreshAIAnalysis() {
-    try {
-        const feature = await loadDashboardFeatureScript('ai');
-        return feature.refreshAIAnalysis();
-    } catch (error) {
-        console.warn('dashboard ai refresh error', error);
-        setDashboardStatus('error', error.message || 'AI 分析模块加载失败，请刷新页面后重试。', 4200);
-        throw error;
-    }
-}
-
-function openReportCenter() {
-    if (window.DashboardAi?.openReportCenter) {
-        window.DashboardAi.openReportCenter();
-        return;
-    }
-    window.location.href = 'insights.html';
-}
-
-function maybeResumePendingAIAnalysis(pendingRequest) {
-    if (!pendingRequest || !getPromptAdminToken()) {
-        return;
-    }
-    loadDashboardFeatureScript('ai')
-        .then((feature) => feature.maybeResumePendingAIAnalysis(pendingRequest))
-        .catch((error) => {
-            console.warn('dashboard ai resume error', error);
-            setDashboardStatus('warn', 'AI 分析模块加载失败，未能恢复上次分析请求。', 4200);
-        });
-}
 
 function syncRangeActionButtons() {
     const adsButton = document.getElementById('load-ads-btn');
@@ -248,9 +192,6 @@ function syncRangeActionButtons() {
     }
 }
 
-function getPromptAdminToken() {
-    return authHelpers.getPromptAdminToken ? authHelpers.getPromptAdminToken() : '';
-}
 
 function applyDashboardDateRange(startDate, endDate) {
     ['ads-start', 'crowd-start', 'single-start'].forEach((id) => {
@@ -345,34 +286,6 @@ function setActiveTab(tabName, options = {}) {
     }
 }
 
-function redirectToPromptAdminLogin(message) {
-    const modal = document.getElementById('ai-analysis-modal');
-    const loading = document.getElementById('ai-analysis-loading');
-    const body = document.getElementById('ai-analysis-body');
-    const text = document.getElementById('ai-analysis-text');
-
-    if (!modal || !loading || !body || !text) {
-        window.location.href = 'auth/index.html?force=1';
-        return;
-    }
-
-    loading.style.display = 'none';
-    body.style.display = 'block';
-    text.textContent = `${message}\n\n正在跳转到登录页，请稍候...`;
-
-    if (window.authHelpers && window.authHelpers.rememberRedirect) {
-        window.authHelpers.rememberRedirect(window.location.href);
-    } else {
-        try { localStorage.setItem('feishu_redirect', window.location.href); } catch (error) { console.warn('failed to remember redirect', error); }
-    }
-    localStorage.removeItem('prompt_admin_token');
-    localStorage.removeItem('prompt_admin_expires_at');
-
-    setTimeout(() => {
-        modal.classList.remove('show');
-        window.location.href = 'auth/index.html?force=1';
-    }, 1200);
-}
 
 function handleDashboardAuthFailure(message) {
     if (typeof authHelpers.handleReauthRequired === 'function') {
@@ -602,10 +515,6 @@ window.DashboardApp = {
     showLoading,
     hideLoading,
     updateLoading,
-    getPromptAdminToken,
-    savePendingAIAnalysisRequest,
-    getPendingAIAnalysisRequest,
-    clearPendingAIAnalysisRequest,
     readDashboardViewState,
     persistDashboardViewState,
     shouldRefreshDashboardCacheEntry,
@@ -618,7 +527,6 @@ window.DashboardApp = {
     getAIAnalysisContext,
     hasValidDateRange,
     isResponseForRange,
-    redirectToPromptAdminLogin,
     fetchDashboardSummary,
     ensureAdsResponseCurrent,
     ensureCrowdResponseCurrent,
@@ -647,11 +555,6 @@ window.DashboardApp = {
     downloadAdsCSV,
     downloadFullReportCSV,
     downloadSingleCSV,
-    openAIAnalysis,
-    closeAIAnalysis,
-    refreshAIAnalysis,
-    openReportCenter,
-    maybeResumePendingAIAnalysis,
     initDateRanges,
     bumpCacheGeneration: dashboardState.bumpCacheGeneration || function() {},
 };

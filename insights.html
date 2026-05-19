@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>洞察中心 - 交个朋友·广告智投工作台</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="assets/css/insights.css?v=202605162201" />
+    <link rel="stylesheet" href="assets/css/insights.css?v=202605191525" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
-    <script src="assets/js/auth-helpers.js?v=202605162201"></script>
-    <script src="auth.js?v=202605162201"></script>
+    <script src="assets/js/auth-helpers.js?v=202605191525"></script>
+    <script src="auth.js?v=202605191525"></script>
 
     <nav class="navbar">
         <div class="nav-container">
@@ -39,11 +39,10 @@
         <div class="insights-header">
             <div class="insights-header-left">
                 <h1 class="insights-header-title">洞察中心</h1>
-                <p class="insights-header-desc">汇总 AI 分析报告、PDF 转文档和运营资料，集中沉淀关键判断、规则说明与可复用内容</p>
+                <p class="insights-header-desc">沉淀关键判断、规则说明与可复用内容</p>
             </div>
             <div class="insights-header-actions">
                 <a href="supabase-dashboard.html" class="btn btn-secondary">返回数据看板</a>
-                <button id="reload-reports-btn" class="btn btn-primary" type="button">刷新内容</button>
             </div>
         </div>
 
@@ -78,58 +77,11 @@
             </div>
         </a>
 
-        <section id="list-view">
-            <div id="list-state"></div>
-            <div id="report-list" class="report-grid"></div>
-        </section>
 
-        <section id="detail-view" class="detail-view">
-            <div class="detail-toolbar">
-                <button id="detail-back-btn" class="back-link" type="button">← 返回内容列表</button>
-                <button id="detail-delete-btn" class="delete-report-btn detail-delete-btn" type="button">删除内容</button>
-            </div>
-            <div class="detail-stage">
-                <div class="detail-stage-grid">
-                    <div class="detail-stage-main">
-                        <div class="detail-stage-copy">
-                            <div class="eyebrow" id="detail-subtitle">洞察内容</div>
-                            <h2 id="detail-title">内容详情</h2>
-                            <p id="detail-summary">--</p>
-                        </div>
-                        <details class="detail-skim">
-                            <summary>关键判断与内容速览（可选展开）</summary>
-                            <div class="detail-skim-body">
-                                <div class="detail-focus-grid" id="detail-focus-points"></div>
-                                <div class="detail-kpi-strip" id="detail-primary-metrics"></div>
-                            </div>
-                        </details>
-                        <div class="chips" id="detail-tags"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="report-sheet">
-                <div class="section-card report-prose-card">
-                    <h3>正文</h3>
-                    <p class="report-prose-lead">以下为完整内容，已排版为易读格式；需要核对原始符号时可展开文末「原始 Markdown」。</p>
-                    <div id="detail-story" class="report-article-prose"></div>
-                </div>
-                <details class="section-card appendix-details">
-                    <summary>补充信息：结构化参考、来源与附件</summary>
-                    <div id="detail-structured-appendix" class="list-block"></div>
-                </details>
-                <details class="section-card appendix-details">
-                    <summary>原始 Markdown</summary>
-                    <pre id="detail-markdown" class="markdown-box"></pre>
-                </details>
-            </div>
-        </section>
     </main>
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/shared-utils.js"></script>
-    <script src="assets/js/ai-article-markdown.js?v=202605162201"></script>
-    <script src="assets/js/insights-render.js?v=202605162201"></script>
-    <script src="assets/js/insights-page.js?v=202605162201"></script>
-    <script src="script.js?v=202605162201"></script>
+    <script src="script.js?v=202605191525"></script>
 </body>
 </html>

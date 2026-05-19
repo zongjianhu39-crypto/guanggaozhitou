@@ -8,7 +8,7 @@
     <meta name="description" content="投放数据聚合看板，监控花费、ROI、转化率与人群表现">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="assets/css/dashboard.css?v=202605162201">
+    <link rel="stylesheet" href="assets/css/dashboard.css?v=202605191525">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         /* 仅保留 dashboard.css 无法覆盖的页面级补丁 */
@@ -51,8 +51,8 @@
     </style>
 </head>
 <body>
-    <script src="assets/js/auth-helpers.js?v=202605162201"></script>
-    <script src="auth.js?v=202605162201"></script>
+    <script src="assets/js/auth-helpers.js?v=202605191525"></script>
+    <script src="auth.js?v=202605191525"></script>
 
     <nav class="navbar">
         <div class="nav-container">
@@ -97,7 +97,6 @@
                 <button class="seg-btn tab" data-tab="single" role="tab" aria-selected="false" aria-controls="panel-single">📦 单品广告</button>
             </div>
             <div class="dashboard-toolbar-actions">
-                <button class="ai-analysis-btn" id="ai-analysis-btn" type="button">🤖 AI 分析</button>
                 <a href="metric-rules.html" class="metric-rules-link" aria-label="查看指标规则" title="配置和管理指标规则">📋 查看指标规则</a>
                 <button class="download-btn" id="download-full-report-btn" type="button">📥 下载当前聚合报告 CSV</button>
             </div>
@@ -235,51 +234,15 @@
         </div>
     </div>
 
-    <div id="ai-analysis-modal" class="ai-analysis-modal">
-        <div class="ai-analysis-dialog">
-            <div class="ai-analysis-header">
-                <div>
-                    <h3 style="margin:0;font-size:var(--text-lg);color:var(--gray-900);font-weight:var(--font-semibold);">🤖 AI 数据分析</h3>
-                    <p class="ai-analysis-range" id="ai-analysis-range" style="margin:4px 0 0;font-size:var(--text-xs);color:var(--gray-400);">分析范围：-- 至 --</p>
-                </div>
-                <button id="close-ai-analysis-btn" type="button" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);padding:4px">×</button>
-            </div>
-            <div id="ai-analysis-loading" class="ai-analysis-loading" style="display:none">
-                <div class="ai-analysis-spinner"></div>
-                <div style="font-size:var(--text-base);color:var(--gray-500)">正在分析数据...</div>
-                <div style="font-size:var(--text-xs);color:var(--gray-400)">约需 60-90 秒，请勿关闭页面</div>
-            </div>
-            <div id="ai-analysis-body" class="ai-analysis-body" style="display:none">
-                <div id="ai-analysis-text" class="ai-analysis-text"></div>
-                <details id="ai-prompt-viewer" class="ai-prompt-viewer" style="display:none;margin-top:16px;">
-                    <summary class="ai-prompt-summary">
-                        📋 查看实际发送给 AI 的提示词
-                    </summary>
-                    <div class="ai-prompt-wrapper">
-                        <div class="ai-prompt-label">System Prompt（身份/约束/背景）</div>
-                        <pre id="ai-prompt-system" class="ai-prompt-pre ai-prompt-pre--system"></pre>
-                        <div class="ai-prompt-label">User Prompt（数据+指令）</div>
-                        <pre id="ai-prompt-rendered" class="ai-prompt-pre ai-prompt-pre--user"></pre>
-                    </div>
-                </details>
-            </div>
-            <div class="ai-analysis-footer">
-                <button id="ai-report-link-btn" type="button" class="ai-footer-btn ai-footer-btn--primary" style="display:none">查看洞察中心</button>
-                <button id="refresh-ai-analysis-btn" type="button" class="ai-footer-btn ai-footer-btn--primary">重新分析</button>
-                <button id="close-ai-analysis-footer-btn" type="button" class="ai-footer-btn ai-footer-btn--secondary">关闭</button>
-            </div>
-        </div>
-    </div>
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/shared-utils.js"></script>
-    <script src="assets/js/ai-article-markdown.js?v=202605162201"></script>
-    <script src="script.js?v=202605162201"></script>
-    <script src="assets/js/dashboard-state.js?v=202605162201"></script>
-    <script src="assets/js/dashboard-render.js?v=202605162201"></script>
-    <script src="assets/js/dashboard-api.js?v=202605162201"></script>
-    <script src="assets/js/dashboard-loader.js?v=202605162201"></script>
-    <script src="assets/js/dashboard-events.js?v=202605162201"></script>
-    <script src="dashboard.js?v=202605162201"></script>
+    <script src="script.js?v=202605191525"></script>
+    <script src="assets/js/dashboard-state.js?v=202605191525"></script>
+    <script src="assets/js/dashboard-render.js?v=202605191525"></script>
+    <script src="assets/js/dashboard-api.js?v=202605191525"></script>
+    <script src="assets/js/dashboard-loader.js?v=202605191525"></script>
+    <script src="assets/js/dashboard-events.js?v=202605191525"></script>
+    <script src="dashboard.js?v=202605191525"></script>
 </body>
 </html>
