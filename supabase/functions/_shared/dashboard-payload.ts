@@ -4,6 +4,7 @@ import { aggregateSingleByProduct, buildSingleKpiPayload, dedupeSingleProductRow
 import { debugLog } from './logger.ts';
 import {
   getFinancialTablesForDateRange,
+  getShortLiveLinkTablesForDateRange,
   getSingleProductAdTablesForDateRange,
   getSuperLiveTablesForDateRange,
   getTaobaoLiveTablesForDateRange,
@@ -26,6 +27,20 @@ const SUPER_LIVE_BASE_COLUMNS = [
   '互动量',
 ];
 const SUPER_LIVE_CROWD_COLUMNS = [...SUPER_LIVE_BASE_COLUMNS, '计划id', '计划名字', '人群名字'];
+const SHORT_LIVE_LINK_COLUMNS = [
+  '日期',
+  '花费',
+  '直播总观看次数',
+  '内容展现次数',
+  '总成交金额',
+  '总成交笔数',
+  '直接成交金额',
+  '总购物车数',
+  '总收藏数',
+  '总预售成交笔数',
+  '互动量',
+];
+const SHORT_LIVE_LINK_CROWD_COLUMNS = [...SHORT_LIVE_LINK_COLUMNS, '人群名字'];
 const SINGLE_PRODUCT_COLUMNS = ['id', '日期', '商品id', '商品名称', 'img_url', '花费', '直接成交笔数', '直接成交金额', '该商品直接成交笔数', '该商品直接成交金额', '该商品加购数', '该商品收藏数', '观看人数'];
 const ADS_SUMMARY_COLUMNS = [
   '日期',
@@ -48,6 +63,7 @@ const ADS_SUMMARY_COLUMNS = [
   '淘宝直播成交金额',
   '淘宝直播退款金额',
   'source_super_live_rows',
+  'source_short_live_rows',
   'source_financial_rows',
   'source_taobao_rows',
 ];
@@ -240,6 +256,26 @@ function parseDate(value: unknown): string | null {
 function normalizeNameValue(value: unknown): string {
   const normalized = String(value ?? '').trim();
   return normalized && normalized !== '0' ? normalized : '';
+}
+
+/**
+ * 将 short_live_link 行数据标准化为 super_live 列名格式，
+ * 处理列名差异：直播总观看次数→观看次数，内容展现次数→展现量
+ */
+function normalizeShortLiveRow(row: Record<string, unknown>): Record<string, unknown> {
+  const normalized: Record<string, unknown> = {};
+  // 复制不变列
+  for (const key of Object.keys(row)) {
+    normalized[key] = row[key];
+  }
+  // 映射差异列
+  if ('直播总观看次数' in normalized) {
+    normalized['观看次数'] = normalized['直播总观看次数'];
+  }
+  if ('内容展现次数' in normalized) {
+    normalized['展现量'] = normalized['内容展现次数'];
+  }
+  return normalized;
 }
 
 function getCrowdAudienceName(row: Record<string, unknown>): { label: string; missing: boolean } {
@@ -882,17 +918,19 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
     debugLog(`[dashboard-data] summary fallback raw ads=${needRawAds} crowd=${needRawCrowd} single=${needRawSingle}`);
   }
 
-  const [financialRaw, taobaoRaw, superLiveChunks, singleProductRaw] = await Promise.all([
+  const [financialRaw, taobaoRaw, superLiveChunks, shortLiveLinkChunks, singleProductRaw] = await Promise.all([
     needRawAds ? fetchRoutedTables(getFinancialTablesForDateRange(startDate, endDate), FINANCIAL_COLUMNS) : Promise.resolve([]),
     needRawAds ? fetchRoutedTables(getTaobaoLiveTablesForDateRange(startDate, endDate), TAOBAO_LIVE_COLUMNS) : Promise.resolve([]),
     needRawSuperLive ? fetchRoutedTables(getSuperLiveTablesForDateRange(startDate, endDate), superLiveColumns) : Promise.resolve([]),
+    needRawSuperLive ? fetchRoutedTables(getShortLiveLinkTablesForDateRange(startDate, endDate), needRawCrowd ? SHORT_LIVE_LINK_CROWD_COLUMNS : SHORT_LIVE_LINK_COLUMNS) : Promise.resolve([]),
     needRawSingle ? fetchRoutedTables(getSingleProductAdTablesForDateRange(startDate, endDate), SINGLE_PRODUCT_COLUMNS) : Promise.resolve([]),
   ]);
 
   const financialData = filterByDateRange(financialRaw, startDate, endDate);
   const taobaoData = filterByDateRange(taobaoRaw, startDate, endDate);
   const superLiveFlat = Array.isArray(superLiveChunks) ? superLiveChunks.flat() : [];
-  const superLiveData = filterRowsByPlanName(filterByDateRange(superLiveFlat, startDate, endDate), crowdPlanNameIncludes);
+  const shortLiveLinkFlat = Array.isArray(shortLiveLinkChunks) ? shortLiveLinkChunks.flat().map(normalizeShortLiveRow) : [];
+  const superLiveData = filterRowsByPlanName(filterByDateRange([...superLiveFlat, ...shortLiveLinkFlat], startDate, endDate), crowdPlanNameIncludes);
   const singleProductFilteredData = filterByDateRange(singleProductRaw, startDate, endDate);
   const singleProductData = needSingle ? dedupeSingleProductRows(singleProductFilteredData) : singleProductFilteredData;
 
@@ -907,7 +945,8 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
     counts: {
       financial: useAdsSummary ? sumRows(adsSummaryData, 'source_financial_rows') : financialData.length,
       taobaoLive: useAdsSummary ? sumRows(adsSummaryData, 'source_taobao_rows') : taobaoData.length,
-      superLive: useAdsSummary ? sumRows(adsSummaryData, 'source_super_live_rows') : useCrowdSummary ? sumRows(crowdSummaryData, 'source_row_count') : superLiveData.length,
+      superLive: useAdsSummary ? sumRows(adsSummaryData, 'source_super_live_rows') : superLiveFlat.length,
+      shortLiveLink: useAdsSummary ? sumRows(adsSummaryData, 'source_short_live_rows') : shortLiveLinkFlat.length,
       singleProduct: useSingleSummary ? sumRows(singleSummaryData, 'source_row_count') : singleProductData.length,
     },
   };

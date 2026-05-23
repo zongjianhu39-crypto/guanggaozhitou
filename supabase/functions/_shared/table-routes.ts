@@ -80,3 +80,7 @@ export function getSuperLiveTablesForDateRange(startDate: string, endDate: strin
 export function getSuperLiveTablesForDates(dates: string[]): RoutedTable[] {
   return groupDatesByTable(dates, getSuperLiveTableName);
 }
+
+export function getShortLiveLinkTablesForDateRange(startDate: string, endDate: string): RoutedTable[] {
+  return getAnnualTablesForDateRange('short_live_link', startDate, endDate);
+}
