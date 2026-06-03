@@ -303,8 +303,7 @@ function buildFunctionUrl(name, query = {}) {
 }
 
 function requiresBackendSession(pathname) {
-  return pathname === '/prompt-admin.html'
-    || pathname === '/genbi-rule-admin.html';
+  return pathname === '/prompt-admin.html';
 }
 
 function clearUserSession() {
@@ -515,7 +514,7 @@ async function fetchFunctionJson(name, options = {}) {
 
   const headers = Object.assign({}, baseHeaders, options.headers || {});
 
-  return fetchJson(url, {
+  const fetchOptions = {
     method: options.method,
     headers,
     body: options.body,
@@ -526,7 +525,24 @@ async function fetchFunctionJson(name, options = {}) {
     unauthorizedMessage: options.unauthorizedMessage,
     onUnauthorized: options.onUnauthorized,
     onParseError: options.onParseError,
-  });
+  };
+
+  // 自动重试：遇到网络抖动（Failed to fetch / 502 / 503 / 504）时最多重试 1 次
+  var retries = options.retries !== undefined ? options.retries : 1;
+  var retryDelayMs = options.retryDelayMs !== undefined ? options.retryDelayMs : 800;
+  for (var i = 0; i <= retries; i++) {
+    try {
+      return await fetchJson(url, fetchOptions);
+    } catch (error) {
+      var isNetworkError = error instanceof TypeError || (error && /fetch|network|503|502|504/i.test(error.message));
+      if (i < retries && isNetworkError) {
+        console.warn('[auth-helpers] 请求失败，' + retryDelayMs / 1000 + 's 后第 ' + (i + 1) + ' 次重试... (' + name + ')', error.message);
+        await new Promise(function(resolve) { setTimeout(resolve, retryDelayMs); });
+      } else {
+        throw error;
+      }
+    }
+  }
 }
 
 window.authHelpers = window.authHelpers || {};

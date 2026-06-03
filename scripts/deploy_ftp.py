@@ -113,13 +113,19 @@ def get_remote_size(ftp, remote_path):
     except Exception:
         return -1
 
+def is_version_injected(path):
+    """该文件是否会在上传时注入 ?v= 版本号（HTML 与 dashboard.js）。
+    这类文件每次发布都必须重传，使 ?v= 时间戳刷新，否则会出现
+    『改了 JS 但 HTML 仍指向旧版本号 → 用户读到缓存里的旧文件』。"""
+    p = Path(path)
+    return p.suffix == '.html' or p.name == 'dashboard.js'
+
 def upload_file(ftp, local_path, remote_path):
     """上传单个文件，对 HTML/JS 自动注入版本号"""
-    suffix = Path(local_path).suffix
     name = Path(local_path).name
 
     # 对 HTML 和特定 JS 文件在内存中替换版本号
-    if suffix == '.html' or name == 'dashboard.js':
+    if is_version_injected(local_path):
         content = Path(local_path).read_bytes()
         try:
             text = content.decode('utf-8')
@@ -231,8 +237,10 @@ def main():
 
             remote_file = REMOTE_ROOT + "/" + rel
 
-            # 增量对比：比较文件大小
-            if not FORCE_UPLOAD:
+            # 增量对比：比较文件大小。
+            # 注入版本号的 HTML/dashboard.js 跳过此判断、每次必传：它们的 ?v= 时间戳
+            # 长度不变（大小相同会被误判为"未变"），但必须刷新才能让浏览器加载最新 JS/CSS。
+            if not FORCE_UPLOAD and not is_version_injected(rel):
                 local_size = local_path.stat().st_size
                 remote_size = get_remote_size(ftp, remote_file)
                 if remote_size == local_size and local_size >= 0:

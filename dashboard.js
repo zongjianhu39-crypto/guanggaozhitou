@@ -36,7 +36,7 @@ const DASHBOARD_FEATURE_SCRIPTS = {
     export: {
         namespace: 'DashboardExport',
         label: '导出',
-        url: 'assets/js/dashboard-export.js?v=202605191525',
+        url: 'assets/js/dashboard-export.js?v=202605310518',
     },
 };
 const dashboardFeatureScriptPromises = new Map();

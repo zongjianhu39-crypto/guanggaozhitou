@@ -5,8 +5,9 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>指标与规则台 - 交个朋友·广告智投工作台</title>
-    <meta name="description" content="查看当前生效的指标定义、口径规则、人群分层和 GenBI 语义配置">
+    <meta name="description" content="查看当前生效的指标定义、口径规则和人群分层配置">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://qjscsikithbxuxmjyjsp.supabase.co" crossorigin>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
@@ -241,7 +242,6 @@
                 <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
 
                 <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
-                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
                 <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
             </ul>
             <button class="mobile-menu-btn">
@@ -254,14 +254,13 @@
         <section class="rules-hero">
             <span class="rules-kicker">Read-only Rules Console</span>
             <h1>把业务规则从代码里拉到台面上。</h1>
-            <p>第一版只做查看，不做编辑。目标是让运营、投手和分析同学能直接看到当前线上生效的指标定义、字段口径、人群分层规则和 GenBI 语义配置，及时发现问题，再决定是否进入技术改动流程。</p>
+            <p>第一版只做查看，不做编辑。目标是让运营、投手和分析同学能直接看到当前线上生效的指标定义、字段口径和人群分层规则，及时发现问题，再决定是否进入技术改动流程。</p>
             <div class="rules-stats" id="rules-stats"></div>
         </section>
 
         <section class="rules-toolbar">
             <div class="rules-tabs">
                 <button class="rules-tab active" type="button" data-tab="dashboard">数据看板规则</button>
-                <button class="rules-tab" type="button" data-tab="genbi">GenBI 语义规则</button>
                 <button class="rules-tab" type="button" data-tab="all">全部</button>
             </div>
             <input id="rules-search" class="rules-search" type="search" placeholder="搜索指标、字段、规则、示例问题">
@@ -286,10 +285,11 @@
         <section id="rules-list" class="rules-list"></section>
     </main>
 
-    <script src="assets/js/auth-helpers.js?v=202605191525"></script>
-    <script src="auth.js?v=202605191525"></script>
+    <script src="assets/js/auth-helpers.js?v=202605310518"></script>
+    <script src="auth.js?v=202605310518"></script>
+    <script src="assets/js/page-tracker.js?v=202605310518"></script>
     <script src="assets/js/shared-utils.js"></script>
-    <script src="script.js?v=202605191525"></script>
-    <script src="assets/js/metric-rules-page.js?v=202605191525"></script>
+    <script src="script.js?v=202605310518"></script>
+    <script src="assets/js/metric-rules-page.js?v=202605310518"></script>
 </body>
 </html>

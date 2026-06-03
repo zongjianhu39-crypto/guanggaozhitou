@@ -61,6 +61,8 @@ function logMissingOptionalTable(table: string, error: { message?: string } | nu
   console.warn(`[plan-dashboard-summary] optional source table skipped: ${table}`, error?.message || '');
 }
 
+const PAGE_SIZE = 1000;
+
 async function fetchRowsByDateFilters(
   client: ReturnType<typeof createClient>,
   table: string,
@@ -70,27 +72,59 @@ async function fetchRowsByDateFilters(
 ) {
   const normalizedDates = Array.from(new Set(dates));
   const rows: Record<string, unknown>[] = [];
-  const pageSize = 1000;
 
   for (const chunk of chunkArray(normalizedDates, DATE_FILTERS_PER_REQUEST)) {
-    let from = 0;
-    for (;;) {
-      const { data, error } = await client
-        .from(table)
-        .select(select)
-        .in(dateField, chunk)
-        .range(from, from + pageSize - 1);
-      if (error) {
-        if (isMissingOptionalTableError(error)) {
-          logMissingOptionalTable(table, error);
-          return [];
-        }
-        throw new Error(`读取表 ${table} 失败: ${error.message}`);
+    // 先取首页并用 count=exact 拿到总行数，再并行抓取剩余页。
+    const first = await client
+      .from(table)
+      .select(select, { count: 'exact' })
+      .in(dateField, chunk)
+      .range(0, PAGE_SIZE - 1);
+    if (first.error) {
+      if (isMissingOptionalTableError(first.error)) {
+        logMissingOptionalTable(table, first.error);
+        return [];
       }
-      if (!data?.length) break;
-      rows.push(...data);
-      if (data.length < pageSize) break;
-      from += pageSize;
+      throw new Error(`读取表 ${table} 失败: ${first.error.message}`);
+    }
+    if (first.data?.length) rows.push(...first.data);
+
+    const total = first.count;
+    if (typeof total === 'number') {
+      if (total > PAGE_SIZE) {
+        const pagePromises: Promise<Record<string, unknown>[]>[] = [];
+        for (let from = PAGE_SIZE; from < total; from += PAGE_SIZE) {
+          pagePromises.push(
+            client
+              .from(table)
+              .select(select)
+              .in(dateField, chunk)
+              .range(from, from + PAGE_SIZE - 1)
+              .then(({ data, error }) => {
+                if (error) throw new Error(`读取表 ${table} 失败: ${error.message}`);
+                return (data || []) as Record<string, unknown>[];
+              }),
+          );
+        }
+        const pages = await Promise.all(pagePromises);
+        for (const page of pages) rows.push(...page);
+      }
+      continue;
+    }
+
+    // count 不可用时，回退到顺序翻页。
+    if ((first.data?.length || 0) >= PAGE_SIZE) {
+      for (let from = PAGE_SIZE; ; from += PAGE_SIZE) {
+        const { data, error } = await client
+          .from(table)
+          .select(select)
+          .in(dateField, chunk)
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw new Error(`读取表 ${table} 失败: ${error.message}`);
+        if (!data?.length) break;
+        rows.push(...data);
+        if (data.length < PAGE_SIZE) break;
+      }
     }
   }
 
@@ -105,28 +139,64 @@ async function fetchRowsByDateRange(
   start: string,
   end: string,
 ) {
-  const pageSize = 1000;
-  let from = 0;
   const rows: Record<string, unknown>[] = [];
-  for (;;) {
-    const { data, error } = await client
-      .from(table)
-      .select(select)
-      .gte(dateField, start)
-      .lte(dateField, end)
-      .range(from, from + pageSize - 1);
-    if (error) {
-      if (isMissingOptionalTableError(error)) {
-        logMissingOptionalTable(table, error);
-        return [];
-      }
-      throw new Error(`读取表 ${table} 失败: ${error.message}`);
+
+  // 先取首页并用 count=exact 拿到总行数，再并行抓取剩余页。
+  const first = await client
+    .from(table)
+    .select(select, { count: 'exact' })
+    .gte(dateField, start)
+    .lte(dateField, end)
+    .range(0, PAGE_SIZE - 1);
+  if (first.error) {
+    if (isMissingOptionalTableError(first.error)) {
+      logMissingOptionalTable(table, first.error);
+      return [];
     }
-    if (!data?.length) break;
-    rows.push(...data);
-    if (data.length < pageSize) break;
-    from += pageSize;
+    throw new Error(`读取表 ${table} 失败: ${first.error.message}`);
   }
+  if (first.data?.length) rows.push(...first.data);
+
+  const total = first.count;
+  if (typeof total === 'number') {
+    if (total > PAGE_SIZE) {
+      const pagePromises: Promise<Record<string, unknown>[]>[] = [];
+      for (let from = PAGE_SIZE; from < total; from += PAGE_SIZE) {
+        pagePromises.push(
+          client
+            .from(table)
+            .select(select)
+            .gte(dateField, start)
+            .lte(dateField, end)
+            .range(from, from + PAGE_SIZE - 1)
+            .then(({ data, error }) => {
+              if (error) throw new Error(`读取表 ${table} 失败: ${error.message}`);
+              return (data || []) as Record<string, unknown>[];
+            }),
+        );
+      }
+      const pages = await Promise.all(pagePromises);
+      for (const page of pages) rows.push(...page);
+    }
+    return rows;
+  }
+
+  // count 不可用时，回退到顺序翻页。
+  if ((first.data?.length || 0) >= PAGE_SIZE) {
+    for (let from = PAGE_SIZE; ; from += PAGE_SIZE) {
+      const { data, error } = await client
+        .from(table)
+        .select(select)
+        .gte(dateField, start)
+        .lte(dateField, end)
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) throw new Error(`读取表 ${table} 失败: ${error.message}`);
+      if (!data?.length) break;
+      rows.push(...data);
+      if (data.length < PAGE_SIZE) break;
+    }
+  }
+
   return rows;
 }
 
@@ -145,6 +215,7 @@ async function fetchSuperLiveRowsForDates(client: ReturnType<typeof createClient
     directOrdersColumn,
     cartColumn,
     preOrdersColumn,
+    directPreOrdersColumn,
   } = DATA_SOURCE_CONFIG.superLive;
   const chunks = await Promise.all(
     routedTables.map(({ table, dates: routedDates }) => {
@@ -152,7 +223,7 @@ async function fetchSuperLiveRowsForDates(client: ReturnType<typeof createClient
       return fetchRowsByDateFilters(
         client,
         table,
-        `${dateField},${amountColumn},${viewsColumn},${ordersColumn},${directOrdersColumn},${cartColumn},${preOrdersColumn}`,
+        `${dateField},${amountColumn},${viewsColumn},${ordersColumn},${directOrdersColumn},${cartColumn},${preOrdersColumn},${directPreOrdersColumn}`,
         dateField,
         routedDates,
       );
@@ -194,6 +265,42 @@ async function findOverlappingActivities(
   });
 }
 
+// ---- GET 结果缓存（进程内）----
+// plan-summary 每次都要全量扫描当月 + 去年同期的原始 super_live 表，开销大（3~5s）。
+// 这里按 start|end 缓存 buildPlanDashboardSummary 的结果。计划/活动可被 POST 编辑，
+// 所以：1) 当前区间（end>=今天）只缓存 60s；历史区间缓存 30min；2) 任意写操作后整表失效。
+const PLAN_SUMMARY_CACHE = new Map<string, { computedAt: number; payload: unknown }>();
+const PLAN_SUMMARY_CACHE_MAX = 40;
+const PLAN_SUMMARY_TTL_CURRENT_MS = 60 * 1000;
+const PLAN_SUMMARY_TTL_HISTORICAL_MS = 30 * 60 * 1000;
+
+function planSummaryTtlMs(end: string): number {
+  const today = new Date().toISOString().slice(0, 10);
+  return end >= today ? PLAN_SUMMARY_TTL_CURRENT_MS : PLAN_SUMMARY_TTL_HISTORICAL_MS;
+}
+
+function getCachedPlanSummary(key: string, end: string): unknown | null {
+  const hit = PLAN_SUMMARY_CACHE.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.computedAt > planSummaryTtlMs(end)) {
+    PLAN_SUMMARY_CACHE.delete(key);
+    return null;
+  }
+  return hit.payload;
+}
+
+function setCachedPlanSummary(key: string, payload: unknown): void {
+  if (PLAN_SUMMARY_CACHE.size >= PLAN_SUMMARY_CACHE_MAX) {
+    const oldest = PLAN_SUMMARY_CACHE.keys().next().value;
+    if (oldest !== undefined) PLAN_SUMMARY_CACHE.delete(oldest);
+  }
+  PLAN_SUMMARY_CACHE.set(key, { computedAt: Date.now(), payload });
+}
+
+function invalidatePlanSummaryCache(): void {
+  PLAN_SUMMARY_CACHE.clear();
+}
+
 async function handleGet(req: Request, client: ReturnType<typeof createClient>, headers: Record<string, string>) {
   const url = new URL(req.url);
   const start = url.searchParams.get('start');
@@ -203,6 +310,12 @@ async function handleGet(req: Request, client: ReturnType<typeof createClient>, 
   }
   if (start! > end!) {
     return json({ error: 'start 不能大于 end' }, 400, headers);
+  }
+
+  const cacheKey = `${start}|${end}`;
+  const cached = getCachedPlanSummary(cacheKey, end!);
+  if (cached) {
+    return json(cached, 200, headers);
   }
 
   const dates = enumerateDates(start!, end!);
@@ -274,6 +387,7 @@ async function handleGet(req: Request, client: ReturnType<typeof createClient>, 
     referenceTaobaoLiveRows,
   });
 
+  setCachedPlanSummary(cacheKey, summary);
   return json(summary, 200, headers);
 }
 
@@ -282,6 +396,12 @@ async function handlePost(req: Request, client: ReturnType<typeof createClient>,
   if (!body) return json({ error: '请求体不是合法 JSON' }, 400, headers);
   const action = String(body.action || '');
   const updatedBy = actorLabel(authResult);
+
+  // 任意写操作都让 GET 结果缓存失效，确保编辑后立即生效（fetch_month_note 为只读，无需失效）。
+  const PLAN_SUMMARY_WRITE_ACTIONS = new Set(['save_plan', 'save_plans', 'save_activity', 'delete_activity', 'save_month_note']);
+  if (PLAN_SUMMARY_WRITE_ACTIONS.has(action)) {
+    invalidatePlanSummaryCache();
+  }
 
   if (action === 'save_plan') {
     const date = String(body.date || '');

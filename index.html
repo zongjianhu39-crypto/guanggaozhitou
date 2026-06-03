@@ -6,14 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>618大促日报 · 交个朋友广告智投工作台</title>
     <meta name="description" content="618大促广告投放日报：每日核心KPI、经营结论、优先动作与AI洞察，一键导出PDF分享">
-    <link rel="stylesheet" href="style.css?v=202605191525">
-    <link rel="stylesheet" href="assets/css/home.css?v=202605191525">
-    <link rel="stylesheet" href="assets/css/insights-preview.css?v=202605191525">
+    <link rel="preconnect" href="https://qjscsikithbxuxmjyjsp.supabase.co" crossorigin>
+    <link rel="stylesheet" href="style.css?v=202605310518">
+    <link rel="stylesheet" href="assets/css/home.css?v=202605310518">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" defer></script>
 </head>
 <body class="home-page">
-    <script src="assets/js/auth-helpers.js?v=202605191525"></script>
-    <script src="auth.js?v=202605191525"></script>
+    <script src="assets/js/auth-helpers.js?v=202605310518"></script>
+    <script src="auth.js?v=202605310518"></script>
+    <script src="assets/js/page-tracker.js?v=202605310518"></script>
 
     <!-- 导航栏（PDF 导出时隐藏） -->
     <nav class="navbar no-print">
@@ -27,7 +29,6 @@
                 <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
                 <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
                 <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
-                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
                 <li><a href="auth/index.html" data-action="logout" class="nav-link">退出登录</a></li>
             </ul>
             <button class="mobile-menu-btn">
@@ -62,14 +63,6 @@
     <main class="report-body">
         <div class="container">
 
-            <!-- ====== 一句话结论 ====== -->
-            <section class="report-section">
-                <div class="report-executive-banner" id="executive-banner">
-                    <span class="executive-icon">📌</span>
-                    <span id="executive-text">正在汇总今日大盘表现...</span>
-                </div>
-            </section>
-
             <!-- ====== 同比去年 ====== -->
             <section class="report-section">
                 <h3 class="report-section-title"><span class="yoy-badge">同比去年</span></h3>
@@ -81,7 +74,7 @@
                                     <th colspan="2" class="group-fixed"></th>
                                     <th colspan="2" class="group-total">汇总</th>
                                     <th colspan="1" class="group-live">直播有客</th>
-                                    <th colspan="10" class="group-ad">广告-万相台</th>
+                                    <th colspan="12" class="group-ad">广告-万相台</th>
                                 </tr>
                                 <tr>
                                     <th class="col-label">开始时间</th>
@@ -91,21 +84,112 @@
                                     <th class="col-num">花费</th>
                                     <th class="col-num">花费</th>
                                     <th class="col-num">观看次数</th>
-                                    <th class="col-num">成交笔数</th>
+                                    <th class="col-num">直接成交笔数</th>
                                     <th class="col-num">总购物车</th>
                                     <th class="col-num">加购成本</th>
                                     <th class="col-num">观看成本</th>
                                     <th class="col-num">观看转化率</th>
-                                    <th class="col-num">订单成交成本</th>
                                     <th class="col-num">预售订单量</th>
+                                    <th class="col-num">直接预售成交笔数</th>
                                     <th class="col-num">预售订单成本</th>
+                                    <th class="col-num">直接成交笔数成本</th>
+                                    <th class="col-num">直接预售成交笔数成本</th>
                                 </tr>
                             </thead>
                             <tbody id="yoy-table-body">
-                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ====== 节奏投放效果 ====== -->
+            <section class="report-section" id="rhythm-delivery-section">
+                <h3 class="report-section-title"><span class="rhythm-delivery-badge">2026 节奏投放效果</span><span class="rhythm-delivery-hint">按 2026 年活动节奏阶段汇总实际投放效果</span></h3>
+                <div class="report-card report-card--flush">
+                    <div class="table-scroll-wrapper">
+                        <table class="report-table kpi-stage-table rhythm-delivery-table" id="rhythm-delivery-table">
+                            <thead>
+                                <tr class="kpi-group-header">
+                                    <th colspan="3" class="group-fixed"></th>
+                                    <th colspan="2" class="group-total">汇总</th>
+                                    <th colspan="1" class="group-live">直播有客</th>
+                                    <th colspan="12" class="group-ad">广告-万相台</th>
+                                </tr>
+                                <tr>
+                                    <th class="col-label">时间范围</th>
+                                    <th class="col-label">活动节奏</th>
+                                    <th class="col-num">天数</th>
+                                    <th class="col-num">总花费</th>
+                                    <th class="col-num">计划花费</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">观看次数</th>
+                                    <th class="col-num">直接成交笔数</th>
+                                    <th class="col-num">总购物车</th>
+                                    <th class="col-num">加购成本</th>
+                                    <th class="col-num">观看成本</th>
+                                    <th class="col-num">观看转化率</th>
+                                    <th class="col-num">预售订单量</th>
+                                    <th class="col-num">直接预售成交笔数</th>
+                                    <th class="col-num">预售订单成本</th>
+                                    <th class="col-num">直接成交笔数成本</th>
+                                    <th class="col-num">直接预售成交笔数成本</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rhythm-delivery-table-body">
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ====== 2025 节奏投放效果 ====== -->
+            <section class="report-section" id="rhythm-delivery-2025-section">
+                <h3 class="report-section-title"><span class="rhythm-delivery-badge rhythm-delivery-badge--2025">2025 节奏投放效果</span><span class="rhythm-delivery-hint">按 2025 年 618 实际活动节奏汇总投放效果（用于同比参考）</span></h3>
+                <div class="report-card report-card--flush">
+                    <div class="table-scroll-wrapper">
+                        <table class="report-table kpi-stage-table rhythm-delivery-table" id="rhythm-delivery-2025-table">
+                            <thead>
+                                <tr class="kpi-group-header">
+                                    <th colspan="3" class="group-fixed"></th>
+                                    <th colspan="1" class="group-total">汇总</th>
+                                    <th colspan="1" class="group-live">直播有客</th>
+                                    <th colspan="12" class="group-ad">广告投放（2025 年 618）</th>
+                                </tr>
+                                <tr>
+                                    <th class="col-label">时间范围</th>
+                                    <th class="col-label">活动节奏</th>
+                                    <th class="col-num">天数</th>
+                                    <th class="col-num">总花费</th>
+                                    <th class="col-num">有客代投花费</th>
+                                    <th class="col-num">花费</th>
+                                    <th class="col-num">观看次数</th>
+                                    <th class="col-num">直接成交笔数</th>
+                                    <th class="col-num">总购物车</th>
+                                    <th class="col-num">加购成本</th>
+                                    <th class="col-num">观看成本</th>
+                                    <th class="col-num">观看转化率</th>
+                                    <th class="col-num">预售订单量</th>
+                                    <th class="col-num">直接预售成交笔数</th>
+                                    <th class="col-num">预售订单成本</th>
+                                    <th class="col-num">直接成交笔数成本</th>
+                                    <th class="col-num">直接预售成交笔数成本</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rhythm-delivery-2025-table-body">
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                                <tr class="skeleton-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -126,7 +210,7 @@
                                     <th colspan="3" class="group-fixed"></th>
                                     <th colspan="2" class="group-total">汇总</th>
                                     <th colspan="1" class="group-live">直播有客</th>
-                                    <th colspan="10" class="group-ad">广告-万相台</th>
+                                    <th colspan="12" class="group-ad">广告-万相台</th>
                                 </tr>
                                 <!-- 第二行：具体列名 -->
                                 <tr>
@@ -138,20 +222,22 @@
                                     <th class="col-num">花费</th>
                                     <th class="col-num">花费</th>
                                     <th class="col-num">观看次数</th>
-                                    <th class="col-num">成交笔数</th>
+                                    <th class="col-num">直接成交笔数</th>
                                     <th class="col-num">总购物车</th>
                                     <th class="col-num">加购成本</th>
                                     <th class="col-num">观看成本</th>
                                     <th class="col-num">观看转化率</th>
-                                    <th class="col-num">订单成交成本</th>
                                     <th class="col-num">预售订单量</th>
+                                    <th class="col-num">直接预售成交笔数</th>
                                     <th class="col-num">预售订单成本</th>
+                                    <th class="col-num">直接成交笔数成本</th>
+                                    <th class="col-num">直接预售成交笔数成本</th>
                                 </tr>
                             </thead>
                             <tbody id="kpi-table-body">
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -170,7 +256,7 @@
                                     <th colspan="3" class="group-fixed"></th>
                                     <th colspan="2" class="group-total">汇总</th>
                                     <th colspan="1" class="group-live">直播有客</th>
-                                    <th colspan="10" class="group-ad">广告-万相台</th>
+                                    <th colspan="12" class="group-ad">广告-万相台</th>
                                 </tr>
                                 <!-- 第二行：具体列名 -->
                                 <tr>
@@ -182,24 +268,26 @@
                                     <th class="col-num">花费</th>
                                     <th class="col-num">花费</th>
                                     <th class="col-num">观看次数</th>
-                                    <th class="col-num">成交笔数</th>
+                                    <th class="col-num">直接成交笔数</th>
                                     <th class="col-num">总购物车</th>
                                     <th class="col-num">加购成本</th>
                                     <th class="col-num">观看成本</th>
                                     <th class="col-num">观看转化率</th>
-                                    <th class="col-num">订单成交成本</th>
                                     <th class="col-num">预售订单量</th>
+                                    <th class="col-num">直接预售成交笔数</th>
                                     <th class="col-num">预售订单成本</th>
+                                    <th class="col-num">直接成交笔数成本</th>
+                                    <th class="col-num">直接预售成交笔数成本</th>
                                 </tr>
                             </thead>
                             <tbody id="daily-detail-table-body">
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:70px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:30px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -217,29 +305,44 @@
                                     <th class="col-label">人群分层 / 定向</th>
                                     <th class="col-num">花费</th>
                                     <th class="col-num">观看次数</th>
-                                    <th class="col-num">成交笔数</th>
+                                    <th class="col-num">直接成交笔数</th>
                                     <th class="col-num">总购物车</th>
                                     <th class="col-num">加购成本</th>
                                     <th class="col-num">观看成本</th>
                                     <th class="col-num">观看转化率</th>
-                                    <th class="col-num">订单成本</th>
                                     <th class="col-num">预售订单量</th>
+                                    <th class="col-num">直接预售成交笔数</th>
                                     <th class="col-num">预售订单成本</th>
-                                    <th class="col-num">ROI</th>
+                                    <th class="col-num">直接成交笔数成本</th>
+                                    <th class="col-num">直接预售成交笔数成本</th>
                                 </tr>
                             </thead>
                             <tbody id="crowd-rule-table-body">
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td></tr>
-                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
+                                <tr class="skeleton-row"><td><span class="skeleton-block" style="width:80px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:50px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td><td><span class="skeleton-block" style="width:36px"></span></td><td><span class="skeleton-block" style="width:40px"></span></td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-
+            <!-- ====== 投放人群分层趋势 ====== -->
+            <section class="report-section" id="crowd-stages-section">
+                <h3 class="report-section-title">📈 投放人群分层趋势</h3>
+                <div class="report-card" style="padding:16px 20px">
+                    <div class="crowd-stages-toolbar" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px">
+                        <div id="crowd-stages-legend" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                        <div style="margin-left:auto;display:flex;gap:6px">
+                            <button class="btn btn-outline btn-sm" id="cs-btn-default" style="font-size:12px;padding:4px 10px">核心 3 项</button>
+                            <button class="btn btn-outline btn-sm" id="cs-btn-all" style="font-size:12px;padding:4px 10px">全选</button>
+                            <button class="btn btn-outline btn-sm" id="cs-btn-scale" style="font-size:12px;padding:4px 10px">Y 轴：原始</button>
+                        </div>
+                    </div>
+                    <div id="crowd-stages-chart" style="width:100%;height:420px;"></div>
+                </div>
+            </section>
 
         </div>
     </main>
@@ -262,8 +365,7 @@
                 <div class="footer-links">
                     <a href="budget-scorecard.html">人群评分</a>
                     <a href="supabase-dashboard.html">数据看板</a>
-                    <a href="insights.html">洞察中心</a>
-                    <a href="genbi.html">GenBI</a>
+                    <a href="analytics.html">访问统计</a>
                 </div>
                 <div class="footer-copy">交个朋友控股 · 广告业务组内部平台</div>
             </div>
@@ -271,7 +373,8 @@
     </footer>
 
     <script src="assets/js/config.js"></script>
-    <script src="script.js?v=202605191525"></script>
-    <script src="assets/js/home-page.js?v=202605191525"></script>
+    <script src="assets/js/plan-dashboard-reference-data.js?v=202605310518"></script>
+    <script src="script.js?v=202605310518"></script>
+    <script src="assets/js/home-page.js?v=202605310518"></script>
 </body>
 </html>

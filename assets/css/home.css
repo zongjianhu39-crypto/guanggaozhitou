@@ -261,6 +261,26 @@
     -webkit-overflow-scrolling: touch;
 }
 
+/* ── 日报区域加宽：仅作用于首页，避免改动全局 --max-width（导航/其它页不受影响） ──
+   列数增多后，把日报报头与正文容器的最大宽度放宽、两侧留白收窄，
+   让更多列在不横向滚动的情况下完整显示。 */
+.home-page .report-header > .container,
+.home-page .report-body > .container {
+    max-width: min(1760px, 96vw);
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+/* ── 宽表紧凑化：缩小字号与单元格内边距，进一步压缩每列宽度 ── */
+.home-page .report-table th,
+.home-page .report-table td {
+    padding: 6px 8px;
+    font-size: 12px;
+}
+.home-page .report-table th {
+    font-size: 11px;
+}
+
 /* 完成率颜色 */
 .rate-green { color: #16a34a; font-weight: var(--font-semibold); }
 .rate-yellow { color: #d97706; font-weight: var(--font-semibold); }
@@ -636,6 +656,78 @@
 .yoy-pct-row { font-weight: bold; background: #f0f0f0; }
 .yoy-neg { color: #e74c3c; font-weight: bold; }
 .yoy-pos { color: #27ae60; font-weight: bold; }
+/* 节奏对比表 */
+.rhythm-badge {
+    background: #6366f1;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+.rhythm-delivery-badge {
+    background: #0891b2;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+.rhythm-delivery-badge--2025 {
+    background: #64748b;
+}
+.rhythm-delivery-hint {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 400;
+    margin-left: 8px;
+}
+.rhythm-delivery-no-data {
+    font-size: 10px;
+    color: #d97706;
+    font-weight: 400;
+}
+.group-current { background: #dbeafe; color: #1e40af; }    /* 蓝色 - 当期 */
+.group-reference { background: #f0fdf4; color: #166534; }  /* 绿色 - 参考 */
+.group-compare { background: #fef3c7; color: #92400e; }   /* 黄色 - 对比 */
+
+.rhythm-comparison-table .rs-label {
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.rhythm-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+.plan-ref-cell {
+    background: #f9fafb;
+    color: #6b7280;
+}
+.plan-muted {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* 节奏判断标签 */
+.rhythm-j {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.rhythm-j-strong-up { background: #fecaca; color: #991b1b; }
+.rhythm-j-up { background: #fed7aa; color: #9a3412; }
+.rhythm-j-flat { background: #e5e7eb; color: #374151; }
+.rhythm-j-down { background: #bbf7d0; color: #166534; }
+.rhythm-j-strong-down { background: #86efac; color: #14532d; }
+
 
 /* 一句话总结 */
 .kpi-summary {
@@ -711,8 +803,8 @@
    ================================ */
 @media print {
     @page {
-        size: A4 portrait;
-        margin: 12mm 10mm;
+        size: A3 landscape;
+        margin: 8mm 10mm;
     }
 
     .no-print,
@@ -839,6 +931,11 @@
     .report-chart-area { min-height: auto !important; }
     #home-chart-canvas { max-height: 160px !important; }
 
+    /* 人群分层趋势图 */
+    .crowd-stages-toolbar { display: none !important; }
+    #crowd-stages-chart { height: 260px !important; }
+    #crowd-stages-chart canvas { max-height: 260px !important; }
+
     /* 趋势和历史避免断页 */
     .report-columns--trend { break-inside: avoid; }
 
@@ -920,9 +1017,9 @@
    ══════════════════════════════════════ */
 .kpi-stage-table th {
     font-size: 11px;
-    padding: 6px 8px;
+    padding: 6px 6px;
 }
 .kpi-stage-table td {
     font-size: 11px;
-    padding: 5px 8px;
+    padding: 5px 6px;
 }

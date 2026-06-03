@@ -228,7 +228,34 @@
         return '';
     }
 
-    function buildTableRow(label, row, showExtraCols) {
+    // 把区间聚合 kpi 映射成 buildTableRow 可用的行结构（比率由后端按原始量重算，最准）。
+    function kpiToRow(kpi) {
+        const k = kpi || {};
+        return {
+            cost: k.totalCost || 0,
+            liveCost: k.totalLiveCost || 0,
+            amount: k.totalAmount || 0,
+            directAmount: k.totalDirectAmount || 0,
+            roi: k.avgRoi || 0,
+            directRoi: k.avgDirectRoi || 0,
+            adShare: k.totalAdShare || 0,
+            orders: k.totalOrders || 0,
+            preOrders: k.totalPreOrders || 0,
+            directOrders: k.totalDirectOrders || 0,
+            directPreOrders: k.totalDirectPreOrders || 0,
+            taobaoOrders: k.totalTaobaoOrders || 0,
+            orderCost: k.avgOrderCost || 0,
+            preOrderCost: k.avgPreOrderCost || 0,
+            viewCost: k.avgViewCost || 0,
+            cartCost: k.avgCartCost || 0,
+            viewConvertRate: k.avgViewConvertRate || 0,
+            viewRate: k.avgViewRate || 0,
+            cart: k.totalCart || 0,
+            taobaoReturnRate: k.totalReturnRate || 0,
+        };
+    }
+
+    function buildTableRow(label, row, showExtraCols, rowClass = '') {
         const roiDisplay = row.roi > 0 ? `<span class="${getRoiClass(row.roi)}">${row.roi.toFixed(2)}</span>` : '-';
         const directRoiDisplay = row.directRoi > 0 ? `<span class="${getRoiClass(row.directRoi)}">${row.directRoi.toFixed(2)}</span>` : '-';
         const breakevenRoiDisplay = row.breakevenRoi !== null && Number.isFinite(Number(row.breakevenRoi))
@@ -242,44 +269,46 @@
             ? `<span class="${getAdShareClass(Number(row.adShare))}">${formatFinitePercent(row.adShare)}</span>`
             : '-';
         const taobaoReturnRate = row.taobaoReturnRate > 0 ? (row.taobaoReturnRate * 100).toFixed(2) + '%' : '-';
-        let html = `<tr>
+        const directOrderCost = row.directOrders > 0 ? row.cost / row.directOrders : 0;
+        const directPreOrderCost = row.directPreOrders > 0 ? row.cost / row.directPreOrders : 0;
+        // 列顺序（自定义）：标识 → 花费 → 成交金额(总/直接) → 成交量(总/预售/直接预售/淘宝) → 订单成本 → ROI/直接ROI/广告占比 → 直接成本/预售成本/直接预售成本 → 观看/加购成本 → 转化率/观看率 → 购物车 → 退货率
+        // 已隐藏字段（保留数据未渲染，便于恢复）：
+        //   财务更新不及时: 盈亏平衡ROI breakevenRoi / 广告收入 adRevenue / 去退ROI returnRoi
+        //                  保量佣金 finGuarantee / 预估结算线下佣金 finOffline / 预估结算机构佣金 finAgency / 直播间红包 finRedPacket / 严选红包 finYanxuanRed
+        //   非重要指标:    可计算天数 computableDays / 跳过天数 skippedDays / 深度互动率 deepInteractRate / 千次展现成本 cpm / 展现量 shows
+        let html = `<tr${rowClass ? ` class="${rowClass}"` : ''}>
             <td>${escapeHtml(label)}</td>
             <td>¥${formatMoney(row.cost)}</td>
+            <td>${row.liveCost > 0 ? '¥' + formatMoney(row.liveCost) : '-'}</td>
             <td>¥${formatMoney(row.amount)}</td>
+            <td>¥${formatMoney(row.directAmount)}</td>
             <td>${formatNum(row.orders)}</td>
+            <td>${formatNum(row.preOrders)}</td>
+            <td>${formatNum(row.directPreOrders)}</td>`;
+
+        if (showExtraCols) {
+            html += `<td>${formatNum(row.taobaoOrders)}</td>`;
+        }
+
+        html += `<td>${row.orderCost > 0 ? '¥' + row.orderCost.toFixed(2) : '-'}</td>
             <td>${roiDisplay}</td>
             <td>${directRoiDisplay}</td>`;
 
         if (showExtraCols) {
-            html += `<td>${breakevenRoiDisplay}</td>
-            <td>${adRevenueDisplay}</td>
-            <td>${returnRoiDisplay}</td>
-            <td>${adShareDisplay}</td>
-            <td>${formatNum(row.computableDays)}</td>
-            <td>${formatNum(row.skippedDays)}</td>`;
+            html += `<td>${adShareDisplay}</td>`;
         }
 
-        html += `<td>${row.viewCost > 0 ? '¥' + row.viewCost.toFixed(2) : '-'}</td>
-            <td>${row.orderCost > 0 ? '¥' + row.orderCost.toFixed(2) : '-'}</td>
-            <td>${row.cartCost > 0 ? '¥' + row.cartCost.toFixed(2) : '-'}</td>
-            <td>${formatNum(row.preOrders)}</td>
+        html += `<td>${directOrderCost > 0 ? '¥' + directOrderCost.toFixed(2) : '-'}</td>
             <td>${row.preOrderCost > 0 ? '¥' + row.preOrderCost.toFixed(2) : '-'}</td>
+            <td>${directPreOrderCost > 0 ? '¥' + directPreOrderCost.toFixed(2) : '-'}</td>
+            <td>${row.viewCost > 0 ? '¥' + row.viewCost.toFixed(2) : '-'}</td>
+            <td>${row.cartCost > 0 ? '¥' + row.cartCost.toFixed(2) : '-'}</td>
             <td>${row.viewConvertRate > 0 ? row.viewConvertRate.toFixed(2) + '%' : '-'}</td>
-            <td>${row.deepInteractRate > 0 ? row.deepInteractRate.toFixed(2) + '%' : '-'}</td>
             <td>${row.viewRate > 0 ? row.viewRate.toFixed(2) + '%' : '-'}</td>
-            <td>${row.cpm > 0 ? '¥' + row.cpm.toFixed(2) : '-'}</td>
-            <td>¥${formatMoney(row.directAmount)}</td>
-            <td>${formatNum(row.cart)}</td>
-            <td>${formatNum(row.shows)}</td>`;
+            <td>${formatNum(row.cart)}</td>`;
 
         if (showExtraCols) {
-            html += `<td>¥${formatMoney(row.finGuarantee)}</td>
-            <td>¥${formatMoney(row.finOffline)}</td>
-            <td>¥${formatMoney(row.finAgency)}</td>
-            <td>¥${formatMoney(row.finRedPacket)}</td>
-            <td>¥${formatMoney(row.finYanxuanRed)}</td>
-            <td>${formatNum(row.taobaoOrders)}</td>
-            <td>${taobaoReturnRate}</td>`;
+            html += `<td>${taobaoReturnRate}</td>`;
         }
 
         html += '</tr>';
@@ -675,22 +704,11 @@
             return;
         }
 
-        const counts = result.counts || {};
-        if (counts.superLive > 0) {
-            const warnParts = [];
-            if (!counts.taobaoLive) warnParts.push('淘宝直播成交数据缺失（无法计算广告成交占比）');
-            if (!counts.financial) warnParts.push('财务佣金数据缺失（无法计算广告收入）');
-            if (warnParts.length > 0) {
-                hideGlobalDashboardError();
-                showGlobalDashboardError(
-                    { message: `⚠ 广告收入 / 可计算天数 无法显示的原因：${warnParts.join('；')}。请检查对应日期的数据是否已导入 Supabase。` },
-                    '部分数据缺失'
-                );
-            }
-        }
+        // 已移除「广告收入 / 可计算天数 数据缺失」提示横幅（用户要求不再弹出）。
 
         document.querySelector('#ads-monthly-table tbody').innerHTML = monthly.length
             ? monthly.map(row => buildTableRow(row.label, row, true)).join('')
+              + buildTableRow('汇总', kpiToRow(kpi), true, 'dash-summary-row')
             : '';
         if (!monthly.length) {
             renderTableEmptyState('#ads-monthly-table', '所选时间范围暂无月度数据');

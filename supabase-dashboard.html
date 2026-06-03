@@ -7,8 +7,9 @@
     <title>数据看板 - 交个朋友·广告智投工作台</title>
     <meta name="description" content="投放数据聚合看板，监控花费、ROI、转化率与人群表现">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://qjscsikithbxuxmjyjsp.supabase.co" crossorigin>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="assets/css/dashboard.css?v=202605191525">
+    <link rel="stylesheet" href="assets/css/dashboard.css?v=202605310518">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         /* 仅保留 dashboard.css 无法覆盖的页面级补丁 */
@@ -51,8 +52,9 @@
     </style>
 </head>
 <body>
-    <script src="assets/js/auth-helpers.js?v=202605191525"></script>
-    <script src="auth.js?v=202605191525"></script>
+    <script src="assets/js/auth-helpers.js?v=202605310518"></script>
+    <script src="auth.js?v=202605310518"></script>
+    <script src="assets/js/page-tracker.js?v=202605310518"></script>
 
     <nav class="navbar">
         <div class="nav-container">
@@ -66,7 +68,6 @@
                 <li><a href="supabase-dashboard.html" class="nav-link active">数据看板</a></li>
 
                 <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
-                <li><a href="insights.html" class="nav-link">洞察中心</a></li>
                 <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
             </ul>
             <button class="mobile-menu-btn">
@@ -128,21 +129,21 @@
             <div class="dash-section">
                 <h2>📅 分月对比表</h2>
                 <div class="table-wrapper">
-                    <table id="ads-monthly-table" class="data-table"><thead><tr><th>月份</th><th>花费</th><th>总成交金额</th><th>总成交笔数</th><th>ROI</th><th>直接ROI</th><th>盈亏平衡ROI</th><th>广告收入</th><th>去退ROI</th><th>广告成交占比</th><th>可计算天数</th><th>跳过天数</th><th>观看成本</th><th>订单成本</th><th>加购成本</th><th>总预售成交笔数</th><th>预售订单成本</th><th>观看转化率</th><th>深度互动率</th><th>观看率</th><th>千次展现成本</th><th>直接成交金额</th><th>总购物车数</th><th>展现量</th><th>保量佣金</th><th>预估结算线下佣金</th><th>预估结算机构佣金</th><th>直播间红包</th><th>严选红包</th><th>淘宝直播成交笔数</th><th>退货率</th></tr></thead><tbody></tbody></table>
+                    <table id="ads-monthly-table" class="data-table"><thead><tr><th>月份</th><th>花费</th><th>有客花费</th><th>总成交金额</th><th>直接成交金额</th><th>总成交笔数</th><th>总预售成交笔数</th><th>直接预售成交笔数</th><th>淘宝直播成交笔数</th><th>订单成本</th><th>ROI</th><th>直接ROI</th><th>广告成交占比</th><th>直接成交笔数成本</th><th>预售订单成本</th><th>直接预售成交笔数成本</th><th>观看成本</th><th>加购成本</th><th>观看转化率</th><th>观看率</th><th>总购物车数</th><th>退货率</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
 
             <div class="dash-section">
                 <h2>📅 分周对比表</h2>
                 <div class="table-wrapper">
-                    <table id="ads-weekly-table" class="data-table"><thead><tr><th>周</th><th>花费</th><th>总成交金额</th><th>总成交笔数</th><th>ROI</th><th>直接ROI</th><th>盈亏平衡ROI</th><th>广告收入</th><th>去退ROI</th><th>广告成交占比</th><th>可计算天数</th><th>跳过天数</th><th>观看成本</th><th>订单成本</th><th>加购成本</th><th>总预售成交笔数</th><th>预售订单成本</th><th>观看转化率</th><th>深度互动率</th><th>观看率</th><th>千次展现成本</th><th>直接成交金额</th><th>总购物车数</th><th>展现量</th><th>保量佣金</th><th>预估结算线下佣金</th><th>预估结算机构佣金</th><th>直播间红包</th><th>严选红包</th><th>淘宝直播成交笔数</th><th>退货率</th></tr></thead><tbody></tbody></table>
+                    <table id="ads-weekly-table" class="data-table"><thead><tr><th>周</th><th>花费</th><th>有客花费</th><th>总成交金额</th><th>直接成交金额</th><th>总成交笔数</th><th>总预售成交笔数</th><th>直接预售成交笔数</th><th>淘宝直播成交笔数</th><th>订单成本</th><th>ROI</th><th>直接ROI</th><th>广告成交占比</th><th>直接成交笔数成本</th><th>预售订单成本</th><th>直接预售成交笔数成本</th><th>观看成本</th><th>加购成本</th><th>观看转化率</th><th>观看率</th><th>总购物车数</th><th>退货率</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
 
             <div class="dash-section">
                 <h2>📅 每日明细表</h2>
                 <div class="table-wrapper">
-                    <table id="ads-daily-table" class="data-table"><thead><tr><th>日期</th><th>花费</th><th>总成交金额</th><th>总成交笔数</th><th>ROI</th><th>直接ROI</th><th>盈亏平衡ROI</th><th>广告收入</th><th>去退ROI</th><th>广告成交占比</th><th>可计算天数</th><th>跳过天数</th><th>观看成本</th><th>订单成本</th><th>加购成本</th><th>总预售成交笔数</th><th>预售订单成本</th><th>观看转化率</th><th>深度互动率</th><th>观看率</th><th>千次展现成本</th><th>直接成交金额</th><th>总购物车数</th><th>展现量</th><th>保量佣金</th><th>预估结算线下佣金</th><th>预估结算机构佣金</th><th>直播间红包</th><th>严选红包</th><th>淘宝直播成交笔数</th><th>退货率</th></tr></thead><tbody></tbody></table>
+                    <table id="ads-daily-table" class="data-table"><thead><tr><th>日期</th><th>花费</th><th>有客花费</th><th>总成交金额</th><th>直接成交金额</th><th>总成交笔数</th><th>总预售成交笔数</th><th>直接预售成交笔数</th><th>淘宝直播成交笔数</th><th>订单成本</th><th>ROI</th><th>直接ROI</th><th>广告成交占比</th><th>直接成交笔数成本</th><th>预售订单成本</th><th>直接预售成交笔数成本</th><th>观看成本</th><th>加购成本</th><th>观看转化率</th><th>观看率</th><th>总购物车数</th><th>退货率</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
         </div>
@@ -237,12 +238,12 @@
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/shared-utils.js"></script>
-    <script src="script.js?v=202605191525"></script>
-    <script src="assets/js/dashboard-state.js?v=202605191525"></script>
-    <script src="assets/js/dashboard-render.js?v=202605191525"></script>
-    <script src="assets/js/dashboard-api.js?v=202605191525"></script>
-    <script src="assets/js/dashboard-loader.js?v=202605191525"></script>
-    <script src="assets/js/dashboard-events.js?v=202605191525"></script>
-    <script src="dashboard.js?v=202605191525"></script>
+    <script src="script.js?v=202605310518"></script>
+    <script src="assets/js/dashboard-state.js?v=202605310518"></script>
+    <script src="assets/js/dashboard-render.js?v=202605310518"></script>
+    <script src="assets/js/dashboard-api.js?v=202605310518"></script>
+    <script src="assets/js/dashboard-loader.js?v=202605310518"></script>
+    <script src="assets/js/dashboard-events.js?v=202605310518"></script>
+    <script src="dashboard.js?v=202605310518"></script>
 </body>
 </html>

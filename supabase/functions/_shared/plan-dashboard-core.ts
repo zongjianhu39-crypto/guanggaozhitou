@@ -21,6 +21,7 @@ export const DATA_SOURCE_CONFIG = {
     directOrdersColumn: '直接成交笔数',
     cartColumn: '总购物车数',
     preOrdersColumn: '总预售成交笔数',
+    directPreOrdersColumn: '直接预售成交笔数',
   },
   agentActual: {
     dateColumn: '日期',
@@ -169,6 +170,7 @@ export function buildPlanDashboardSummary(input: PlanDashboardSummaryInput) {
   const referenceDirectOrdersByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.directOrdersColumn);
   const referenceCartByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.cartColumn);
   const referencePreOrdersByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.preOrdersColumn);
+  const referenceDirectPreOrdersByDate = sumRowsByDate(referenceRows, refDateCols, DATA_SOURCE_CONFIG.superLive.directPreOrdersColumn);
 
   const financialDateCols = [DATA_SOURCE_CONFIG.referenceFinancial.dateColumn];
   const referenceGuaranteeByDate = sumRowsByDate(referenceFinancialRows, financialDateCols, DATA_SOURCE_CONFIG.referenceFinancial.guaranteeCommissionColumn);
@@ -216,6 +218,7 @@ export function buildPlanDashboardSummary(input: PlanDashboardSummaryInput) {
       reference_direct_orders: referenceDirectOrdersByDate.get(referenceDate) || 0,
       reference_cart: referenceCartByDate.get(referenceDate) || 0,
       reference_pre_orders: referencePreOrdersByDate.get(referenceDate) || 0,
+      reference_direct_pre_orders: referenceDirectPreOrdersByDate.get(referenceDate) || 0,
       reference_buyers: referenceBuyersByDate.get(referenceDate) || 0,
       reference_taobao_orders: referenceTaobaoOrdersByDate.get(referenceDate) || 0,
       reference_financial_guarantee_commission: referenceGuaranteeByDate.get(referenceDate) || 0,

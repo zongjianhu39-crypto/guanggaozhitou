@@ -73,16 +73,8 @@
       el.innerHTML = '<div class="table-shell"><div class="plan-status">当前日期范围内暂无明细数据。</div></div>';
       return;
     }
-    const totalPlan = utils.sum(days.map((item) => item.total_plan_amount));
-    const totalActual = utils.sum(days.map((item) => item.actual_cost));
-    const overallCompletion = totalPlan > 0 ? totalActual / totalPlan : null;
     el.innerHTML = `
       <div class="table-shell">
-        <div class="table-summary-bar">
-          <span>合计：计划 <strong>${utils.escapeHtml(utils.formatCurrency(totalPlan))}</strong></span>
-          <span>实际 <strong>${utils.escapeHtml(utils.formatCurrency(totalActual))}</strong></span>
-          <span>完成率 <strong>${utils.escapeHtml(utils.formatPercent(overallCompletion))}</strong></span>
-        </div>
         <div class="table-scroll">
           <table class="plan-table" id="plan-data-table">
             <thead>

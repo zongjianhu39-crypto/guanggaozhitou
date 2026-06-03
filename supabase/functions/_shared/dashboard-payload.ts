@@ -12,6 +12,11 @@ import {
 } from './table-routes.ts';
 
 const FINANCIAL_COLUMNS = ['日期', '保量佣金', '预估结算线下佣金', '预估结算机构佣金', '直播间红包', '严选红包'];
+// 看板「有客花费」列：取「有客代投计划」(ad_plans.agent_plan)，即用户在计划拆解页手填的预算，
+// 而非实际代投花费。独立旁路，不并入广告花费/ROI 计算。注意计划表日期列是 plan_date（非「日期」）。
+const AGENT_PLAN_TABLE = 'ad_plans';
+const AGENT_PLAN_DATE_COLUMN = 'plan_date';
+const AGENT_PLAN_AMOUNT_COLUMN = 'agent_plan';
 const TAOBAO_LIVE_COLUMNS = ['日期', '成交笔数', '退款金额', '成交金额'];
 const SUPER_LIVE_BASE_COLUMNS = [
   '日期',
@@ -24,6 +29,8 @@ const SUPER_LIVE_BASE_COLUMNS = [
   '总购物车数',
   '总收藏数',
   '总预售成交笔数',
+  '直接成交笔数',
+  '直接预售成交笔数',
   '互动量',
 ];
 const SUPER_LIVE_CROWD_COLUMNS = [...SUPER_LIVE_BASE_COLUMNS, '计划id', '计划名字', '人群名字'];
@@ -38,6 +45,8 @@ const SHORT_LIVE_LINK_COLUMNS = [
   '总购物车数',
   '总收藏数',
   '总预售成交笔数',
+  '直接成交笔数',
+  '直接预售成交笔数',
   '互动量',
 ];
 const SHORT_LIVE_LINK_CROWD_COLUMNS = [...SHORT_LIVE_LINK_COLUMNS, '人群名字'];
@@ -53,6 +62,8 @@ const ADS_SUMMARY_COLUMNS = [
   '总购物车数',
   '总收藏数',
   '总预售成交笔数',
+  '直接成交笔数',
+  '直接预售成交笔数',
   '互动量',
   '保量佣金',
   '预估结算线下佣金',
@@ -80,6 +91,8 @@ const CROWD_SUMMARY_COLUMNS = [
   '总购物车数',
   '总收藏数',
   '总预售成交笔数',
+  '直接成交笔数',
+  '直接预售成交笔数',
   '互动量',
   'source_row_count',
 ];
@@ -121,6 +134,8 @@ type AggregateBucket = {
   cart: number;
   fav: number;
   preOrders: number;
+  directOrders: number;
+  directPreOrders: number;
   interactions: number;
   finGuarantee: number;
   finOffline: number;
@@ -136,6 +151,7 @@ type AggregateBucket = {
 type DisplayRow = {
   label: string;
   cost: number;
+  liveCost?: number;
   amount: number;
   orders: number;
   views: number;
@@ -144,6 +160,8 @@ type DisplayRow = {
   cart: number;
   fav: number;
   preOrders: number;
+  directOrders: number;
+  directPreOrders: number;
   interactions: number;
   roi: number;
   directRoi: number;
@@ -191,6 +209,8 @@ type DashboardPayloadCacheEntry = {
 type RestQueryOptions = {
   rangeGte: string;
   rangeLte: string;
+  // 可选：把「计划名字 包含关键词」下推到数据库（PostgREST like），避免整表拉回内存再过滤。
+  planNameIncludes?: string | null;
 };
 
 const dashboardPayloadCache = new Map<string, DashboardPayloadCacheEntry>();
@@ -374,6 +394,11 @@ async function fetchTablePage(
   params.set('offset', String(offset));
   params.set(DATE_COLUMN, `gte.${options.rangeGte}`);
   params.append(DATE_COLUMN, `lte.${options.rangeLte}`);
+  // 计划名筛选下推到数据库：仅取「计划名字」包含关键词的行（与内存端 includes 语义一致，大小写敏感用 like）。
+  const planNameIncludes = String(options.planNameIncludes ?? '').trim();
+  if (planNameIncludes) {
+    params.append('计划名字', `like.*${planNameIncludes}*`);
+  }
   const url = `${SB_URL}/rest/v1/${table}?${params.toString()}`;
   const headers = includeCount ? { ...getSupabaseHeaders(), Prefer: 'count=exact' } : getSupabaseHeaders();
   const response = await fetchRestPageWithRetry(table, url, headers);
@@ -392,19 +417,37 @@ async function fetchTablePage(
 }
 
 async function fetchTableData(table: string, selectColumns: string[], options: RestQueryOptions): Promise<any[]> {
-  const allData: any[] = [];
-  for (let offset = 0; ; offset += REST_PAGE_SIZE) {
-    const page = await fetchTablePage(table, selectColumns, REST_PAGE_SIZE, offset, false, options);
-    allData.push(...page.rows);
-    if (page.rows.length < REST_PAGE_SIZE) break;
+  // 第一页带 count=exact 拿到总行数，随后并行抓取剩余分页，避免逐页串行往返（大表可省数秒）。
+  const first = await fetchTablePage(table, selectColumns, REST_PAGE_SIZE, 0, true, options);
+  const allData: any[] = [...first.rows];
+
+  if (first.totalCount !== null) {
+    if (first.totalCount > REST_PAGE_SIZE) {
+      const pagePromises: Promise<{ rows: any[] }>[] = [];
+      for (let offset = REST_PAGE_SIZE; offset < first.totalCount; offset += REST_PAGE_SIZE) {
+        pagePromises.push(fetchTablePage(table, selectColumns, REST_PAGE_SIZE, offset, false, options));
+      }
+      const pages = await Promise.all(pagePromises);
+      for (const page of pages) allData.push(...page.rows);
+    }
+    return allData;
+  }
+
+  // count 不可用时退回串行翻页（保持原行为）。
+  if (first.rows.length === REST_PAGE_SIZE) {
+    for (let offset = REST_PAGE_SIZE; ; offset += REST_PAGE_SIZE) {
+      const page = await fetchTablePage(table, selectColumns, REST_PAGE_SIZE, offset, false, options);
+      allData.push(...page.rows);
+      if (page.rows.length < REST_PAGE_SIZE) break;
+    }
   }
   return allData;
 }
 
-async function fetchSummaryTable(table: string, selectColumns: string[], startDate: string, endDate: string): Promise<any[]> {
+async function fetchSummaryTable(table: string, selectColumns: string[], startDate: string, endDate: string, planNameIncludes?: string | null): Promise<any[]> {
   const startedAt = Date.now();
   debugLog(`[dashboard-data] summary query ${table} ${DATE_COLUMN}=gte.${startDate}&${DATE_COLUMN}=lte.${endDate}`);
-  const rows = await fetchTableData(table, selectColumns, { rangeGte: startDate, rangeLte: endDate });
+  const rows = await fetchTableData(table, selectColumns, { rangeGte: startDate, rangeLte: endDate, planNameIncludes });
   debugLog(`[dashboard-data] summary query ${table} rows=${rows.length} duration_ms=${Date.now() - startedAt}`);
   return rows;
 }
@@ -447,7 +490,7 @@ function filterByDateRange(data: any[], startDate: string, endDate: string): any
 
 function createAggregateBucket(withDates = false): AggregateBucket {
   const bucket: AggregateBucket = {
-    cost: 0, amount: 0, orders: 0, views: 0, shows: 0, directAmount: 0, cart: 0, fav: 0, preOrders: 0, interactions: 0,
+    cost: 0, amount: 0, orders: 0, views: 0, shows: 0, directAmount: 0, cart: 0, fav: 0, preOrders: 0, directOrders: 0, directPreOrders: 0, interactions: 0,
     finGuarantee: 0, finOffline: 0, finAgency: 0, finRedPacket: 0, finYanxuanRed: 0, taobaoOrders: 0, taobaoRefund: 0, taobaoAmount: 0,
   };
   if (withDates) bucket.dates = new Set();
@@ -464,6 +507,8 @@ function accumulateSuperLiveRow(bucket: AggregateBucket, row: any, date?: string
   bucket.cart += toNum(row['总购物车数']);
   bucket.fav += toNum(row['总收藏数']);
   bucket.preOrders += toNum(row['总预售成交笔数']);
+  bucket.directOrders += toNum(row['直接成交笔数']);
+  bucket.directPreOrders += toNum(row['直接预售成交笔数']);
   bucket.interactions += toNum(row['互动量']);
   if (bucket.dates && date) bucket.dates.add(date);
 }
@@ -508,6 +553,37 @@ function buildLiveByDate(taobaoData: any[]) {
     result[date].push(row);
   });
   return result;
+}
+
+// 有客代投（直播）花费：按日期累加 amount。键格式与每日行 label 一致（parseDate -> YYYY-MM-DD）。
+// 直读计划表 ad_plans，按 plan_date 汇总 agent_plan（有客代投计划）。表很小（每天一行），单次请求即可。
+async function fetchAgentPlanByDate(startDate: string, endDate: string): Promise<Record<string, number>> {
+  try {
+    const params = new URLSearchParams();
+    params.set('select', `${AGENT_PLAN_DATE_COLUMN},${AGENT_PLAN_AMOUNT_COLUMN}`);
+    params.set(AGENT_PLAN_DATE_COLUMN, `gte.${startDate}`);
+    params.append(AGENT_PLAN_DATE_COLUMN, `lte.${endDate}`);
+    const url = `${SB_URL}/rest/v1/${AGENT_PLAN_TABLE}?${params.toString()}`;
+    const response = await fetch(url, { headers: getSupabaseHeaders() });
+    if (!response.ok) return {};
+    const rows: any[] = await response.json();
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      const date = parseDate(row?.[AGENT_PLAN_DATE_COLUMN]);
+      if (!date) continue;
+      result[date] = (result[date] || 0) + toNum(row?.[AGENT_PLAN_AMOUNT_COLUMN]);
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+// 把有客花费按日期注入每日行，并供分月/分周/kpi 累加。
+function applyAgentCostToDailyRows(dailyRows: DisplayRow[], agentCostByDate: Record<string, number>) {
+  dailyRows.forEach((row) => {
+    row.liveCost = agentCostByDate[row.label] || 0;
+  });
 }
 
 function mergeFinAndLiveByDates(bucket: AggregateBucket, dates: Iterable<string>, finByDate: Record<string, any>, liveByDate: Record<string, any[]>) {
@@ -557,9 +633,11 @@ function calcGroup(row: Record<string, number>) {
   const cart = toNum(row['总购物车数']);
   const fav = toNum(row['总收藏数']);
   const preOrders = toNum(row['总预售成交笔数']);
+  const directOrders = toNum(row['直接成交笔数']);
+  const directPreOrders = toNum(row['直接预售成交笔数']);
   const interactions = toNum(row['互动量']);
   return {
-    cost, amount, orders, views, shows, directAmount, cart, fav, preOrders, interactions,
+    cost, amount, orders, views, shows, directAmount, cart, fav, preOrders, directOrders, directPreOrders, interactions,
     roi: cost > 0 ? amount / cost : 0,
     directRoi: cost > 0 ? directAmount / cost : 0,
     viewCost: views > 0 ? cost / views : 0,
@@ -587,7 +665,8 @@ function getWeekStr(dateString: string) {
 function buildAggregateDisplay(label: string, bucket: AggregateBucket): DisplayRow {
   const metrics = calcGroup({
     '花费': bucket.cost, '总成交金额': bucket.amount, '总成交笔数': bucket.orders, '观看次数': bucket.views, '展现量': bucket.shows,
-    '直接成交金额': bucket.directAmount, '总购物车数': bucket.cart, '总收藏数': bucket.fav, '总预售成交笔数': bucket.preOrders, '互动量': bucket.interactions,
+    '直接成交金额': bucket.directAmount, '总购物车数': bucket.cart, '总收藏数': bucket.fav, '总预售成交笔数': bucket.preOrders,
+    '直接成交笔数': bucket.directOrders, '直接预售成交笔数': bucket.directPreOrders, '互动量': bucket.interactions,
   });
   const finNet = getBucketFinNet(bucket);
   const adRevenue = computeAdRevenue(finNet, bucket.orders, bucket.taobaoOrders);
@@ -618,9 +697,11 @@ function aggregateDisplayRows(label: string, rows: DisplayRow[]): DisplayRow {
   let computableCost = 0;
   let computableDays = 0;
   let skippedDays = 0;
+  let liveCost = 0;
 
   rows.forEach((row) => {
     bucket.cost += toNum(row.cost);
+    liveCost += toNum(row.liveCost);
     bucket.amount += toNum(row.amount);
     bucket.orders += toNum(row.orders);
     bucket.views += toNum(row.views);
@@ -629,6 +710,8 @@ function aggregateDisplayRows(label: string, rows: DisplayRow[]): DisplayRow {
     bucket.cart += toNum(row.cart);
     bucket.fav += toNum(row.fav);
     bucket.preOrders += toNum(row.preOrders);
+    bucket.directOrders += toNum(row.directOrders);
+    bucket.directPreOrders += toNum(row.directPreOrders);
     bucket.interactions += toNum(row.interactions);
     bucket.finGuarantee += toNum(row.finGuarantee);
     bucket.finOffline += toNum(row.finOffline);
@@ -649,12 +732,14 @@ function aggregateDisplayRows(label: string, rows: DisplayRow[]): DisplayRow {
 
   const metrics = calcGroup({
     '花费': bucket.cost, '总成交金额': bucket.amount, '总成交笔数': bucket.orders, '观看次数': bucket.views, '展现量': bucket.shows,
-    '直接成交金额': bucket.directAmount, '总购物车数': bucket.cart, '总收藏数': bucket.fav, '总预售成交笔数': bucket.preOrders, '互动量': bucket.interactions,
+    '直接成交金额': bucket.directAmount, '总购物车数': bucket.cart, '总收藏数': bucket.fav, '总预售成交笔数': bucket.preOrders,
+    '直接成交笔数': bucket.directOrders, '直接预售成交笔数': bucket.directPreOrders, '互动量': bucket.interactions,
   });
   const totalAdRevenue = computableDays > 0 ? adRevenue : null;
   return {
     label,
     ...metrics,
+    liveCost,
     finGuarantee: bucket.finGuarantee,
     finOffline: bucket.finOffline,
     finAgency: bucket.finAgency,
@@ -729,6 +814,8 @@ function buildCrowdRows(rows: any[], crowdLayerConfig: CrowdLayerConfig, layerMa
         '直接成交金额': crowdMap[crowd].directAmount,
         '总购物车数': crowdMap[crowd].cart,
         '总预售成交笔数': crowdMap[crowd].preOrders,
+        '直接成交笔数': crowdMap[crowd].directOrders,
+        '直接预售成交笔数': crowdMap[crowd].directPreOrders,
         '互动量': crowdMap[crowd].interactions,
       }),
       subRows: Object.keys(crowdSubs[crowd])
@@ -746,6 +833,8 @@ function buildCrowdRows(rows: any[], crowdLayerConfig: CrowdLayerConfig, layerMa
             '直接成交金额': crowdSubs[crowd][key].directAmount,
             '总购物车数': crowdSubs[crowd][key].cart,
             '总预售成交笔数': crowdSubs[crowd][key].preOrders,
+            '直接成交笔数': crowdSubs[crowd][key].directOrders,
+            '直接预售成交笔数': crowdSubs[crowd][key].directPreOrders,
             '互动量': crowdSubs[crowd][key].interactions,
           }),
         })),
@@ -788,6 +877,8 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
         '直接成交金额': crowdMap[crowd].directAmount,
         '总购物车数': crowdMap[crowd].cart,
         '总预售成交笔数': crowdMap[crowd].preOrders,
+        '直接成交笔数': crowdMap[crowd].directOrders,
+        '直接预售成交笔数': crowdMap[crowd].directPreOrders,
         '互动量': crowdMap[crowd].interactions,
       }),
       subRows: Object.keys(crowdSubs[crowd])
@@ -805,13 +896,15 @@ function buildCrowdRowsFromSummary(rows: any[], crowdLayerConfig: CrowdLayerConf
             '直接成交金额': crowdSubs[crowd][key].directAmount,
             '总购物车数': crowdSubs[crowd][key].cart,
             '总预售成交笔数': crowdSubs[crowd][key].preOrders,
+            '直接成交笔数': crowdSubs[crowd][key].directOrders,
+            '直接预售成交笔数': crowdSubs[crowd][key].directPreOrders,
             '互动量': crowdSubs[crowd][key].interactions,
           }),
         })),
     }));
 }
 
-function buildAdsPayloadFromSummary(rows: any[]) {
+function buildAdsPayloadFromSummary(rows: any[], agentCostByDate: Record<string, number> = {}) {
   const totalAggregate = createAggregateBucket(false);
   rows.forEach((row) => accumulateAdsSummaryRow(totalAggregate, row));
 
@@ -823,6 +916,7 @@ function buildAdsPayloadFromSummary(rows: any[]) {
     })
     .filter((row): row is DisplayRow => Boolean(row))
     .sort((left, right) => right.label.localeCompare(left.label));
+  applyAgentCostToDailyRows(dailyRows, agentCostByDate);
 
   return {
     kpi: buildKpiPayload(totalAggregate, dailyRows),
@@ -837,8 +931,10 @@ function buildKpiPayload(totalAggregate: AggregateBucket, dailyRows: DisplayRow[
   const computableCost = dailyRows.reduce((sum, row) => sum + (isFiniteMetric(row.adRevenue) ? Number(row.cost) : 0), 0);
   const computableDays = dailyRows.reduce((sum, row) => sum + Number(row.computableDays || 0), 0);
   const skippedDays = dailyRows.reduce((sum, row) => sum + Number(row.skippedDays || 0), 0);
+  const totalLiveCost = dailyRows.reduce((sum, row) => sum + Number(row.liveCost || 0), 0);
   return {
     totalCost: totalAggregate.cost,
+    totalLiveCost,
     totalAmount: totalAggregate.amount,
     totalOrders: totalAggregate.orders,
     avgRoi: totalAggregate.cost > 0 ? totalAggregate.amount / totalAggregate.cost : 0,
@@ -852,6 +948,8 @@ function buildKpiPayload(totalAggregate: AggregateBucket, dailyRows: DisplayRow[
     avgCartCost: totalAggregate.cart > 0 ? totalAggregate.cost / totalAggregate.cart : 0,
     totalPreOrders: totalAggregate.preOrders,
     avgPreOrderCost: totalAggregate.preOrders > 0 ? totalAggregate.cost / totalAggregate.preOrders : 0,
+    totalDirectOrders: totalAggregate.directOrders,
+    totalDirectPreOrders: totalAggregate.directPreOrders,
     avgViewConvertRate: totalAggregate.views > 0 ? (totalAggregate.orders / totalAggregate.views) * 100 : 0,
     avgDeepInteractRate: totalAggregate.views > 0 ? (totalAggregate.interactions / totalAggregate.views) * 100 : 0,
     avgViewRate: totalAggregate.shows > 0 ? (totalAggregate.views / totalAggregate.shows) * 100 : 0,
@@ -884,26 +982,31 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
     return cachedPayload;
   }
 
-  const dashboardSpec = await getDashboardSpec();
   const needAds = sections.ads;
   const needCrowd = sections.crowd;
   const needSingle = sections.single;
   const crowdPlanNameIncludes = String(options.crowdPlanNameIncludes ?? '').trim();
-  const forceRawCrowd = Boolean(options.forceRawCrowd || crowdPlanNameIncludes);
+  // 仅当显式要求 forceRawCrowd 时才回退原始表；计划名筛选可直接在预聚合 summary 上完成，
+  // 无需扫描原始 super_live/short_live_link 全表（summary 每行已含「计划名字」）。
+  const forceRawCrowd = Boolean(options.forceRawCrowd);
 
-  const audienceLayerMap = needCrowd ? await fetchAudienceLayerMapping() : new Map<string, string>();
-
-  const [adsSummaryRaw, crowdSummaryRaw, singleSummaryRaw] = await Promise.all([
+  const [dashboardSpec, audienceLayerMap, adsSummaryRaw, crowdSummaryRaw, singleSummaryRaw, agentCostByDate] = await Promise.all([
+    getDashboardSpec(),
+    needCrowd ? fetchAudienceLayerMapping() : Promise.resolve(new Map<string, string>()),
     needAds ? fetchSummaryTable('dashboard_ads_daily_summary', ADS_SUMMARY_COLUMNS, startDate, endDate) : Promise.resolve([]),
-    needCrowd ? fetchSummaryTable('dashboard_crowd_daily_summary', CROWD_SUMMARY_COLUMNS, startDate, endDate) : Promise.resolve([]),
+    needCrowd ? fetchSummaryTable('dashboard_crowd_daily_summary', CROWD_SUMMARY_COLUMNS, startDate, endDate, crowdPlanNameIncludes) : Promise.resolve([]),
     needSingle ? fetchSummaryTable('dashboard_single_product_daily_summary', SINGLE_PRODUCT_SUMMARY_COLUMNS, startDate, endDate) : Promise.resolve([]),
+    // 有客花费列 = 有客代投计划（ad_plans.agent_plan），按日期映射，供 summary / raw 两条 ads 路径注入每日行。
+    needAds ? fetchAgentPlanByDate(startDate, endDate) : Promise.resolve({} as Record<string, number>),
   ]);
 
   const adsSummaryData = filterByDateRange(adsSummaryRaw, startDate, endDate);
   const crowdSummaryData = filterByDateRange(crowdSummaryRaw, startDate, endDate);
   const singleSummaryData = filterByDateRange(singleSummaryRaw, startDate, endDate);
   const useAdsSummary = needAds && adsSummaryData.length > 0;
-  const useCrowdSummary = needCrowd && !forceRawCrowd && crowdSummaryData.length > 0;
+  // 设置了计划名筛选时，汇总查询已在数据库端过滤；返回 0 行表示「确实没有匹配」，
+  // 而非「汇总表为空」，因此不应回退原始表全表扫描。
+  const useCrowdSummary = needCrowd && !forceRawCrowd && (crowdSummaryData.length > 0 || crowdPlanNameIncludes.length > 0);
   const useSingleSummary = needSingle && singleSummaryData.length > 0;
   const needRawAds = needAds && !useAdsSummary;
   const needRawCrowd = needCrowd && !useCrowdSummary;
@@ -953,7 +1056,7 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
 
   if (needAds) {
     if (useAdsSummary) {
-      payload.ads = buildAdsPayloadFromSummary(adsSummaryData);
+      payload.ads = buildAdsPayloadFromSummary(adsSummaryData, agentCostByDate);
     } else {
       const finByDate = buildFinByDate(financialData);
       const liveByDate = buildLiveByDate(taobaoData);
@@ -966,6 +1069,7 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
       mergeFinAndLiveByDates(totalAggregate, totalAggregate.dates || [], finByDate, liveByDate);
       const dailyMap = buildDailyAggregateMap(superLiveData, finByDate, liveByDate);
       const dailyRows = Object.keys(dailyMap).sort().reverse().map((key) => buildAggregateDisplay(key, dailyMap[key]));
+      applyAgentCostToDailyRows(dailyRows, agentCostByDate);
 
       payload.ads = {
         kpi: buildKpiPayload(totalAggregate, dailyRows),
@@ -977,9 +1081,11 @@ export async function getDashboardPayload(startDate: string, endDate: string, se
   }
 
   if (needCrowd) {
+    // 计划名筛选：summary 路径在预聚合行上按「计划名字」过滤；raw 路径已在 superLiveData 处过滤。
+    const crowdSummaryForPayload = filterRowsByPlanName(crowdSummaryData, crowdPlanNameIncludes);
     payload.crowd = {
       summary: useCrowdSummary
-        ? buildCrowdRowsFromSummary(crowdSummaryData, dashboardSpec.dimensions.crowdLayer, audienceLayerMap)
+        ? buildCrowdRowsFromSummary(crowdSummaryForPayload, dashboardSpec.dimensions.crowdLayer, audienceLayerMap)
         : buildCrowdRows(superLiveData, dashboardSpec.dimensions.crowdLayer, audienceLayerMap),
     };
   }

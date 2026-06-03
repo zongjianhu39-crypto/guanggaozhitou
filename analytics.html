@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://open.feishu.cn; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>访问统计 - 交个朋友·广告智投工作台</title>
+    <meta name="description" content="查看登录用户的页面访问情况：访问用户数、页面热度与最近访问明细">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://qjscsikithbxuxmjyjsp.supabase.co" crossorigin>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        body { background:#f5f7fb; color:#111827; }
+        .analytics-shell { max-width: 1240px; margin: 0 auto; padding: 24px 20px 60px; }
+        .analytics-hero {
+            background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 48%, #fff8f2 100%);
+            border: 1px solid #dbe5ff;
+            border-radius: 24px;
+            padding: 28px 32px;
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+            margin-bottom: 22px;
+        }
+        .analytics-kicker {
+            display:inline-flex; align-items:center; padding:6px 12px; border-radius:999px;
+            background:#e8efff; color:#4053b5; font-size:12px; font-weight:700; letter-spacing:0.04em;
+        }
+        .analytics-hero h1 { margin: 14px 0 10px; font-size: 32px; line-height: 1.15; }
+        .analytics-hero p { margin:0; max-width:780px; color:#5f6b7a; line-height:1.8; font-size:14px; }
+        .analytics-toolbar {
+            display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:18px;
+        }
+        .range-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+        .range-tab {
+            border:none; border-radius:999px; background:#e9eef8; color:#445064;
+            padding:9px 16px; font-size:14px; font-weight:600; cursor:pointer;
+        }
+        .range-tab.active {
+            background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff;
+            box-shadow:0 10px 24px rgba(79,70,229,0.22);
+        }
+        .toolbar-spacer { flex:1; }
+        .refresh-btn {
+            border:1px solid #d7deee; border-radius:12px; background:#fff; color:#374151;
+            padding:9px 16px; font-size:14px; font-weight:600; cursor:pointer;
+        }
+        .refresh-btn:hover { border-color:#6e7ff5; color:#4f46e5; }
+        .stats-grid {
+            display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px; margin-bottom:22px;
+        }
+        .stat-card {
+            background:#fff; border:1px solid #e8ecf4; border-radius:18px; padding:18px 20px;
+            box-shadow:0 12px 28px rgba(15,23,42,0.05);
+        }
+        .stat-card strong { display:block; font-size:30px; color:#1d4ed8; line-height:1; margin-bottom:8px; }
+        .stat-card span { color:#667085; font-size:13px; }
+        .panel {
+            background:#fff; border:1px solid #e8ecf4; border-radius:20px;
+            box-shadow:0 12px 28px rgba(15,23,42,0.05); padding:22px 24px; margin-bottom:18px;
+        }
+        .panel h2 { margin:0 0 4px; font-size:19px; }
+        .panel .panel-sub { margin:0 0 14px; color:#667085; font-size:13px; }
+        .data-table { width:100%; border-collapse:collapse; font-size:13px; }
+        .data-table th, .data-table td {
+            padding:11px 12px; border-bottom:1px solid #eef2f7; text-align:left; vertical-align:middle;
+        }
+        .data-table th { color:#475467; background:#fbfcfe; font-weight:700; white-space:nowrap; }
+        .data-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+        .data-table tbody tr:hover { background:#f8faff; }
+        .page-chip {
+            display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px;
+            background:#eef2ff; color:#4338ca; font-size:12px; font-weight:600;
+        }
+        .bar-cell { display:flex; align-items:center; gap:8px; }
+        .bar-track { flex:1; height:8px; background:#eef2f7; border-radius:999px; overflow:hidden; min-width:60px; }
+        .bar-fill { height:100%; background:linear-gradient(90deg,#6366f1,#8b5cf6); border-radius:999px; }
+        .muted { color:#98a2b3; }
+        .two-col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+        .state-box { text-align:center; padding:40px 20px; color:#667085; }
+        .state-box.error { color:#b42318; }
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+            .two-col { grid-template-columns:1fr; }
+        }
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns:1fr; }
+            .analytics-hero h1 { font-size:26px; }
+        }
+    </style>
+</head>
+<body>
+    <script src="assets/js/auth-helpers.js?v=202605310518"></script>
+    <script src="auth.js?v=202605310518"></script>
+    <script src="assets/js/page-tracker.js?v=202605310518"></script>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-emoji">🎯</span>
+                <span>广告智投工作台</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">首页</a></li>
+                <li><a href="plan-dashboard.html" class="nav-link">计划拆解</a></li>
+                <li><a href="supabase-dashboard.html" class="nav-link">数据看板</a></li>
+                <li><a href="budget-scorecard.html" class="nav-link">人群评分</a></li>
+                <li><a href="auth/index.html" data-action="logout" class="nav-link" style="color:#999;">退出登录</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="analytics-shell">
+        <section class="analytics-hero">
+            <span class="analytics-kicker">Access Analytics</span>
+            <h1>谁在用这个工作台？</h1>
+            <p>统计飞书登录用户的页面访问情况。数据来自每次页面加载的埋点记录，可按时间范围查看访问用户数、各页面热度以及最近的访问明细。</p>
+        </section>
+
+        <section class="analytics-toolbar">
+            <div class="range-tabs" id="range-tabs">
+                <button class="range-tab" type="button" data-range="1">今日</button>
+                <button class="range-tab active" type="button" data-range="7">近 7 天</button>
+                <button class="range-tab" type="button" data-range="30">近 30 天</button>
+                <button class="range-tab" type="button" data-range="0">全部</button>
+            </div>
+            <div class="toolbar-spacer"></div>
+            <button class="refresh-btn" id="refresh-btn" type="button">↻ 刷新</button>
+        </section>
+
+        <section class="stats-grid" id="stats-grid">
+            <div class="stat-card"><strong>—</strong><span>访问用户数</span></div>
+            <div class="stat-card"><strong>—</strong><span>总访问次数</span></div>
+            <div class="stat-card"><strong>—</strong><span>覆盖页面数</span></div>
+            <div class="stat-card"><strong>—</strong><span>今日访问</span></div>
+        </section>
+
+        <div class="two-col">
+            <section class="panel">
+                <h2>用户访问排行</h2>
+                <p class="panel-sub">按访问次数排序，展示每位用户的访问次数、覆盖页面数与最近访问时间。</p>
+                <div id="user-table-wrap">
+                    <div class="state-box">加载中…</div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>页面热度</h2>
+                <p class="panel-sub">各页面的访问次数与独立访问用户数。</p>
+                <div id="page-table-wrap">
+                    <div class="state-box">加载中…</div>
+                </div>
+            </section>
+        </div>
+
+        <section class="panel">
+            <h2>最近访问明细</h2>
+            <p class="panel-sub">最近的访问记录（最多 100 条）。</p>
+            <div id="recent-table-wrap">
+                <div class="state-box">加载中…</div>
+            </div>
+        </section>
+    </main>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/shared-utils.js"></script>
+    <script src="script.js?v=202605310518"></script>
+    <script src="assets/js/analytics-page.js?v=202605310518"></script>
+</body>
+</html>

@@ -335,7 +335,7 @@
 
 .dash-section .data-table th,
 .dash-section .data-table td {
-    text-align: right;
+    text-align: left;
     white-space: nowrap;
 }
 
@@ -355,6 +355,38 @@
 
 .dash-section .data-table tr:hover td:first-child {
     background: var(--gray-50);
+}
+
+/* ── 宽表平铺：加宽容器 + 压缩单元格，尽量免横向滚动 ── */
+.dashboard-container {
+    max-width: min(1880px, 97vw);
+}
+
+.dash-section .data-table th,
+.dash-section .data-table td {
+    padding: 5px 7px;
+    font-size: 12px;
+}
+
+/* 表头允许折行，长表头折成多行以收窄列宽（数字单元格仍保持 nowrap） */
+.dash-section .data-table th {
+    font-size: 11px;
+    white-space: normal;
+    letter-spacing: 0;
+    line-height: 1.25;
+    vertical-align: bottom;
+}
+
+/* ── 汇总行（区间合计）── */
+.dash-section .data-table tr.dash-summary-row td {
+    font-weight: var(--font-semibold);
+    background: var(--surface-overlay);
+    border-top: 2px solid var(--gray-300);
+    color: var(--gray-900);
+}
+.dash-section .data-table tr.dash-summary-row td:first-child,
+.dash-section .data-table tr.dash-summary-row:hover td:first-child {
+    background: var(--surface-overlay);
 }
 
 /* ── 人群表特殊行 ── */

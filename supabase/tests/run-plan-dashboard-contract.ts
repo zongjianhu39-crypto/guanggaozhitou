@@ -43,8 +43,8 @@ function main() {
       { 日期: '2026-01-01', 花费: '15' },
     ],
     referenceRows: [
-      { 日期: '2025-01-01', 花费: '80', 观看次数: '1000', 总成交笔数: '12', 直接成交笔数: '4', 总购物车数: '30', 总预售成交笔数: '3' },
-      { 日期: '2025-01-02', 花费: '90', 观看次数: '800', 总成交笔数: '8', 直接成交笔数: '5', 总购物车数: '20', 总预售成交笔数: '2' },
+      { 日期: '2025-01-01', 花费: '80', 观看次数: '1000', 总成交笔数: '12', 直接成交笔数: '4', 总购物车数: '30', 总预售成交笔数: '3', 直接预售成交笔数: '6' },
+      { 日期: '2025-01-02', 花费: '90', 观看次数: '800', 总成交笔数: '8', 直接成交笔数: '5', 总购物车数: '20', 总预售成交笔数: '2', 直接预售成交笔数: '7' },
     ],
     referenceFinancialRows: [
       { 日期: '2025/1/1', 保量佣金: '111', 预估结算机构佣金: '222', 品牌费: '333' },
@@ -92,6 +92,7 @@ function main() {
     'reference_direct_orders',
     'reference_cart',
     'reference_pre_orders',
+    'reference_direct_pre_orders',
     'reference_buyers',
     'reference_taobao_orders',
     'reference_financial_guarantee_commission',
@@ -109,6 +110,7 @@ function main() {
   assert.equal(firstDay.reference_direct_orders, 4);
   assert.equal(firstDay.reference_cart, 30);
   assert.equal(firstDay.reference_pre_orders, 3);
+  assert.equal(firstDay.reference_direct_pre_orders, 6);
   assert.equal(firstDay.reference_buyers, 9);
   assert.equal(firstDay.reference_taobao_orders, 15);
   assert.equal(firstDay.reference_financial_guarantee_commission, 111);

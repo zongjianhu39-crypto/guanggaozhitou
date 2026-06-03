@@ -18,7 +18,7 @@ declare
   v_mode text;
 begin
   -- 1. Whitelist: only pipeline data tables are allowed
-  if p_table_name !~ '^(super_live_|financial_|short_live_link_|live_ad_agent_|single_product_ad_|taobao_live_)\d{4,6}$' then
+  if p_table_name !~ '^(super_live_|financial_|short_live_link_|live_ad_agent_|single_product_ad_|taobao_live_|crowd_stages_)\d{4,6}$' then
     return jsonb_build_object(
       'ok', false,
       'error', format('table name ''%s'' not in pipeline whitelist', p_table_name)

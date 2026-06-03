@@ -1,11 +1,90 @@
--- 将短直联动数据并入 dashboard 汇总视图和刷新函数
--- 短直联动与超级直播同属万相台，应在 ads 和 crowd 汇总中合并统计
+-- 将「直接成交笔数」「直接预售成交笔数」并入 dashboard 汇总表/视图/刷新函数
+-- 源表 super_live_* 与 short_live_link_2026 均已含这两列，此前未透出到汇总层
 
--- 1. 增加短直联动行数追踪列
+-- ============================================================
+-- 1. 汇总表加列
+-- ============================================================
 alter table public.dashboard_ads_daily_summary
-  add column if not exists source_short_live_rows integer not null default 0;
+  add column if not exists "直接成交笔数" numeric not null default 0,
+  add column if not exists "直接预售成交笔数" numeric not null default 0;
 
--- 2. 创建短直联动源数据视图（列名映射到 super_live 标准）
+alter table public.dashboard_crowd_daily_summary
+  add column if not exists "直接成交笔数" numeric not null default 0,
+  add column if not exists "直接预售成交笔数" numeric not null default 0;
+
+-- ============================================================
+-- 2. 重建 super_live 源视图，透出两列（在 20260507 定义基础上追加）
+-- ============================================================
+create or replace view public.dashboard_src_super_live as
+select t."日期"::date as "日期",
+  to_jsonb(t)->>'花费' as "花费",
+  to_jsonb(t)->>'总成交金额' as "总成交金额",
+  to_jsonb(t)->>'总成交笔数' as "总成交笔数",
+  to_jsonb(t)->>'观看次数' as "观看次数",
+  to_jsonb(t)->>'展现量' as "展现量",
+  to_jsonb(t)->>'直接成交金额' as "直接成交金额",
+  to_jsonb(t)->>'总购物车数' as "总购物车数",
+  to_jsonb(t)->>'总收藏数' as "总收藏数",
+  to_jsonb(t)->>'总预售成交笔数' as "总预售成交笔数",
+  to_jsonb(t)->>'互动量' as "互动量",
+  to_jsonb(t)->>'人群名字' as "人群名字",
+  to_jsonb(t)->>'计划id' as "计划id",
+  to_jsonb(t)->>'计划名字' as "计划名字",
+  to_jsonb(t)->>'直接成交笔数' as "直接成交笔数",
+  to_jsonb(t)->>'直接预售成交笔数' as "直接预售成交笔数"
+from public.super_live_2025 t
+union all select t."日期"::date,
+  to_jsonb(t)->>'花费', to_jsonb(t)->>'总成交金额', to_jsonb(t)->>'总成交笔数',
+  to_jsonb(t)->>'观看次数', to_jsonb(t)->>'展现量', to_jsonb(t)->>'直接成交金额',
+  to_jsonb(t)->>'总购物车数', to_jsonb(t)->>'总收藏数', to_jsonb(t)->>'总预售成交笔数',
+  to_jsonb(t)->>'互动量', to_jsonb(t)->>'人群名字',
+  to_jsonb(t)->>'计划id', to_jsonb(t)->>'计划名字',
+  to_jsonb(t)->>'直接成交笔数', to_jsonb(t)->>'直接预售成交笔数'
+from public.super_live_202601 t
+union all select t."日期"::date,
+  to_jsonb(t)->>'花费', to_jsonb(t)->>'总成交金额', to_jsonb(t)->>'总成交笔数',
+  to_jsonb(t)->>'观看次数', to_jsonb(t)->>'展现量', to_jsonb(t)->>'直接成交金额',
+  to_jsonb(t)->>'总购物车数', to_jsonb(t)->>'总收藏数', to_jsonb(t)->>'总预售成交笔数',
+  to_jsonb(t)->>'互动量', to_jsonb(t)->>'人群名字',
+  to_jsonb(t)->>'计划id', to_jsonb(t)->>'计划名字',
+  to_jsonb(t)->>'直接成交笔数', to_jsonb(t)->>'直接预售成交笔数'
+from public.super_live_202602 t
+union all select t."日期"::date,
+  to_jsonb(t)->>'花费', to_jsonb(t)->>'总成交金额', to_jsonb(t)->>'总成交笔数',
+  to_jsonb(t)->>'观看次数', to_jsonb(t)->>'展现量', to_jsonb(t)->>'直接成交金额',
+  to_jsonb(t)->>'总购物车数', to_jsonb(t)->>'总收藏数', to_jsonb(t)->>'总预售成交笔数',
+  to_jsonb(t)->>'互动量', to_jsonb(t)->>'人群名字',
+  to_jsonb(t)->>'计划id', to_jsonb(t)->>'计划名字',
+  to_jsonb(t)->>'直接成交笔数', to_jsonb(t)->>'直接预售成交笔数'
+from public.super_live_202603 t
+union all select t."日期"::date,
+  to_jsonb(t)->>'花费', to_jsonb(t)->>'总成交金额', to_jsonb(t)->>'总成交笔数',
+  to_jsonb(t)->>'观看次数', to_jsonb(t)->>'展现量', to_jsonb(t)->>'直接成交金额',
+  to_jsonb(t)->>'总购物车数', to_jsonb(t)->>'总收藏数', to_jsonb(t)->>'总预售成交笔数',
+  to_jsonb(t)->>'互动量', to_jsonb(t)->>'人群名字',
+  to_jsonb(t)->>'计划id', to_jsonb(t)->>'计划名字',
+  to_jsonb(t)->>'直接成交笔数', to_jsonb(t)->>'直接预售成交笔数'
+from public.super_live_202604 t
+union all select t."日期"::date,
+  to_jsonb(t)->>'花费', to_jsonb(t)->>'总成交金额', to_jsonb(t)->>'总成交笔数',
+  to_jsonb(t)->>'观看次数', to_jsonb(t)->>'展现量', to_jsonb(t)->>'直接成交金额',
+  to_jsonb(t)->>'总购物车数', to_jsonb(t)->>'总收藏数', to_jsonb(t)->>'总预售成交笔数',
+  to_jsonb(t)->>'互动量', to_jsonb(t)->>'人群名字',
+  to_jsonb(t)->>'计划id', to_jsonb(t)->>'计划名字',
+  to_jsonb(t)->>'直接成交笔数', to_jsonb(t)->>'直接预售成交笔数'
+from public.super_live_202605 t
+union all select t."日期"::date,
+  to_jsonb(t)->>'花费', to_jsonb(t)->>'总成交金额', to_jsonb(t)->>'总成交笔数',
+  to_jsonb(t)->>'观看次数', to_jsonb(t)->>'展现量', to_jsonb(t)->>'直接成交金额',
+  to_jsonb(t)->>'总购物车数', to_jsonb(t)->>'总收藏数', to_jsonb(t)->>'总预售成交笔数',
+  to_jsonb(t)->>'互动量', to_jsonb(t)->>'人群名字',
+  to_jsonb(t)->>'计划id', to_jsonb(t)->>'计划名字',
+  to_jsonb(t)->>'直接成交笔数', to_jsonb(t)->>'直接预售成交笔数'
+from public.super_live_202606 t;
+
+-- ============================================================
+-- 3. 重建 short_live_link 源视图，透出两列（在 20260523 定义基础上追加）
+-- ============================================================
 create or replace view public.dashboard_src_short_live_link as
 select
   t."日期"::date as "日期",
@@ -20,10 +99,14 @@ select
   to_jsonb(t)->>'总预售成交笔数' as "总预售成交笔数",
   to_jsonb(t)->>'互动量' as "互动量",
   coalesce(to_jsonb(t)->>'人群名字', '') as "人群名字",
-  '' as "计划名字"
+  '' as "计划名字",
+  to_jsonb(t)->>'直接成交笔数' as "直接成交笔数",
+  to_jsonb(t)->>'直接预售成交笔数' as "直接预售成交笔数"
 from public.short_live_link_2026 t;
 
--- 3. 重建 ads 汇总刷新函数，加入短直联动
+-- ============================================================
+-- 4. 重建 ads 汇总刷新函数（在 20260523 定义基础上追加两列）
+-- ============================================================
 create or replace function public.refresh_dashboard_ads_summary(p_start_date date, p_end_date date)
 returns void
 language plpgsql
@@ -51,6 +134,8 @@ begin
       sum(public.dashboard_to_numeric("总购物车数"::text)) as cart,
       sum(public.dashboard_to_numeric("总收藏数"::text)) as fav,
       sum(public.dashboard_to_numeric("总预售成交笔数"::text)) as pre_orders,
+      sum(public.dashboard_to_numeric("直接成交笔数"::text)) as direct_orders,
+      sum(public.dashboard_to_numeric("直接预售成交笔数"::text)) as direct_pre_orders,
       sum(public.dashboard_to_numeric("互动量"::text)) as interactions,
       count(*)::integer as source_rows
     from public.dashboard_src_super_live
@@ -68,6 +153,8 @@ begin
       sum(public.dashboard_to_numeric("总购物车数"::text)) as cart,
       sum(public.dashboard_to_numeric("总收藏数"::text)) as fav,
       sum(public.dashboard_to_numeric("总预售成交笔数"::text)) as pre_orders,
+      sum(public.dashboard_to_numeric("直接成交笔数"::text)) as direct_orders,
+      sum(public.dashboard_to_numeric("直接预售成交笔数"::text)) as direct_pre_orders,
       sum(public.dashboard_to_numeric("互动量"::text)) as interactions,
       count(*)::integer as source_rows
     from public.dashboard_src_short_live_link
@@ -103,7 +190,7 @@ begin
     union select "日期" from taobao_daily
   )
   insert into public.dashboard_ads_daily_summary (
-    "日期", "花费", "总成交金额", "总成交笔数", "观看次数", "展现量", "直接成交金额", "总购物车数", "总收藏数", "总预售成交笔数", "互动量",
+    "日期", "花费", "总成交金额", "总成交笔数", "观看次数", "展现量", "直接成交金额", "总购物车数", "总收藏数", "总预售成交笔数", "直接成交笔数", "直接预售成交笔数", "互动量",
     "保量佣金", "预估结算线下佣金", "预估结算机构佣金", "直播间红包", "严选红包",
     "淘宝直播成交笔数", "淘宝直播成交金额", "淘宝直播退款金额",
     source_super_live_rows, source_short_live_rows, source_financial_rows, source_taobao_rows, updated_at
@@ -118,6 +205,8 @@ begin
     coalesce(s.cart, 0) + coalesce(sl.cart, 0),
     coalesce(s.fav, 0) + coalesce(sl.fav, 0),
     coalesce(s.pre_orders, 0) + coalesce(sl.pre_orders, 0),
+    coalesce(s.direct_orders, 0) + coalesce(sl.direct_orders, 0),
+    coalesce(s.direct_pre_orders, 0) + coalesce(sl.direct_pre_orders, 0),
     coalesce(s.interactions, 0) + coalesce(sl.interactions, 0),
     coalesce(f.guarantee, 0), coalesce(f.offline, 0), coalesce(f.agency, 0), coalesce(f.red_packet, 0), coalesce(f.yanxuan_red, 0),
     coalesce(t.taobao_orders, 0), coalesce(t.taobao_amount, 0), coalesce(t.taobao_refund, 0),
@@ -138,7 +227,9 @@ exception when others then
 end;
 $$;
 
--- 4. 重建 crowd 汇总刷新函数，加入短直联动
+-- ============================================================
+-- 5. 重建 crowd 汇总刷新函数（在 20260523 定义基础上追加两列）
+-- ============================================================
 create or replace function public.refresh_dashboard_crowd_summary(p_start_date date, p_end_date date)
 returns void
 language plpgsql
@@ -156,7 +247,7 @@ begin
   delete from public.dashboard_crowd_daily_summary where "日期" between p_start_date and p_end_date;
 
   insert into public.dashboard_crowd_daily_summary (
-    "日期", "人群分类", "人群名字", "计划名字", "花费", "总成交金额", "总成交笔数", "观看次数", "展现量", "直接成交金额", "总购物车数", "总收藏数", "总预售成交笔数", "互动量", source_row_count, updated_at
+    "日期", "人群分类", "人群名字", "计划名字", "花费", "总成交金额", "总成交笔数", "观看次数", "展现量", "直接成交金额", "总购物车数", "总收藏数", "总预售成交笔数", "直接成交笔数", "直接预售成交笔数", "互动量", source_row_count, updated_at
   )
   select
     "日期",
@@ -172,15 +263,17 @@ begin
     sum(public.dashboard_to_numeric("总购物车数"::text)),
     sum(public.dashboard_to_numeric("总收藏数"::text)),
     sum(public.dashboard_to_numeric("总预售成交笔数"::text)),
+    sum(public.dashboard_to_numeric("直接成交笔数"::text)),
+    sum(public.dashboard_to_numeric("直接预售成交笔数"::text)),
     sum(public.dashboard_to_numeric("互动量"::text)),
     count(*)::integer,
     now()
   from (
-    select "日期", "花费", "总成交金额", "总成交笔数", "观看次数", "展现量", "直接成交金额", "总购物车数", "总收藏数", "总预售成交笔数", "互动量", "人群名字", "计划名字"
+    select "日期", "花费", "总成交金额", "总成交笔数", "观看次数", "展现量", "直接成交金额", "总购物车数", "总收藏数", "总预售成交笔数", "直接成交笔数", "直接预售成交笔数", "互动量", "人群名字", "计划名字"
     from public.dashboard_src_super_live
     where "日期" between p_start_date and p_end_date
     union all
-    select "日期", "花费", "总成交金额", "总成交笔数", "观看次数", "展现量", "直接成交金额", "总购物车数", "总收藏数", "总预售成交笔数", "互动量", "人群名字", "计划名字"
+    select "日期", "花费", "总成交金额", "总成交笔数", "观看次数", "展现量", "直接成交金额", "总购物车数", "总收藏数", "总预售成交笔数", "直接成交笔数", "直接预售成交笔数", "互动量", "人群名字", "计划名字"
     from public.dashboard_src_short_live_link
     where "日期" between p_start_date and p_end_date
   ) combined
@@ -195,3 +288,9 @@ exception when others then
   raise;
 end;
 $$;
+
+-- ============================================================
+-- 6. 回填历史数据（覆盖 2025 同比参考 + 2026 当年）
+-- ============================================================
+select public.refresh_dashboard_ads_summary('2025-01-01'::date, '2026-12-31'::date);
+select public.refresh_dashboard_crowd_summary('2025-01-01'::date, '2026-12-31'::date);
